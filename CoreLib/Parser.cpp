@@ -4,7 +4,7 @@ using namespace CoreLib::Basic;
 
 namespace CoreLib
 {
-	namespace Text
+	namespace Text //sa
 	{
 		
 		Parser::Parser(String text)
