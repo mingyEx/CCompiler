@@ -109,6 +109,9 @@
     <ClCompile Include="SyntaxPrinter.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\CoreLib\CoreLib.vcxproj">
+      <Project>{f9be7957-8399-899e-0c49-e714fddd4b65}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\IL\IL.vcxproj">
       <Project>{c4d6955f-562a-1b9b-671f-92858debbc62}</Project>
     </ProjectReference>

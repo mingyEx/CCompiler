@@ -129,6 +129,9 @@
     <ProjectReference Include="..\..\CoreLib\CoreLib.vcxproj">
       <Project>{f9be7957-8399-899e-0c49-e714fddd4b65}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\CoreLib\CoreLib.vcxproj">
+      <Project>{f9be7957-8399-899e-0c49-e714fddd4b65}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

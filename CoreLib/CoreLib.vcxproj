@@ -179,7 +179,6 @@
   <ItemGroup>
     <ClCompile Include="LibIO.cpp" />
     <ClCompile Include="LibString.cpp" />
-    <ClCompile Include="Parser.cpp" />
     <ClCompile Include="Stream.cpp" />
     <ClCompile Include="TextIO.cpp" />
   </ItemGroup>
