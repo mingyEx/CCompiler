@@ -3,7 +3,7 @@
 
 #include "Basic.h"
 #include "LibIO.h"
-#include "CompileError.h"
+#include "CompileError.h"	//当心，我要
 
 namespace Compiler
 {
