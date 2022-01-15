@@ -150,7 +150,7 @@ namespace Compiler
 			}
 
 			//合并 phi .
-			//我觉得啊，这个函数说是 CoalescePhi ，实际上是在合并(coalesce) 相关的变量.
+			//这个函数说是 CoalescePhi ，实际上是在合并(coalesce) 相关的变量.
 			//If the live ranges of variables in φ function (x3, x1, x2) do not interfere,then coalesce them into a single variable(X), and delete the φ - function.
 			//这里是在coalesce them into a single variable(X)，但是为什么是在对phiClass进行操作?
 			TransformContext CoalescePhi(ControlFlowGraph * program)

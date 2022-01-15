@@ -56,6 +56,17 @@ https://www.google.com/search?q=Machine+Language+Code+x86+add&oq=Machine+Languag
 要把注释好好整理一遍。
 line 40 第一遍读的时候没搞懂，挂起。
 这个文件都够我水一篇博客了。
+不对，是五篇。
+真的，以写清楚它们做了啥来写五篇博客完全没问题。
+暂时挂起。
+
+
+### InterferenceAnalysis
+这里的东西也需要再搞一遍，就当是复习算法题了。
+
+...
+到了优化那一部分已经完全想不起来了。
+前端部分先写写试试吧，就当是练习现代cpp了。
 
 ## end
 写完这个之后就去读clang源码作为娱乐项目。
