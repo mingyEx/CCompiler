@@ -18,7 +18,7 @@ namespace CoreLib
 		{
 			friend class StringBuilder;
 		private:
-			RefPtr<wchar_t, RefPtrArrayDestructor> buffer;	//这东西就是一个指向buffer的指针.
+			RefPtr<wchar_t, RefPtrArrayDestructor> buffer;
 			char * multiByteBuffer;
 			int length;
 			void Free()

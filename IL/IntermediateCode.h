@@ -3,7 +3,7 @@
 
 #include "Basic.h"
 #include "LibIO.h"
-#include "CompileError.h"	//当心，我要
+#include "CompileError.h"
 
 namespace Compiler
 {
@@ -11,7 +11,7 @@ namespace Compiler
 	{
 		using namespace CoreLib::Basic;
 		using namespace CoreLib::IO;
-		class InvalidProgramException : public Exception
+		class InvalidProgramException : public Exception	//满满的c#味
 		{
 		public:
 			InvalidProgramException()
@@ -93,8 +93,7 @@ namespace Compiler
 					   Type == OperandType::ConstInt8;
 			}
 		};
-
-		
+				
 		class Operation	//操作符
 		{
 		public:
@@ -159,16 +158,16 @@ namespace Compiler
 
 		class ControlFlowNode;
 
+		//单条指令以instruction来表示,所以这个Instruction就是一个三地址代码的抽象
 		class Instruction
 		{
 		public:
-			Operation * Func;			//嗯嗯,这里,单条指令以instruction来表示,所以这个Instruction就是一个三地址代码的抽象? 可是那就没必要list<操作数>了啊..
+			Operation * Func;		//操作符，比如move,add之类的。		
 			Operand LeftOperand;
-
 			ControlFlowNode * CFG_Node;	
 			//节点指针,从当前块指向下一个节点,为了cfg与Instruction block一一对应的.
-			List<Operand> Operands;		
-			int Mark : 1;	//mark谁?
+			List<Operand> Operands;//一条指令对应多个操作数
+			int Mark : 1;	//标记关键节点的flag,是优化部分用到的。
 			int IsVolatile : 1;
 			Instruction()
 				: Func(0), CFG_Node(0), Mark(0), IsVolatile(0)
@@ -266,12 +265,9 @@ namespace Compiler
 
 		enum class MemoryLocationType
 		{
-			Register, Stack
+			Register, Stack	//标记变量的位置在stack还是寄存器。
 		};
 
-		//这个内存位置，里面有一个stack,不懂。联系上面的栈与寄存器，所以这个应该是运行时表示相关。
-		//但是为什么里面没有寄存器呢..
-		//todo 栈是用来辅助其他的,并非如此,待整理;
 		class MemoryLocation
 		{
 		public:
@@ -363,10 +359,11 @@ namespace Compiler
 		public:
 			String Name;
 			LinkedList<Instruction> Instructions;	
-			//函数是由一系列指令形成的，而非cst里的几条语句组成的树。cst里，函数是节点连起来的，没有"翻译到元语言的call操作"，只有名，参，体的树节点而已。
+			//函数是由里面一系列表达式翻译成的一系列指令形成的，
+			//而非cst里的几条语句组成的树。cst里，函数是节点连起来的，没有"翻译到元语言的call操作"，只有名，参，体的树节点而已。
 
 			List<unsigned char> Code;			//这里的Code 是保存了那些指令吗？
-			List<RefPtr<Variable>> Variables; // do not add directly	这个不是形参，那该是什么？先挂起
+			List<RefPtr<Variable>> Variables; // do not add directly	实参？
 			List<RefPtr<Variable>> Parameters; // do not add directly	形参
 			int ParameterSize;
 			int VariableSize;
@@ -433,7 +430,7 @@ namespace Compiler
 			void Dump(const String & fileName)
 			{
 				StreamWriter writer(fileName);
-				//调用的func的dump来吧指令等写入文本.
+				//调用func的dump来把指令等写入文本给cfgView显示.
 				for (auto & func:Functions)
 					func.Dump(writer);
 			}

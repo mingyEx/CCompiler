@@ -44,7 +44,7 @@ namespace CoreLib
 		{
 			int pos = path.LastIndexOf(L'/');
 			pos = Math::Max(path.LastIndexOf(L'\\'), pos) + 1;
-			return path.SubString(pos, path.Length()-pos);	//艹，这不是跟某人的一样吗..
+			return path.SubString(pos, path.Length()-pos);
 		}
 		String Path::GetFileExt(const String & path)
 		{

@@ -3,7 +3,6 @@
 #include "LibIO.h"
 
 using namespace CoreLib::IO;
-// 没看懂.
 namespace Compiler
 {
 	namespace x86
@@ -203,6 +202,7 @@ namespace Compiler
 			assembly.CodeBuffer.AddRange(code);
 		}
 
+		//把代码里的主函数链接到可执行文件里？
 		Assembly_x86 Program_x86::Link()
 		{
 			Assembly_x86 rs;
@@ -239,11 +239,14 @@ namespace Compiler
 			return rs;
 		}
 
-		MemoryExecutable_x86 Assembly_x86::CreateMemoryExecutable()	//真的手写二进制？ 怎么做到的..
+		MemoryExecutable_x86 Assembly_x86::CreateMemoryExecutable()	//在内存里创建可执行，然后把可执行代码写进去。
 		{
 			MemoryExecutable_x86 rs;
 			rs.BufferSize = CodeBuffer.Count() + ConstBuffer.Count();
+
+			//在调用进程的虚地址空间,预定或者提交一部分页。
 			rs.Buffer = VirtualAlloc(0, rs.BufferSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+
 			memcpy(rs.Buffer, CodeBuffer.Buffer(), CodeBuffer.Count());
 			char * pConst = (char*)rs.Buffer + CodeBuffer.Count();
 			memcpy(pConst, ConstBuffer.Buffer(), ConstBuffer.Count());

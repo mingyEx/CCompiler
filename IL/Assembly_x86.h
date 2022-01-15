@@ -376,7 +376,7 @@ namespace Compiler
 			int Id;
 		};
 
-		class Assembly_x86
+		class Assembly_x86	//Ã÷ÏÔÊÇ
 		{
 		public:
 			List<unsigned char> ConstBuffer;

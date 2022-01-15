@@ -8,17 +8,17 @@ namespace CoreLib
 {
 	namespace Basic
 	{
-		//每个list内部是一系列的Node, 而每个Node本身有指向List的指针，储存图的链表? 根据操作和使用来确定这一点吧..
 		template<typename T>
 		class LinkedNode
 		{
 			template<typename T1>
 			friend class LinkedList;		//向 class LinkedList 授予对 LinkedNode 的私有及受保护成员的访问权。
 		private:
-			LinkedNode<T> *pPrev, *pNext;	//指向前一个和后一个节点
-			LinkedList<T> * FLink;
+			LinkedNode<T> *pPrev, *pNext;	//指向前一个和后一个节点，双链表
+			LinkedList<T> * FLink;	// 为了在操作之后修改所属于的链表的属性
 		public:
 			T Value;
+			//为什么是以FLink为构造参数的? 总之我们知道函数操作跟名字一样。  因为每个节点都是要在FLink上进行操作的，鸭！
 			LinkedNode (LinkedList<T> * lnk):FLink(lnk)
 			{
 				pPrev = pNext = 0;
@@ -33,19 +33,18 @@ namespace CoreLib
 			};
 			LinkedNode<T> * InsertAfter(const T & nData)	
 			{
-				//为什么是以FLink为构造参数的? 总之我们知道函数操作跟名字一样。  因为每个节点都是要在FLink上进行操作的，鸭！
-				LinkedNode<T> * n = new LinkedNode<T>(FLink);	//看起来构造函数就这一个，那别的链表节点的构造函数都长什么样?哦，左右值.
+				LinkedNode<T>* n = new LinkedNode<T>(FLink);
 				n->Value = nData;
 				n->pPrev = this;
 				n->pNext = this->pNext;
-				LinkedNode<T> *npp = n->pNext;	//如果下面还有节点，才把下一个节点的前一个设置为当前.
-				if (npp)
+				LinkedNode<T> *npp = n->pNext;
+				if (npp)//验证存在才设定。
 				{
-					npp->pPrev = n;
+					npp->pPrev = n;	
 				}
 				pNext = n;	//而this的next就该是n了。
 				if (!n->pNext)
-					FLink->FTail = n;
+					FLink->FTail = n;//设置整个链表的相关内容
 				FLink->FCount ++;
 				return n;
 			};
@@ -72,7 +71,7 @@ namespace CoreLib
 				if (pNext)
 					pNext->pPrev = pPrev;
 
-				FLink->FCount --;		//这个是干嘛的，大概是链表内元素数量的统计吧.
+				FLink->FCount --;		//链表内元素数量的统计.
 				if (FLink->FHead == this)
 				{
 					FLink->FHead = pNext;
@@ -85,7 +84,8 @@ namespace CoreLib
 			}
 		};
 		template<typename T>
-		class LinkedList
+		class LinkedList			//==std::list
+
 		{
 			template<typename T1>
 			friend class LinkedNode;
@@ -313,7 +313,6 @@ namespace CoreLib
 				FTail = 0;
 				FCount = 0;
 			}
-			//趁此问一下，这个liinklist跟list有啥区别?
 			List<T> ToList() const
 			{
 				List<T> rs;

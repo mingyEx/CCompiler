@@ -11,10 +11,10 @@ namespace Compiler
 	{
 		using namespace CoreLib::Basic;
 
-		class EnumerableIntSet	//名字是 可枚举的整数集 ，大概来自dotnet. 简单看一下它的概念和接口,不看了..
+		class EnumerableIntSet	//可枚举的整数集 ，大概来自dotnet的概念
 		{
 		public:
-			IntSet Set;	//存了俩数据结构，每次 增删都同时操作两个结构，求交时用List,参数是intset就用intset.
+			IntSet Set;	//存了俩数据结构，每次 增删都同时操作两个结构，求交时用List,参数是intset就用intset. LC上大把这类的题
 			List<int> Values;
 			void Add(int val)
 			{
@@ -75,7 +75,7 @@ namespace Compiler
 			}
 			InterferenceGraph(int size)
 			{
-				edges.SetMax(size*(size+1)>>1);	//为什么要用这种方式设置最大值? (5+6)/2=5 (6+7)/2=6  原来如此。
+				edges.SetMax(size*(size+1)>>1);	// example: (5+6)/2=5 (6+7)/2=6  
 				varCount = size;
 			}
 			InterferenceGraph(const InterferenceGraph & graph)
@@ -106,7 +106,6 @@ namespace Compiler
 				int id0 = Math::Min(var0, var1);
 				int id1 = Math::Max(var0, var1);
 				edges.Add((id1*(id1+1)>>1) + id0);	
-				// todo: 既然还是(id1*(id1+1)>>1) 等于自身，为什么还要这么算? >>1 等于除以2，IntSet,还是不知道IntSet是怎么工作的，还有定义里那个>>5.
 			}
 			int AddNode()
 			{
@@ -132,8 +131,6 @@ namespace Compiler
 				int id0 = Math::Min(var0, var1);
 				int id1 = Math::Max(var0, var1);
 				return edges.Contains((id1*(id1+1)>>1) + id0);	
-				//注意到了，加1/2的是大的那个，这里找到大的那个的二倍，然后加上小的，求的是什么？contains. 这里的var是Id. 更奇怪了，为啥Id要被这么计算？
-				// edges 里面存的是寄存器.
 
 			}
 		};

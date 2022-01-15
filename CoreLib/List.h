@@ -11,7 +11,7 @@ namespace CoreLib
 	namespace Basic
 	{
 		template<typename T>
-		class List
+		class List	//like vector
 		{
 		private:
 			static const int InitialSize = 16;
@@ -175,8 +175,6 @@ namespace CoreLib
 				}
 				else
 				{
-					/*if (std::has_trivial_assign<T>::value ||
-						std::has_trivial_copy<T>::value)*/
 					if (std::is_trivially_copy_assignable<T>::value ||
 						std::is_trivially_copy_constructible<T>::value)
 						memmove(buffer + id + n, buffer + id, sizeof(T) * (_count - id));
@@ -186,8 +184,6 @@ namespace CoreLib
 							buffer[i + n] = static_cast<T&&>(buffer[i]);
 					}
 				}
-				/*if (std::has_trivial_assign<T>::value ||
-					std::has_trivial_copy<T>::value)*/
 				if (std::is_trivially_copy_assignable<T>::value ||
 					std::is_trivially_copy_constructible<T>::value)
 					memcpy(buffer + id, vals, sizeof(T) * n);
@@ -198,12 +194,6 @@ namespace CoreLib
 				_count += n;
 			}			
 			
-			//slower than original edition
-			//void Add(const T & val)
-			//{
-			//	InsertRange(_count, &val, 1);
-			//}
-
 			void InsertRange(int id, const List<T> & list)
 			{
 				InsertRange(id, list.buffer, list._count);
@@ -267,8 +257,6 @@ namespace CoreLib
 					T * newBuffer = new T[size];
 					if (bufferSize)
 					{
-						//if (std::has_trivial_assign<T>::value ||
-							//std::has_trivial_copy<T>::value)
 						if (std::is_trivially_copy_assignable<T>::value ||std::is_trivially_copy_constructible<T>::value)
 							memcpy(newBuffer, buffer, _count * sizeof(T));
 						else

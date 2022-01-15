@@ -106,7 +106,8 @@ namespace CoreLib
 				throw ArgumentException(L"Invalid file share mode.");
 				break;
 			}
-			handle = _wfsopen(fileName.Buffer(), mode, shFlag);		//https://www.cnblogs.com/cnxkey/articles/8301556.html
+			handle = _wfsopen(fileName.Buffer(), mode, shFlag);		
+			//https://www.cnblogs.com/cnxkey/articles/8301556.html
 			if (!handle)
 			{
 				throw IOException(L"Cannot open file '" + fileName + L"'");

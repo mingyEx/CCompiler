@@ -149,13 +149,8 @@ namespace CoreLib
 				rs.buffer.SetSize(set1.buffer.Count());
 				for (int i = 0; i < Math::Min(set1.buffer.Count(), set2.buffer.Count()); i++){
 					rs.buffer[i] = set1.buffer[i] & (~set2.buffer[i]);
-				}//抹除 set1.buffer[i] 中含有 set2.buffer[i] 的标志位？
-			}/*
-			你怎么知道就“应该”
-				“应该”的话remove和contain会写成那样吗
-				很明显buffer[0]的32个位表示了0 - 31是否存在
-				第二个数字就是32 - 63
-				但是不知道这样做好在哪，因为他要求数字是连续的。你突然插入一个很大的数字就得在中间加入一大串0*/
+				}//抹除 set1.buffer[i] 中含有 set2.buffer[i] 的标志位。
+			}
 			static bool HasIntersection(const IntSet & set1, const IntSet & set2)
 			{
 				for (int i = 0; i<Math::Min(set1.buffer.Count(), set2.buffer.Count()); i++)

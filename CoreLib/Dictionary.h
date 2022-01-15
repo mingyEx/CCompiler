@@ -29,13 +29,7 @@ namespace CoreLib
 			template<typename TKey>
 			static int GetHashCode(TKey& key)
 			{
-				//add 
-				//std::cout << typeid(key).name() << std::endl;
-				//end
-
-				return key.GetHashCode();//好jb傻逼啊，这个函数明明是...?是它自己的成员函数，嗯。下面的哪个是呢？
-				//算了，到时候注意一下这个传进来的是什么算了。
-
+				return key.GetHashCode();
 			}
 		};
 
@@ -50,7 +44,6 @@ namespace CoreLib
 			static int GetHashCode(TKey& key)
 			{
 				return ((int)key) / sizeof(typename std::remove_pointer<TKey>::type);
-				//它的值除以它的类型是什么意思？ 找一下这个函数在那里被用到了。
 			}
 		};
 		template<>
@@ -61,20 +54,19 @@ namespace CoreLib
 			static int GetHashCode(TKey& key)
 			{
 				return Hash <std::is_integral<TKey>::value || std::is_enum<TKey>::value> ::GetHashCode(key);
-				//is_integral 返回true 或者false,而hash以此来选择偏特化
 			}
 		};
 
 		template<typename TKey>
 		int GetHashCode(const TKey& key)
 		{
-			return PointerHash<std::is_pointer<TKey>::value>::GetHashCode(key);//这里选择了PointerHash里的静态函数，所以前面那几个都是为了这个上层函数用的.
+			return PointerHash<std::is_pointer<TKey>::value>::GetHashCode(key);
 		}
 
 		template<typename TKey>
 		int GetHashCode(TKey& key)
 		{
-			return PointerHash<std::is_pointer<TKey>::value>::GetHashCode(key);//这个是定义了non-const版本.
+			return PointerHash<std::is_pointer<TKey>::value>::GetHashCode(key);//定义了non-const版本.
 		}
 
 		inline int GetHashCode(double key)
@@ -224,7 +216,6 @@ namespace CoreLib
 					hashPos = (hashPos + GetProbeOffset(numProbes)) & bucketSizeMinusOne;
 				}
 				throw InvalidOperationException(L"Hash map is full. This indicates an error in Key::Equal or Key::GetHashCode.");
-				//直接把字符串写进来就行了吗？被如何使用？
 			}
 			TValue& _Insert(KeyValuePair<TKey, TValue>&& kvPair, int pos)
 			{
@@ -301,7 +292,7 @@ namespace CoreLib
 				{
 					return dict->hashMap[pos];
 				}
-				KeyValuePair<TKey, TValue>* operator ->()	//这两个有什么区别？第一个是对迭代器对象的解引用，会导致获得容器里的值，第二个是对指向迭代器对象本身的指针的解引用，会导致返回迭代器本身的位置加上目标位置，吗？  等遇到具体场景再说吧，暂时挂起。
+				KeyValuePair<TKey, TValue>* operator ->()	//这两个有什么区别？第一个是对迭代器对象的解引用，会导致获得容器里的值，第二个是对指向迭代器对象本身的指针的解引用，会导致返回迭代器本身的位置加上目标位置
 				{
 					return dict->hashMap + pos;
 				}
@@ -310,7 +301,7 @@ namespace CoreLib
 					if (pos > dict->bucketSizeMinusOne)
 						return *this;
 					pos++;
-					while (pos <= dict->bucketSizeMinusOne && (dict->IsDeleted(pos) || dict->IsEmpty(pos)))	//这个用来跳过所有无效值
+					while (pos <= dict->bucketSizeMinusOne && (dict->IsDeleted(pos) || dict->IsEmpty(pos)))	//跳过所有无效值
 					{
 						pos++;
 					}
@@ -318,7 +309,7 @@ namespace CoreLib
 				}
 				Iterator operator ++(int)
 				{
-					Iterator rs = *this;	//这俩有什么区别？有参数和没参数，哦，是“每次前进多少”？我觉得自己得看看他们被调用的地方才好，
+					Iterator rs = *this;	//这俩有什么区别？有参数和没参数，哦，是“每次前进多少”？
 					operator++();			//啊，我想起来了，这是前置与后置的区别！
 					return rs;				//++i 运算符重载时不需要加形参,i++ 运算符重载时需要加形参.
 				}							//i++ 的版本，为返回的是拷贝的临时变量，所以不能是左值. 那么，要给这里添加const限定吗？
@@ -337,7 +328,7 @@ namespace CoreLib
 				}
 				Iterator()
 				{
-					this->dict = 0;	//可以写成成员初始化列表的形式。
+					this->dict = 0;
 					this->pos = 0;
 				}
 			};
@@ -400,7 +391,7 @@ namespace CoreLib
 			{
 				if (bucketSizeMinusOne == -1)
 					return false;
-				auto pos = FindPosition(key);	//我就不懂了 DataType 这个东西你找什么positon啊？？？
+				auto pos = FindPosition(key);
 				if (pos.ObjectPosition != -1)
 				{
 					value = hashMap[pos.ObjectPosition].Value;
@@ -434,7 +425,7 @@ namespace CoreLib
 					else
 						throw KeyNotFoundException(L"The key does not exists in dictionary.");
 				}
-				operator TValue& () const	//这个操作符重载的语法是什么意思？类型转换操作符，这里的类型是 TValue& ，只是不知道什么地方才会用到它
+				operator TValue& () const	//类型转换操作符,返回引用
 				{
 					return GetValue();
 				}

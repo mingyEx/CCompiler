@@ -52,16 +52,17 @@ namespace Compiler
 			splits.Sort();				//排序之后，所有可能作为跳走和跳转目标的都有序了.
 
 			List<int> nSplit;
-			nSplit.Reserve(splits.Count());	//先保存split的元素个数?可是里面有Count(),哦，那个就当富裕了，下面一行还塞进去一个0呢。
+			nSplit.Reserve(splits.Count());	//先保存split的元素个数
 
 			if (splits[0] != 0)			//排序之后,第一个就是入口节点, 如果排序之后,也就是说所有的进入节点的第一个不是第一个,就塞到nsplits里.
-				nSplit.Add(0);			//并且把0作为开始节点?
+				nSplit.Add(0);			//并且把0作为开始节点
 
-			for (int i = 0; i<splits.Count(); i++)	//对于每一个splits,如果除0外的当前跳转目标不等于上一个目标,就塞进去.把整个三地址IR的每一个小框的分界线都排序号画出来
+			for (int i = 0; i<splits.Count(); i++)	
+				//对于每一个splits,如果除0外的当前跳转目标不等于上一个目标,就塞进去.把整个三地址IR的每一个小框的分界线都排序号画出来
 				if (i == 0 || splits[i] != splits[i-1])
 					nSplit.Add(splits[i]);
 			
-			//下面这里在干什么呢?根据首指令来建立cfg图!
+			//根据首指令来建立cfg图!
 			int ptr = 0;
 			int start = 0;
 			auto node = rs.AddNode();	//创建新节点，在这之前rs只搞了变量
@@ -85,7 +86,7 @@ namespace Compiler
 					node->Code.AddLast(code[i]);
 					//instruction code 的第I个指令?   互相指定了一波呗,指令把自己的CFG节点指给了当前CFG的node,node把自己的Code字段添加了当前指令?
 				}	
-				//我的问题是，为什么.. 哦，start 和end 本来就该只差一个数字，其间的那些内容才是一个完整的基本块的所有东西。
+				//start 和end 本来就该只差一个数字，其间的那些内容才是一个完整的基本块的所有东西。
 				start = end;
 				if (start < code.Count())
 					node = rs.AddNode();
@@ -142,12 +143,12 @@ namespace Compiler
 			AddEdge(rs.Nodes[rs.Nodes.Count()-2].Ptr(), 0, result->Sink);	
 			
 			//Source 和sink分别是进入节点和退出节点 like llvm https://clang.llvm.org/doxygen/CFG_8h_source.html
-			rs.ComputeDominatorTree();	//然后是支配者树和变量活跃性分析。
-			rs.ComputeVariableLiveness();	//在这里的时候我没有读活跃性分析的实现吗?
+			rs.ComputeDominatorTree();
+			rs.ComputeVariableLiveness();
 			return result;
 		}
 
-		//与fromCode对应，这个应该是把cfg转换出来IR，还是汇编代码? 看到的都是机器码了,什么格式啊?
+		//与fromCode对应，把cfg转换出来IR
 		void ControlFlowGraph::ToCode(Function & func)
 		{
 			func.Instructions.Clear();	//首先清空指令码链表
@@ -160,20 +161,19 @@ namespace Compiler
 				lineMap[node->Id] = func.Instructions.Count();	//把其中的指令数量放置到lineMap里
 				for (auto& instr : node->Code)	//然后把里面所有的指令都加到func的指令里面.
 				{
-					auto instrNode = func.Instructions.AddLast(instr);	//哦，这个是添加并返回了指向其的指针.
+					auto instrNode = func.Instructions.AddLast(instr);	//添加并返回了指向其的指针.
 					if (instr.Func == Operation::Branch)
 					{
-						instrNode->Value.Operands[1].IntValue = node->Exits[0]->Id;	//如果是分支，就把当前cfg节点的目标点的id，赋给我们指令的操作数.
-						func.Instructions.AddLast(Instruction(Operation::Jump, node->Exits[1]->Id));//可是为啥下一步不用他，而是..哦，instrNode这个返回值就是一个指针，用来赋值的，函数里传正常顺序下的下一条指令就行了.
+						instrNode->Value.Operands[1].IntValue = node->Exits[0]->Id;	//如果是分支，就把当前cfg节点的目标点的id，赋给指令的操作数.
+						func.Instructions.AddLast(Instruction(Operation::Jump, node->Exits[1]->Id));//instrNode这个返回值就是一个指针，用来赋值的，函数里传正常顺序下的下一条指令就行了.
 					}
 					else if (instr.Func == Operation::Jump)
 					{
-						instrNode->Value.Operands[0].IntValue = node->Exits[0]->Id;//这个就跟上面的一样哈哈.
+						instrNode->Value.Operands[0].IntValue = node->Exits[0]->Id;
 					}
 				}
-			}
-			//然后所有指令就又都回到了func里.
-
+			}//然后所有指令就又都回到了func里.
+			
 			int instrId = 0;
 			List<int> removedInstrs;	//这是要把第i条已经移除的指令都标记下来?
 			for (auto instrNode = func.Instructions.begin(); instrNode != func.Instructions.end(); ++instrNode)
@@ -265,7 +265,7 @@ namespace Compiler
 					TraverseGraphPostOrder(curNode->Exits[0], nodes, visited);
 				if (curNode->Exits[1])		//如果jump分支有路径，同理
 					TraverseGraphPostOrder(curNode->Exits[1], nodes, visited);
-				nodes.Add(curNode);			//最后再把本节点塞进去，这就算"后序遍历"了,原来图算法这么简单的吗？ 我也要玩！
+				nodes.Add(curNode);			//最后再把本节点塞进去，这就算"后序遍历"了,第一次看这的时候我都没写过图代码，至多一个clone graph... 在校期间听人们都说刷题没用，算法课又没提图... 以后多做点图论题目还愿
 			}
 		}
 
@@ -280,10 +280,15 @@ namespace Compiler
 			}
 		}
 		//后序遍历一个图
+		//实际上，DAG 的 RPO 还有一个名字——拓扑排序。 
+		//https://eli.thegreenplace.net/2015/directed-graph-traversal-orderings-and-applications-to-data-flow-analysis/
+		//每次都是在别处看到之后才注意到“原来这里也提到了”。
+		//要求自己手写拓扑排序应该不算过分...
+		//
 		List<ControlFlowNode *> ControlFlowGraph::GetPostOrder()
 		{
-			IntSet visited(Nodes.Count());	//所有节点都mark下，我的问题是，Nodes为啥是链表？ 因为虽然互相之间连起来了，但是储存的时候依旧是它.
-			List<ControlFlowNode *> rs;	//这个用来传递? 每次 TraverseGraphPostOrder() 调用的时候,作为返回值的车车，被挂上去. 显然是后序遍历，有什么用?是在对流图执行遍历，所以后序遍历的结果应该是一棵深度优先生成树，暂且这么认为
+			IntSet visited(Nodes.Count());	//所有节点都mark下，Nodes是链表？ 因为虽然互相之间连起来了，但是储存的时候依旧是它.
+			List<ControlFlowNode *> rs;	//x 这个用来传递? 每次 TraverseGraphPostOrder() 调用的时候,作为返回值的车车，被挂上去. 显然是后序遍历，有什么用?是在对流图执行遍历，所以后序遍历的结果应该是一棵深度优先生成树，暂且这么认为
 			
 			if (Nodes.Count() != 0)
 				TraverseGraphPostOrder(Nodes[0].Ptr(), rs, visited);	//后两个参数用来保存状态，第一个参数，每次调用的时候?根据它的Id来判断是否访问过，并且根据其退出节点来选择下次遍历的开始节点。
@@ -300,7 +305,7 @@ namespace Compiler
 			return rs;
 		}
 
-		//一个类似数组的链表，用来干嘛?
+		//一个vector一样的东西，用来干嘛? 为什么不用list呢？操作少了很多，只有一个取值。
 		template <typename T>
 		class FakedList
 		{
@@ -332,12 +337,14 @@ namespace Compiler
 				ptr2 = n2;
 				while (ptr1 != ptr2)
 				{
-					while (order[ptr1->Id] < order[ptr2->Id])	//如果p1的id小于p2的id,则p1是它自身的idom 如果order保存了节点访问的顺序，则小的代表是父节点，吗？ 这里好像没有这一说.. 暂且这么认为吧
+					while (order[ptr1->Id] < order[ptr2->Id])	
+						//如果p1的id小于p2的id,则p1是它自身的idom 如果order保存了节点访问的顺序，则小的代表是父节点，吗？ 这里好像没有这一说.. 暂且这么认为吧
 						//如果p1的id的order比p2的小，说明p2不是p1的idom,于是p1只能是她自己
 					{
 						ptr1 = ptr1->ImmediateDominator;
 					}
-					while (order[ptr1->Id] > order[ptr2->Id])//反之，则p2的idom 只能是自己。 不对，这里p1,p2的ImmediateDominator 都是他们已经保存在作为ControlFlowNode的自己的结构体里，所以这个不是“设置为xx”，而是在重新赋值，然后这还是在循环！ 于是他们到底在干嘛呢? 在找公共的... 使得p1和p2相等的那个节点，那个节点将会是他俩共同的前向节点，对吧？
+					while (order[ptr1->Id] > order[ptr2->Id])
+						//反之，则p2的idom 只能是自己。 不对，这里p1,p2的ImmediateDominator 都是他们已经保存在作为ControlFlowNode的自己的结构体里，所以这个不是“设置为xx”，而是在重新赋值，然后这还是在循环！ 于是他们到底在干嘛呢? 在找公共的... 使得p1和p2相等的那个节点，那个节点将会是他俩共同的前向节点，对吧？
 						//它会成为真正的支配节点，对于当前节点来说?
 					{
 						ptr2 = ptr2->ImmediateDominator;
@@ -431,24 +438,13 @@ namespace Compiler
 			}
 		};
 
-		//这个是eac p.392 9-24里，修改后的迭代支配者算法
+		//这个是eac p.392 9-24里，修改后的迭代支配者算法，妈的卡了我好几天，因为书上没说。
 		template <typename GraphVisitor>
 		void BuildDominateTree_Internal(ControlFlowGraph & graph, GraphVisitor visitor)
 		{
 			if (graph.Nodes.Count() == 0)return;
-
 			IntSet processed(graph.Nodes.Count());
-
 			List<ControlFlowNode*> traverse = visitor.GetPostOrder(graph);
-
-
-
-
-
-
-
-
-
 			//后序遍历，先挂所有子节点再挂自己,导致的结果是根节点比子节点的index大
 
 			List<int> order;

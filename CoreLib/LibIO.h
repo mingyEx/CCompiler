@@ -1,4 +1,4 @@
-#ifndef CORE_LIB_IO_H	//展开全部 防止重复包含头文件。
+#ifndef CORE_LIB_IO_H	//防止重复包含头文件。
 #define CORE_LIB_IO_H
 
 #include "LibString.h"

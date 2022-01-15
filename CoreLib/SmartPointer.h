@@ -30,7 +30,7 @@ namespace CoreLib
 		class RefPtr
 		{
 			template<typename T1, typename Destructor1>
-			friend class RefPtr;	//终于，不同类型作为参数的自己是友元。
+			friend class RefPtr;	//不同类型作为参数的自己是友元，用来在ctor里摸对象。
 		private:
 			T *pointer;
 			int *refCount;
@@ -43,10 +43,7 @@ namespace CoreLib
 			}
 			template<typename T1>
 			RefPtr(T1 * ptr)	
-				//这个会被怎么使用？ 模板里的模板？T 里面的T1,T会被以RefPtr<xx> 来实例化成xx,那么T1呢
-				//会被推断出来，这只是一个构造函数啊！？
-				// 以前见过的写法都是把T1指定给与T有关系的东西了。
-				//在这里就只是"某个类的构造函数是模板" 而已。不要多想。
+				//泛型构造函数，ptr会被推断给operator=用。
 				: pointer(0), refCount(0)
 			{
 				this->operator=(ptr);
@@ -60,16 +57,16 @@ namespace CoreLib
 				: pointer(0), refCount(0)
 			{
 				this->operator=(static_cast<RefPtr<T, Destructor> &&>(str));	
-				//// static_cast 没有运行时类型检查来保证转换的安全性,lyt的这个是dynamic版本的，有啥区别?
+				//// static_cast 没有运行时类型检查来保证转换的安全性,
+				// lyt的这个是dynamic版本的，有啥区别?
 				//如果 新类型 是指向某类类型 D 的指针或引用，且 表达式 的类型是其非虚基类 B 的左值或指向它的指针纯右值,
 				//则 static_cast 进行向下转型（downcast）
 				//	这种 static_cast 并不在运行时检查该对象的运行时类型确实为 D, 安全的向下转型可以用 dynamic_cast 执行
-			}	
+			}
 			
 			RefPtr<T,Destructor>& operator=(T * ptr)
 			{
 				Dereferance();
-
 				pointer = ptr;
 				if(ptr)
 				{
@@ -84,7 +81,6 @@ namespace CoreLib
 			RefPtr<T,Destructor>& operator=(T1 * ptr)
 			{
 				Dereferance();
-
 				pointer = dynamic_cast<T*>(ptr);	//为啥这里反倒dym了..
 				if(ptr)
 				{
@@ -218,7 +214,7 @@ namespace CoreLib
 				return pointer;
 			}
 		private:
-			class _BoolConversionClass	//这个是干嘛的? 没有任何地方用到，可能被干死了吧..
+			class _BoolConversionClass	//没用..
 			{
 			public:
 				int Dummy;

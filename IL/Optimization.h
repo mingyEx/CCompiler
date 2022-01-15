@@ -35,7 +35,7 @@ namespace Compiler
 			List<RefPtr<IntraProcOptimizer>> Optimizers;
 
 			//参数类型都一样，可以改成变参模板类型吗?需要支持递归调用。 关于这个可以看:https://stackoverflow.com/a/60209012/13792395
-			//首先要有一个模板... 这个你就已经不及格了，放弃吧.
+			//首先要有一个模板... 这个就已经不及格了，放弃.
 			CompoundOptimizer()
 			{}
 			CompoundOptimizer(RefPtr<IntraProcOptimizer> op1)
