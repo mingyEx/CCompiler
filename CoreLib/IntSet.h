@@ -1,6 +1,7 @@
 #ifndef BIT_VECTOR_INT_SET_H
 #define BIT_VECTOR_INT_SET_H
-
+//https://www.google.com/search?q=how+to+impl+a+intset+in+cpp&oq=how+to+impl+a+intset+in+cpp&aqs=edge..69i57.9026j0j1&sourceid=chrome&ie=UTF-8
+//又是基本常识..
 #include <memory.h>
 #include<iostream>
 #include "List.h"
