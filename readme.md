@@ -5,9 +5,6 @@
 就当是学画画的描图练习，重新用c++17来实现。
 搞完之后还要发给老师看看，告诉他这次是我有了充分的知识和经验之后重新写的，
 
-经验是指读过这种东西:
-https://github.com/Ubpa/UVisitor
-
 或者看过cppcon上关于tdd的视频之后学会了catch2的用法，还有log库之类的作为手脚架。
 
 
@@ -34,8 +31,6 @@ https://github.com/Ubpa/UVisitor
 重写的时候再说吧。
 
 可以参考clang源码，待会build一下试试，这次只build clang 应该不会需要四个小时了吧...
-
-
 
 ### CodeEmitter_x86 
 Instruction_x86
