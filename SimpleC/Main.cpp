@@ -9,7 +9,6 @@
 #include "IL/x86CodeGen.h"
 #include<iostream>
 #include<filesystem>
-//这是一个无聊的测试，Do you hear me?
 using namespace CoreLib::Basic;
 using namespace SimpleC::Compiler;
 
