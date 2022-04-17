@@ -9,7 +9,7 @@ I want to increase my knowledge of compilers and exercise my ability to read cod
 1.Replace as much functionality as possible with functions that exist in the standard library  
 2.try to avoid the use of raw pointers  
 3.Try adding support for classes and object-oriented features  
-4.use LLVM to produce LLVM IR
+4.use LLVM to produce LLVM IR  
 5.Write clear documentation and comments  
 
 ## The part I don't understand yet
