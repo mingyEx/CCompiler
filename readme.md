@@ -6,6 +6,7 @@ I want to increase my knowledge of compilers and exercise my ability to read cod
 
 ## todo
 
+0.Completely understand the meaning of [this line](https://github.com/KargathEx/CCompiler/blob/master/IL/CFG.cpp#L48) of code
 1.Replace as much functionality as possible with functions that exist in the standard library  
 2.try to avoid the use of raw pointers  
 3.Try adding support for classes and object-oriented features  
