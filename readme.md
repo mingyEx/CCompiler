@@ -12,7 +12,7 @@ I want to increase my knowledge of compilers and exercise my ability to read cod
 3.Try adding support for classes and object-oriented features  
 4.use LLVM to produce LLVM IR  
 5.Write clear documentation and comments  
-就算是中文，[扯淡的地方](https://www.zhihu.com/question/23697873/answer/25411314),保持动力把它撸完吧！
+就算是中文，[扯淡的地方](https://www.zhihu.com/question/23697873/answer/25411314)也是很多的,保持动力把它撸完吧！
 ## The part I don't understand yet
 
 Assembly_x86  
