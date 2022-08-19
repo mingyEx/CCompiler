@@ -25,11 +25,11 @@ https://stackoverflow.com/a/2547502/13792395 提到：
 
 something more:
 
-https://www.felixcloutier.com/x86/add
-https://www.cs.virginia.edu/~evans/cs216/guides/x86.html
-https://stackoverflow.com/questions/51032301/how-can-i-write-raw-machine-code-for-x86-without-using-assembly
-https://www.cs.uaf.edu/2016/fall/cs301/lecture/09_28_machinecode.html
-https://www.google.com/search?q=Machine+Language+Code+x86+add&oq=Machine+Language+Code+x86+add&aqs=chrome..69i57.3276j0j7&sourceid=chrome&ie=UTF-8
+https://www.felixcloutier.com/x86/add  
+https://www.cs.virginia.edu/~evans/cs216/guides/x86.html  
+https://stackoverflow.com/questions/51032301/how-can-i-write-raw-machine-code-for-x86-without-using-assembly  
+https://www.cs.uaf.edu/2016/fall/cs301/lecture/09_28_machinecode.html  
+https://www.google.com/search?q=Machine+Language+Code+x86+add&oq=Machine+Language+Code+x86+add&aqs=chrome..69i57.3276j0j7&sourceid=chrome&ie=UTF-8  
 
 ### intention
 Practicing my programming skills by reinventing the wheel,just like [MySTL](https://github.com/Alinshans/MyTinySTL) and [mqLinq](https://github.com/MichaelSuen-thePointer/mqLinq)  
