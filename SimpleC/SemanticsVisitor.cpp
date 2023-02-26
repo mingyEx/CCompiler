@@ -6,12 +6,11 @@ namespace SimpleC
 {
 	namespace Compiler
 	{
-		//头文件有一个SyntaxVisitors.h就行了，甚至可以没有!
 		class SemanticsVisitor : public SyntaxVisitor
 		{
 			ProgramSyntaxNode * program;
-			FunctionSyntaxNode * function;	//为什么这三个会被特殊提出来?
-			List<SyntaxNode *> loops;
+			FunctionSyntaxNode * function;		
+			List<SyntaxNode *> loops;	//why? what? how?
 			List<CompileError> & errors;
 
 			void Error(int id, const String & text, SyntaxNode * node)
@@ -21,8 +20,8 @@ namespace SimpleC
 		public:
 			SemanticsVisitor(List<CompileError> & _errors)
 				:errors(_errors)
-			{
-			}
+			{}
+			//Check if function names are duplicated
 			virtual void VisitProgram(ProgramSyntaxNode * program)
 			{
 				std::set<String> funcNames;
@@ -33,19 +32,20 @@ namespace SimpleC
 						Error(30001, L"Function \'" + func->Name + L"\' redefinition.", func.Ptr());
 					else
 						funcNames.insert(func->Name);
-
 					func->Accept(this);
 				});
 			}
-			//复习: override 确保该函数为虚函数并覆盖某个基类中的虚函数,final 则是指定不许被派生类覆盖。
+
+			//
 			virtual void VisitFunction(FunctionSyntaxNode *function) override 
 			{
 				this->function = function;
-
+				//Check if there is a return type of the form void []
 				auto & returnType = function->ReturnType->ToExpressionType();
 				if(returnType.BaseType == ExpressionType::_Void && returnType.IsArray)
 					Error(30024, L"Function return type can not be 'void' array.", function->ReturnType.Ptr());
-
+				
+				//Detect if Parameter is duplicated
 				std::set<String> paraNames;
 				function->Parameters.ForEach([&](RefPtr<ParameterSyntaxNode> & para)
 				{
@@ -55,26 +55,25 @@ namespace SimpleC
 						paraNames.insert(para->Name);
 					if(para->Type->ToExpressionType().BaseType == ExpressionType::_Void)
 						Error(30016, L"'void' can not be parameter type.", para.Ptr());
-					//para->Accept(this);
+					para->Accept(this);
 				});
-				function->Body->Accept(this);	//块作用域的处理
-				
-				this->function = NULL;
+				function->Body->Accept(this);
+				this->function = nullptr;
 			}
 			//class Lambda01
 			//{
 			//public:
-			//	SemanticsVisitor * _this;
-			//	int &cdf;
-			//	Lambda01(int &_cdf, SemanticsVisitor *_this)
+			//	SemanticsVisitor* _this;
+			//	int& cdf;
+			//	Lambda01(int& _cdf, SemanticsVisitor* _this)
 			//		:cdf(_cdf), _this(_this)
 			//	{}
-			//	void operator ()(RefPtr<StatementSyntaxNode> & node)
+			//	void operator ()(RefPtr<StatementSyntaxNode>& node)
 			//	{
 			//		int xx = cdf;
 			//		node->Accept(_this);
 			//	}
-			//};	
+			//};
 			virtual void VisitBlockStatement(BlockStatementSyntaxNode *stmt)
 			{
 				//int cdf = 50;
@@ -85,6 +84,7 @@ namespace SimpleC
 					node->Accept(this);
 				});
 			}
+
 			virtual void VisitBreakStatement(BreakStatementSyntaxNode *stmt)
 			{
 				if (!loops.Count())
@@ -95,18 +95,16 @@ namespace SimpleC
 				if (!loops.Count())
 					Error(30004, L"'continue' must appear inside loop constructs.", stmt);
 			}
-			//基于loops.count来判断，大概是因为下面有修改。
 
 			virtual void VisitDoWhileStatement(DoWhileStatementSyntaxNode *stmt)	
 				//DoWhileStatementSyntaxNode 有执行语句和谓词
 			{
 				loops.Add(stmt);	//loops 类型是list<node>.目的是把所有的循环语句放在一起
-				if(stmt->Predicate != NULL)	//只要谓词不为空，就尝试Accept。
+				if(stmt->Predicate != nullptr)
 					stmt->Predicate->Accept(this);
 				if(stmt->Predicate->Type != ExpressionType::Error && stmt->Predicate->Type != ExpressionType::Int)
 					Error(30005, L"'while': expression must evaluate to int.", stmt);
-				stmt->Statement->Accept(this);	//对语句进行语义分析
-
+				stmt->Statement->Accept(this);	
 				loops.RemoveAt(loops.Count() - 1);
 			}
 			virtual void VisitEmptyStatement(EmptyStatementSyntaxNode *stmt){}
@@ -114,38 +112,38 @@ namespace SimpleC
 			{
 				loops.Add(stmt);
 
-				if (stmt->VarDeclr != NULL)		
+				if (stmt->VarDeclr != nullptr)		
 					stmt->VarDeclr->Accept(this);
 
-				if (stmt->InitialExpression != NULL)
+				if (stmt->InitialExpression != nullptr)
 					stmt->InitialExpression->Accept(this);
 
-				if (stmt->MarginExpression != NULL)
+				if (stmt->MarginExpression != nullptr)
 					stmt->MarginExpression->Accept(this);
 
-				if (stmt->SideEffectExpression != NULL)
+				if (stmt->SideEffectExpression != nullptr)
 					stmt->SideEffectExpression->Accept(this);
 
 				stmt->Statement->Accept(this);
 
-				loops.RemoveAt(loops.Count() - 1);	//loops是什么？
+				loops.RemoveAt(loops.Count() - 1);
 			}
 			virtual void VisitIfStatement(IfStatementSyntaxNode *stmt)
 			{
-				if (stmt->Predicate != NULL)
+				if (stmt->Predicate != nullptr)
 					stmt->Predicate->Accept(this);
 				if (stmt->Predicate->Type != ExpressionType::Error && stmt->Predicate->Type != ExpressionType::Int)
 					Error(30006, L"'if': expression must evaluate to int.", stmt);
 
-				if (stmt->PositiveStatement != NULL)
+				if (stmt->PositiveStatement != nullptr)
 					stmt->PositiveStatement->Accept(this);
 				
-				if (stmt->NegativeStatement != NULL)
+				if (stmt->NegativeStatement != nullptr)
 					stmt->NegativeStatement->Accept(this);
 			}
 			virtual void VisitReturnStatement(ReturnStatementSyntaxNode *stmt)
 			{
-				if (stmt->Expression == NULL)
+				if (stmt->Expression == nullptr)
 				{
 					if(function->ReturnType->ToExpressionType() != ExpressionType::Void)
 						Error(30006, L"'return' should have an expression.", stmt);
@@ -173,7 +171,7 @@ namespace SimpleC
 						Error(30025, L"Array size must larger than zero.", stmt);
 
 					function->Variables.Add(varDeclr);
-					if(para->Expression != NULL)
+					if(para->Expression != nullptr)
 						para->Expression->Accept(this);
 				});
 			}
@@ -181,15 +179,14 @@ namespace SimpleC
 			{
 				loops.Add(stmt);
 				stmt->Predicate->Accept(this);
-				if (stmt->Predicate->Type != ExpressionType::Error && stmt->Predicate->Type != ExpressionType::Int)	//类型检查
+				if (stmt->Predicate->Type != ExpressionType::Error && stmt->Predicate->Type != ExpressionType::Int)
 					Error(30010, L"'while': expression must evaluate to int.", stmt);
-
 				stmt->Statement->Accept(this);
 				loops.RemoveAt(loops.Count() - 1);
 			}
 			virtual void VisitExpressionStatement(ExpressionStatementSyntaxNode *stmt)
 			{
-				stmt->Expression->Accept(this);//访问者模式经典应用. https://zhuanlan.zhihu.com/p/53810286
+				stmt->Expression->Accept(this);
 			}
 			virtual void VisitBinaryExpression(BinaryExpressionSyntaxNode *expr)
 			{

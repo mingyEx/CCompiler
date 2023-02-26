@@ -62,51 +62,48 @@ int wmain(int argc, wchar_t* argv[])
 		Lexer lexer;
 		List<CompileError> errorList;
 
-		auto tokens = lexer.Parse(argv[1], source, errorList);	//fileName作为错误输出
+		auto tokens = lexer.Parse(fileName, source, errorList);	//状态机，先不管.
+		//for (auto i : tokens) std::wcout << i.Content.Buffer() << std::endl;
 
 		Parser parser(tokens, errorList, fileName);
-		auto programSyntaxNode = parser.Parse();	//返回的是一些函数组成的list的头节点的指针。
+		auto programSyntaxNode = parser.Parse();	//return the total file' SyntaxNode,which include all the functionNode.
 		if (errorList.Count() > 0)
 		{
 			PrintError(errorList);
 			return 0;
 		}
-		//访问者模式的经典使用场景，语义分析器只进行了类型检查.
+
+		//Simple type checking
 		RefPtr<SyntaxVisitor> visitor = CreateSemanticsVisitor(errorList);		
 		programSyntaxNode->Accept(visitor.Ptr());		
 		
-		//programSyntaxNode 是一个指针，指向一系列函数组成的列表，列表是程序体的结点指针。
-
 		if (errorList.Count() > 0)
 		{
 			PrintError(errorList);
 			return 0;
 		}
 
-		//打印文本:
+		//print stmt
 		//RefPtr<SyntaxVisitor> visitors = CreateSyntaxPrinter();
 		//programSyntaxNode->Accept(visitors.Ptr());
 
-		SimpleC::Compiler::CodeGenerator gen;	//代码生成是从语法树传给代码生成器的。
+		SimpleC::Compiler::CodeGenerator gen;
 		programSyntaxNode->Accept(&gen);
-		fileName = Path::ReplaceExt(fileName, L"code");	//生成三地址代码
+		fileName = Path::ReplaceExt(fileName, L"code");	
 		gen.CompiledCode->Dump(fileName);
 
-		//优化器声明。
 		RefPtr<IntraProcOptimizer> preSsaOptmizer = CreateControlFlowCleanupOptimizer();
-		RefPtr<IntraProcOptimizer> optimizer =	//Intra Proc Optimizer，内部处理优化器，作为其他优化器的基类。
+		RefPtr<IntraProcOptimizer> optimizer =	//Intra Proc Optimizer:base of others.
 			new CompoundOptimizer	
-			(
-				new IterateOptimizer
+			(new IterateOptimizer
 				(
 					new CompoundOptimizer
 					(
-						CreateUselessInstructionOptimizer(),//创建无用的指令优化器
-						CreateVariableCleanupOptimizer(),	//创建变量清理优化器
-						CreateDeadCodeOptimizer(),			//死代码消除
-						CreateControlFlowCleanupOptimizer(),//控制流清理
-						//与上述几乎重合，除了一个while()来反复多次直到无变化.
-						CreateConstIndirectionRemovalOptimizer(),//创建常量间接删除优化器,书上没有
+						CreateUselessInstructionOptimizer(),
+						CreateVariableCleanupOptimizer(),
+						CreateDeadCodeOptimizer(),
+						CreateControlFlowCleanupOptimizer(),//控制流清理,与上述几乎重合，除了一个while()来反复多次直到无变化.
+						CreateConstIndirectionRemovalOptimizer(),//常量间接删除优化器,书上没有
 						CreateVariableCleanupOptimizer()
 					)),	
 				CreatePeepHoleOptimizer()		//窥孔优化，只实现了最基本的指令重写，没有先进的微语言和算法。
@@ -129,7 +126,6 @@ int wmain(int argc, wchar_t* argv[])
 			graph->ConvertToSSA();
 			graph->Dump(Path::ReplaceExt(fileName, L"cfg") + L"." + func.Name + L"_ssa.cfgdump");
 
-			//功能更强大的优化器,六御锁魂阵!
 			graph = optimizer->Optimize(graph).Program;
 			graph->Dump(Path::ReplaceExt(fileName, L"cfg") + L"." + func.Name + L"_optimize.cfgdump");
 
@@ -152,28 +148,8 @@ int wmain(int argc, wchar_t* argv[])
 		auto assembly = program.Link();	
 		auto exe = assembly.CreateMemoryExecutable();	//到此为止生成了啥?
 		IntFunc f = (IntFunc)exe.Buffer;
-
-		//下面是用来测量此程序执行时间的？
-		//可是为什么到这里才开始出现计时，却统计的是全部时间？
-		//我发现无论编译什么都是那么长的时间，作者可能是个鸡贼。
-		//	LARGE_INTEGER c1, c2, freq;
-		//	int rs = 0;
-		//	int rs2=0;
-		//	QueryPerformanceCounter(&c1);
-		//	for (int i = 0; i<1000; i++)
-		//	//	rs = f();
-		//	QueryPerformanceCounter(&c2);
-		//	QueryPerformanceFrequency(&freq);
-		//	double time1 = (c2.QuadPart-c1.QuadPart)/(double)(freq.QuadPart);
-		//	printf("time1: %f\n", time1);
-		//	QueryPerformanceCounter(&c1);
-		//	for (int i = 0; i<1000; i++)
-		//		rs2 = sum();
-		//	QueryPerformanceCounter(&c2);
-		//	double time2 = (c2.QuadPart-c1.QuadPart)/(double)(freq.QuadPart);
-		//	printf("time2: %f\n", time2);
-		//	printf("result is %d, %d\n", rs, rs2);
-		//	PrintError(errorList);
 	}
+	else
+		std::wcout << "no input" << std::endl;
 	return 0;
 }

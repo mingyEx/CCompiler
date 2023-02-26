@@ -1,0 +1,10 @@
+{
+  "FileVersion": 2,
+  "Id": "d400a72d-8cc0-3d35-5305-53ba330db4c4",
+  "Items": [
+    {
+      "Id": "c344debf-3854-47da-8cd8-1aa1413d9df1",
+      "Command": "in.txt"
+    }
+  ]
+}

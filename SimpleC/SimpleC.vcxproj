@@ -97,9 +97,10 @@
     <ClInclude Include="SyntaxVisitors.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Debug\testCode.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-    </ClCompile>
+    <Text Include="..\Debug\test.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <FileType>CppCode</FileType>
+    </Text>
     <ClCompile Include="CodeGenerator.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Lexer.cpp" />
@@ -107,6 +108,7 @@
     <ClCompile Include="SemanticsVisitor.cpp" />
     <ClCompile Include="Syntax.cpp" />
     <ClCompile Include="SyntaxPrinter.cpp" />
+    <Text Include="in.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CoreLib\CoreLib.vcxproj">

@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\Debug\testCode.c" />
     <ClCompile Include="Parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -48,5 +47,13 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{b4330a4a-00d0-4f2a-89eb-62772ad7f9a7}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\Debug\test.c">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="in.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

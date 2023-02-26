@@ -84,7 +84,7 @@ namespace SimpleC
 			String FileName;
 			virtual void Accept(SyntaxVisitor * visitor) = 0;
 		};
-
+		//默认的是私有继承，https://www.zhihu.com/question/425852397
 		class TypeSyntaxNode : public SyntaxNode
 		{
 		public:
@@ -153,7 +153,7 @@ namespace SimpleC
 		class VarExpressionSyntaxNode : public ExpressionSyntaxNode
 		{
 		public:
-			String Variable;	////这个variable是什么？ 变量名？ 
+			String Variable;	//var name.
 			virtual void Accept(SyntaxVisitor * visitor);
 		};
 
@@ -221,7 +221,7 @@ namespace SimpleC
 			List<RefPtr<ExpressionSyntaxNode>> Arguments;
 			virtual void Accept(SyntaxVisitor * visitor);
 		};
-		//代表类型，本身不需要值。
+
 		class StatementSyntaxNode : public SyntaxNode
 		{
 		};
@@ -249,7 +249,7 @@ namespace SimpleC
 			{
 				return Name == var.Name;
 			}
-			bool operator ==(const String & name)
+			bool operator ==(const String & name)	// usage?
 			{
 				return name == Name;
 			}
@@ -263,18 +263,12 @@ namespace SimpleC
 			RefPtr<BlockStatementSyntaxNode> Body;
 			List<VariableDeclr> Variables;
 			virtual void Accept(SyntaxVisitor * visitor);
-			//为什么注释掉？ 因为其本身是没有这些的，它的子表达式才可以指定这些值，而且还有可能报错. 所以就用默认的了，而下面的也是这样。
-			/*FunctionSyntaxNode(int line, int col)	
-			{
-				Line = line;
-				Col = col;
-			}*/
 		};
 
 		class ProgramSyntaxNode : public SyntaxNode
 		{
 		public:
-			ProgramSyntaxNode()	//那为什么这个可以指定呢？ 因为很明显？ 我猜是因为第一次调用的时候，这两个值是可以被指定的。毕竟这里是程序开始的地方，仔细一看，除此之外的任何 SyntaxNode 都没有指定这些。
+			ProgramSyntaxNode()//init
 			{
 				Line = 0;
 				Col = 0;
@@ -283,13 +277,14 @@ namespace SimpleC
 			virtual void Accept(SyntaxVisitor * visitor);
 		};
 
-		class VarDeclrStatementSyntaxNode : public StatementSyntaxNode
+		//"int a=10;"
+		class VarDeclrStatementSyntaxNode : public StatementSyntaxNode 
 		{
 		public:
 			struct Variable : public SyntaxNode
 			{
-				String Name;
-				RefPtr<ExpressionSyntaxNode> Expression;
+				String Name; //var name
+				RefPtr<ExpressionSyntaxNode> Expression;	//the part after `=`
 				virtual void Accept(SyntaxVisitor * visitor);
 			};
 			RefPtr<TypeSyntaxNode> Type;
@@ -305,15 +300,16 @@ namespace SimpleC
 			RefPtr<StatementSyntaxNode> NegativeStatement;
 			virtual void Accept(SyntaxVisitor * visitor);
 		};
+
 		//看书时间...书上没有，这个估计得看c语言的文法
 		class ForStatementSyntaxNode : public StatementSyntaxNode
 		{
 		public:
-			RefPtr<ExpressionSyntaxNode> InitialExpression;	//初始值
-			RefPtr<VarDeclrStatementSyntaxNode> VarDeclr;	//表达式声明
-			RefPtr<ExpressionSyntaxNode> MarginExpression;	//边界表达式
-			RefPtr<ExpressionSyntaxNode> SideEffectExpression;	//这个应该对应自增操作
-			RefPtr<StatementSyntaxNode> Statement;//然后才是{}里的语句
+			RefPtr<ExpressionSyntaxNode> InitialExpression;
+			RefPtr<VarDeclrStatementSyntaxNode> VarDeclr;
+			RefPtr<ExpressionSyntaxNode> MarginExpression;	// "..;i<n.size();.."
+			RefPtr<ExpressionSyntaxNode> SideEffectExpression;	//"++i"
+			RefPtr<StatementSyntaxNode> Statement;//"{...}"
 			virtual void Accept(SyntaxVisitor * visitor);
 		};
 
@@ -364,8 +360,7 @@ namespace SimpleC
 		public:
 			virtual void VisitProgram(ProgramSyntaxNode * program)
 			{
-				program->Functions.ForEach([&](RefPtr<FunctionSyntaxNode> f){f->Accept(this);});	
-				//依次遍历其中每个节点.
+				program->Functions.ForEach([&](RefPtr<FunctionSyntaxNode> f){f->Accept(this);});	//iterator every function.
 			}
 			virtual void VisitFunction(FunctionSyntaxNode* function){}	
 			virtual void VisitBlockStatement(BlockStatementSyntaxNode* stmt){}

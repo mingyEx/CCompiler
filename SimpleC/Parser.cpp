@@ -184,7 +184,7 @@ namespace SimpleC
 
 		RefPtr<ProgramSyntaxNode> Parser::ParseProgram()
 		{
-			RefPtr<ProgramSyntaxNode> program = new ProgramSyntaxNode();	//人家也是上来就封指针啊..  为啥没有象我一样遇到基类向子类转的情景?
+			RefPtr<ProgramSyntaxNode> program = new ProgramSyntaxNode();
 			try
 			{
 				while(pos < tokens.Count())
