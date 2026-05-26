@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -16,8 +17,6 @@ namespace Compiler
 	{
 		using CoreLib::Basic::Exception;
 		using CoreLib::Basic::InvalidOperationException;
-		using CoreLib::Basic::LinkedList;
-		using CoreLib::Basic::LinkedNode;
 		using CoreLib::Basic::String;
 		class InvalidProgramException : public Exception	//满满的c#味
 		{
@@ -270,14 +269,311 @@ namespace Compiler
 			std::wstring ToString() const;
 		};
 
-		typedef LinkedNode<Instruction> InstructionNode;
+		class InstructionList;
 
-		inline InstructionNode * FirstInstructionNode(LinkedList<Instruction> & code)
+		class InstructionNode
+		{
+			friend class InstructionList;
+		private:
+			InstructionList* owner = nullptr;
+		public:
+			Instruction Value;
+
+			InstructionNode() = default;
+			explicit InstructionNode(const Instruction& instruction)
+				: Value(instruction)
+			{
+			}
+
+			InstructionNode* GetPrevious();
+			InstructionNode* GetNext();
+			InstructionNode* InsertBefore(const Instruction& instruction);
+			InstructionNode* InsertAfter(const Instruction& instruction);
+			void Delete();
+		};
+
+		class InstructionList
+		{
+		private:
+			std::list<InstructionNode> nodes;
+
+			std::list<InstructionNode>::iterator FindNode(InstructionNode* node)
+			{
+				for (auto iter = nodes.begin(); iter != nodes.end(); ++iter)
+				{
+					if (&*iter == node)
+						return iter;
+				}
+				return nodes.end();
+			}
+
+			std::list<InstructionNode>::const_iterator FindNode(const InstructionNode* node) const
+			{
+				for (auto iter = nodes.begin(); iter != nodes.end(); ++iter)
+				{
+					if (&*iter == node)
+						return iter;
+				}
+				return nodes.end();
+			}
+
+			void ResetOwners()
+			{
+				for (auto& node : nodes)
+					node.owner = this;
+			}
+
+		public:
+			class Iterator
+			{
+			private:
+				std::list<InstructionNode>::iterator iter;
+			public:
+				explicit Iterator(std::list<InstructionNode>::iterator iterator)
+					: iter(iterator)
+				{
+				}
+
+				Instruction& operator*() const
+				{
+					return iter->Value;
+				}
+
+				Iterator& operator++()
+				{
+					++iter;
+					return *this;
+				}
+
+				bool operator!=(const Iterator& other) const
+				{
+					return iter != other.iter;
+				}
+			};
+
+			class ConstIterator
+			{
+			private:
+				std::list<InstructionNode>::const_iterator iter;
+			public:
+				explicit ConstIterator(std::list<InstructionNode>::const_iterator iterator)
+					: iter(iterator)
+				{
+				}
+
+				const Instruction& operator*() const
+				{
+					return iter->Value;
+				}
+
+				ConstIterator& operator++()
+				{
+					++iter;
+					return *this;
+				}
+
+				bool operator!=(const ConstIterator& other) const
+				{
+					return iter != other.iter;
+				}
+			};
+
+			InstructionList() = default;
+
+			InstructionList(const InstructionList& other)
+			{
+				for (const auto& instruction : other)
+					AddLast(instruction);
+			}
+
+			InstructionList(InstructionList&& other) noexcept
+				: nodes(std::move(other.nodes))
+			{
+				ResetOwners();
+			}
+
+			InstructionList& operator=(const InstructionList& other)
+			{
+				if (this == &other)
+					return *this;
+				Clear();
+				for (const auto& instruction : other)
+					AddLast(instruction);
+				return *this;
+			}
+
+			InstructionList& operator=(InstructionList&& other) noexcept
+			{
+				if (this == &other)
+					return *this;
+				nodes = std::move(other.nodes);
+				ResetOwners();
+				return *this;
+			}
+
+			Iterator begin()
+			{
+				return Iterator(nodes.begin());
+			}
+
+			Iterator end()
+			{
+				return Iterator(nodes.end());
+			}
+
+			ConstIterator begin() const
+			{
+				return ConstIterator(nodes.begin());
+			}
+
+			ConstIterator end() const
+			{
+				return ConstIterator(nodes.end());
+			}
+
+			template<typename IteratorFunc>
+			void ForEach(const IteratorFunc& func)
+			{
+				for (auto& node : nodes)
+					func(node.Value);
+			}
+
+			InstructionNode* FirstNode()
+			{
+				return nodes.empty() ? nullptr : &nodes.front();
+			}
+
+			InstructionNode* LastNode()
+			{
+				return nodes.empty() ? nullptr : &nodes.back();
+			}
+
+			Instruction& First()
+			{
+				if (nodes.empty())
+					throw InvalidOperationException(L"InstructionList is empty.");
+				return nodes.front().Value;
+			}
+
+			Instruction& Last()
+			{
+				if (nodes.empty())
+					throw InvalidOperationException(L"InstructionList is empty.");
+				return nodes.back().Value;
+			}
+
+			InstructionNode* AddFirst(const Instruction& instruction)
+			{
+				nodes.emplace_front(instruction);
+				nodes.front().owner = this;
+				return &nodes.front();
+			}
+
+			InstructionNode* AddLast(const Instruction& instruction)
+			{
+				nodes.emplace_back(instruction);
+				nodes.back().owner = this;
+				return &nodes.back();
+			}
+
+			void Delete(InstructionNode* node)
+			{
+				auto iter = FindNode(node);
+				if (iter != nodes.end())
+					nodes.erase(iter);
+			}
+
+			void Clear()
+			{
+				nodes.clear();
+			}
+
+			int Count() const
+			{
+				return static_cast<int>(nodes.size());
+			}
+
+			std::vector<Instruction> ToVector() const
+			{
+				std::vector<Instruction> result;
+				result.reserve(nodes.size());
+				for (const auto& node : nodes)
+					result.push_back(node.Value);
+				return result;
+			}
+
+			InstructionNode* PreviousNode(InstructionNode* node)
+			{
+				auto iter = FindNode(node);
+				if (iter == nodes.end() || iter == nodes.begin())
+					return nullptr;
+				--iter;
+				return &*iter;
+			}
+
+			InstructionNode* NextNode(InstructionNode* node)
+			{
+				auto iter = FindNode(node);
+				if (iter == nodes.end())
+					return nullptr;
+				++iter;
+				return iter == nodes.end() ? nullptr : &*iter;
+			}
+
+			InstructionNode* InsertBefore(InstructionNode* node, const Instruction& instruction)
+			{
+				auto iter = FindNode(node);
+				if (iter == nodes.end())
+					return nullptr;
+				auto inserted = nodes.emplace(iter, instruction);
+				inserted->owner = this;
+				return &*inserted;
+			}
+
+			InstructionNode* InsertAfter(InstructionNode* node, const Instruction& instruction)
+			{
+				auto iter = FindNode(node);
+				if (iter == nodes.end())
+					return nullptr;
+				++iter;
+				auto inserted = nodes.emplace(iter, instruction);
+				inserted->owner = this;
+				return &*inserted;
+			}
+		};
+
+		inline InstructionNode* InstructionNode::GetPrevious()
+		{
+			return owner ? owner->PreviousNode(this) : nullptr;
+		}
+
+		inline InstructionNode* InstructionNode::GetNext()
+		{
+			return owner ? owner->NextNode(this) : nullptr;
+		}
+
+		inline InstructionNode* InstructionNode::InsertBefore(const Instruction& instruction)
+		{
+			return owner ? owner->InsertBefore(this, instruction) : nullptr;
+		}
+
+		inline InstructionNode* InstructionNode::InsertAfter(const Instruction& instruction)
+		{
+			return owner ? owner->InsertAfter(this, instruction) : nullptr;
+		}
+
+		inline void InstructionNode::Delete()
+		{
+			if (owner)
+				owner->Delete(this);
+		}
+
+		inline InstructionNode * FirstInstructionNode(InstructionList & code)
 		{
 			return code.FirstNode();
 		}
 
-		inline InstructionNode * LastInstructionNode(LinkedList<Instruction> & code)
+		inline InstructionNode * LastInstructionNode(InstructionList & code)
 		{
 			return code.LastNode();
 		}
@@ -302,7 +598,7 @@ namespace Compiler
 			return node->Value;
 		}
 
-		inline InstructionNode * AppendInstruction(LinkedList<Instruction> & code, const Instruction & instruction)
+		inline InstructionNode * AppendInstruction(InstructionList & code, const Instruction & instruction)
 		{
 			return code.AddLast(instruction);
 		}
@@ -419,7 +715,7 @@ namespace Compiler
 		{
 		public:
 			std::wstring Name;
-			LinkedList<Instruction> Instructions;	
+			InstructionList Instructions;	
 			//函数是由里面一系列表达式翻译成的一系列指令形成的，
 			//而非cst里的几条语句组成的树。cst里，函数是节点连起来的，没有"翻译到元语言的call操作"，只有名，参，体的树节点而已。
 

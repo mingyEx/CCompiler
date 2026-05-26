@@ -56,9 +56,9 @@ namespace Compiler
 				if (rs.Variables[i] == 0)
 					throw InvalidProgramException(L"Variable ids inconsistent.");
 #endif
-			auto code = func.Instructions.ToList();
+			auto code = func.Instructions.ToVector();
 			
-			for (int i = 0; i < code.Count(); i++)	//遍历来获得操作符存在分支或者跳转的情况
+			for (int i = 0; i < static_cast<int>(code.size()); i++)	//遍历来获得操作符存在分支或者跳转的情况
 			{
 				if (code[i].Func == Operation::Branch || code[i].Func == Operation::Jump)
 				{
@@ -69,7 +69,7 @@ namespace Compiler
 					splits.push_back(i + 1);	//只能看见buffer里的一个5
 				}
 			}
-			splits.push_back(code.Count());	//循环完了之后再记下code中所有的指令数.
+			splits.push_back(static_cast<int>(code.size()));	//循环完了之后再记下code中所有的指令数.
 			std::sort(splits.begin(), splits.end());				//排序之后，所有可能作为跳走和跳转目标的都有序了.
 
 			std::vector<int> nSplit;
@@ -109,7 +109,7 @@ namespace Compiler
 				}	
 				//start 和end 本来就该只差一个数字，其间的那些内容才是一个完整的基本块的所有东西。
 				start = end;
-				if (start < code.Count())
+				if (start < static_cast<int>(code.size()))
 					node = rs.AddNode();
 				else
 					break;

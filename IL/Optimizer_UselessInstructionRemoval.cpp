@@ -74,7 +74,7 @@ namespace Compiler
 					for (auto instrNode = FirstInstructionNode(node->Code); instrNode != nullptr; )	//遍历当前节点里list<Instruction>里的每一个.
 					{
 						auto nextInstrNode = NextInstructionNode(instrNode);
-						Instruction & instr = GetInstruction(instrNode);	//Current 代表的是，迭代器指向的那个，在这里就是begin().所以是LinkedList<Instruction> 里的一个.
+						Instruction & instr = GetInstruction(instrNode);
 						// Process Phi functions
 						if (instr.Func == Operation::Phi)
 						{

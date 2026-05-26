@@ -1,5 +1,6 @@
 #include "X86CodeGen.h"
 #include "CodeEmitter_x86.h"
+#include <iterator>
 #include <utility>
 #include <unordered_map>
 #include <vector>
@@ -32,23 +33,23 @@ namespace Compiler
 			{
 				if (instrName == x86::Instruction::MOV && op1 == op2)
 					throw "st";
-				curFunc->Code.AddLast(x86::Instruction(instrName, op1, op2));
-				curFunc->Code.Last().Label = labelGenerator++;
-				return curFunc->Code.Last();
+				curFunc->Code.push_back(x86::Instruction(instrName, op1, op2));
+				curFunc->Code.back().Label = labelGenerator++;
+				return curFunc->Code.back();
 			}
 
 			x86::Instruction &  Emit(x86::Instruction::InstructionName instrName, const x86::Operand & op1)
 			{
-				curFunc->Code.AddLast(x86::Instruction(instrName, op1));
-				curFunc->Code.Last().Label = labelGenerator++;
-				return curFunc->Code.Last();
+				curFunc->Code.push_back(x86::Instruction(instrName, op1));
+				curFunc->Code.back().Label = labelGenerator++;
+				return curFunc->Code.back();
 			}
 
 			x86::Instruction &  Emit(x86::Instruction::InstructionName instrName)
 			{
-				curFunc->Code.AddLast(x86::Instruction(instrName));
-				curFunc->Code.Last().Label = labelGenerator++;
-				return curFunc->Code.Last();
+				curFunc->Code.push_back(x86::Instruction(instrName));
+				curFunc->Code.back().Label = labelGenerator++;
+				return curFunc->Code.back();
 			}
 
 			int EmitFloatConst(float val)
@@ -961,21 +962,20 @@ namespace Compiler
 			}
 			void PeepHoleOptimize(Function_x86 & func)
 			{
-				for (auto instrNode = FirstInstructionNode(func.Code); instrNode != nullptr; )
+				for (auto iter = func.Code.begin(); iter != func.Code.end(); )
 				{
-					auto nextNode = NextInstructionNode(instrNode);
-					auto &instr = GetInstruction(instrNode);
+					auto nextIter = std::next(iter);
+					auto & instr = *iter;
 					x86::Instruction * prevInstr = 0;
 					x86::Instruction * nextInstr = 0;
-					if (auto prevNode = PreviousInstructionNode(instrNode))
-						prevInstr = &GetInstruction(prevNode);
-					if (nextNode)
-						nextInstr = &GetInstruction(nextNode);
+					if (iter != func.Code.begin())
+						prevInstr = &*std::prev(iter);
+					if (nextIter != func.Code.end())
+						nextInstr = &*nextIter;
 					if (instr.Name == x86::Instruction::MOV &&
 						instr.Op1 == instr.Op2)
 					{
-						RemoveInstruction(instrNode);
-						instrNode = nextNode;
+						iter = func.Code.erase(iter);
 						continue;
 					}
 					if (instr.Name == x86::Instruction::MOV &&
@@ -992,8 +992,7 @@ namespace Compiler
 						(nextInstr->Name == x86::Instruction::JE || nextInstr->Name == x86::Instruction::JNE ||
 						nextInstr->Name == x86::Instruction::JZ || nextInstr->Name == x86::Instruction::JNZ))
 					{
-						RemoveInstruction(instrNode);
-						instrNode = nextNode;
+						iter = func.Code.erase(iter);
 						continue;
 					}
 					if (prevInstr && nextInstr && prevInstr->IsJump() && prevInstr->Op1.Value == nextInstr->Label
@@ -1004,12 +1003,15 @@ namespace Compiler
 						{
 							prevInstr->Op1 = instr.Op1;
 							prevInstr->Name = oppo;
-							RemoveInstruction(instrNode);
+							iter = func.Code.erase(iter);
 						}
-						instrNode = nextNode;
+						else
+						{
+							iter = nextIter;
+						}
 						continue;
 					}
-					instrNode = nextNode;
+					iter = nextIter;
 				}
 			}
 		public:

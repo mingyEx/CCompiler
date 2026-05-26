@@ -16,7 +16,6 @@ namespace Compiler
 	{
 		using CoreLib::Basic::BitIntSet;
 		using CoreLib::Basic::IntSet;
-		using CoreLib::Basic::LinkedList;
 
 		class ControlFlowNode
 		{
@@ -24,7 +23,7 @@ namespace Compiler
 			int Id;
 			std::vector<ControlFlowNode*> Entries;
 			ControlFlowNode* Exits[2];
-			LinkedList<Instruction> Code;
+			InstructionList Code;
 		public:
 			ControlFlowNode* ImmediateDominator, * ReverseImmediateDominator;
 			std::vector<ControlFlowNode *> DomChildren;
@@ -64,8 +63,7 @@ namespace Compiler
 			InstructionNode* FirstInstruction()
 			{
 				InstructionNode * rs = FirstInstructionNode(Code);	
-				//取出第一条指令,InstructionNode是 LinkedNode<Instruction>，存了指令的一个节点
-				//Code是LinkedList<Instruction>，存了指令的链表，所以后者等于List<>前者。 这里是在遍历来找东西。 当第一个是phi的时候就找下一个，因为
+				//取出第一条指令。Code 使用稳定节点的 InstructionList；如果第一个是 phi 就继续找下一条。
 				//... 来看看这个函数调用的地方吧，我觉得它一定不止在程序开始节点被调用，中间遇到某个块的时候，他还是会被调用的.到那时候phi必须被跳过，因为目标机没有对应的指令 ? 再说吧~
 				//上来就是outofssa,不打掉Phi就他妈的怪了..
 				while (rs && rs->Value.Func == Operation::Phi)	//如果phi存在就跳过，

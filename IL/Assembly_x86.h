@@ -3,19 +3,15 @@
 
 #include <cstring>
 #include <filesystem>
+#include <list>
 #include <string>
 #include <vector>
 #include <Windows.h>
-
-#include "Basic.h"
 
 namespace Compiler
 {
 	namespace x86
 	{
-		using CoreLib::Basic::LinkedList;
-		using CoreLib::Basic::LinkedNode;
-
 		enum class Register
 		{
 			None = -1,
@@ -261,44 +257,6 @@ namespace Compiler
 			}
 		};
 
-		typedef LinkedNode<Instruction> InstructionNode;
-
-		inline InstructionNode * FirstInstructionNode(LinkedList<Instruction> & code)
-		{
-			return code.FirstNode();
-		}
-
-		inline InstructionNode * LastInstructionNode(LinkedList<Instruction> & code)
-		{
-			return code.LastNode();
-		}
-
-		inline InstructionNode * NextInstructionNode(InstructionNode * node)
-		{
-			return node ? node->GetNext() : nullptr;
-		}
-
-		inline InstructionNode * PreviousInstructionNode(InstructionNode * node)
-		{
-			return node ? node->GetPrevious() : nullptr;
-		}
-
-		inline Instruction & GetInstruction(InstructionNode * node)
-		{
-			return node->Value;
-		}
-
-		inline const Instruction & GetInstruction(const InstructionNode * node)
-		{
-			return node->Value;
-		}
-
-		inline void RemoveInstruction(InstructionNode * node)
-		{
-			if (node)
-				node->Delete();
-		}
-
 		struct FunctionLinkPoint
 		{
 			int FuncId;
@@ -332,7 +290,7 @@ namespace Compiler
 		private:
 			Function_x86(const Function_x86 & f){}
 		public:
-			LinkedList<Instruction> Code;
+			std::list<Instruction> Code;
 			std::wstring Name;
 			std::vector<FloatConstant> FloatConsts;
 			Function_x86(){}

@@ -50,7 +50,7 @@
 当前残留：
 
 - `compiler_pipeline.cpp` 仍保留旧 CoreLib 异常捕获，用于报告 IL/CoreLib 抛出的兼容异常。
-- 非测试路径中 CoreLib 主要残留在 IL 的 `LinkedList<Instruction>` / `LinkedNode<Instruction>`、`IntSet` / `BitIntSet`、旧异常和兼容重载中。
+- 非测试路径中 CoreLib 主要残留在 IL 的 `IntSet` / `BitIntSet`、旧异常和 `String` 兼容重载中。
 
 ## IL 和分析工具状态
 
@@ -87,6 +87,9 @@
 - 当前 `IL` 目录已经没有 `RefPtr<...>` 命中。
 - CFG liveness 和 SSA phi placement 的局部 `List<IntSet>` 工作集已改为 `std::vector<IntSet>`。
 - SimpleC/IL 主链路中的 broad `using namespace CoreLib::Basic` 已清掉，剩余 CoreLib 类型通过精确 using 或显式限定暴露。
+- x86 `Function_x86::Code` 已从 CoreLib `LinkedList<Instruction>` 改为 `std::list<Instruction>`。
+- IL `Function::Instructions` 和 `ControlFlowNode::Code` 已从 CoreLib `LinkedList<Instruction>` 改为本地 `InstructionList` 过渡层；该层内部使用 `std::list`，保留稳定 `InstructionNode*` 以兼容现有 SSA/out-of-SSA 和优化器节点引用。
+- 当前 SimpleC/IL 主链路已经没有 CoreLib `LinkedList` / `LinkedNode` 类型命中；剩余 `LinkedList` 命中只在 `corelib_regression_tests.cpp` 中测试 CoreLib 自身。
 - `ScopeDictionary` 已从 CoreLib `Dictionary/GetHashCode` helper 解耦，当前表达式 key 使用 `std::wstring`。
 - IL 非测试路径中的 CoreLib `StringBuilder` 已清掉，若干无调用的 CoreLib `String` 兼容重载已删除。
 - interference analysis 的 `LiveRange` 结果已从 CoreLib `RefPtr` 改为 `std::shared_ptr`。
@@ -201,15 +204,15 @@
 
 纠偏：
 
-- 最新一批已经切到主链路 CoreLib 依赖拆除，完成 IL/x86 文本输出的标准库字符串迁移，以及 `Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表、CFG edge `Entries`、CFG 局部 liveness/phi 工作集的标准容器迁移和 optimizer CFG / CFG 节点 / IL 变量 / out-of-SSA `PhiClasses` 所有权的 `std::shared_ptr` 迁移，并压缩了 SimpleC 非测试代码的 CoreLib 直接引用。
+- 最新一批已经切到主链路 CoreLib 依赖拆除，完成 IL/x86 文本输出的标准库字符串迁移，以及 `Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表、CFG edge `Entries`、CFG 局部 liveness/phi 工作集的标准容器迁移，IL/x86 指令链表的标准库链表迁移，optimizer CFG / CFG 节点 / IL 变量 / out-of-SSA `PhiClasses` 所有权的 `std::shared_ptr` 迁移，并压缩了 SimpleC 非测试代码的 CoreLib 直接引用。
 - 下一步应继续拆 SimpleC/IL 的 `List`、`LinkedList`、`RefPtr`、`String` 边界，而不是继续后端功能或低价值风格化清理。
 
 ## 当前下一步建议
 
 短期：
 
-- 继续评估 IL 中剩余 CoreLib `LinkedList<Instruction>` / `LinkedNode<Instruction>` 指令链表边界；该项需要先评估节点指针稳定性。
-- 清理 IL 中剩余 CoreLib `String/StringBuilder` 入口，尽量改为 `std::wstring` / `std::filesystem::path`。
+- 继续评估 IL 中剩余 `IntSet` / `BitIntSet` / `Math` 依赖，优先看是否可迁移到本地或标准库 backed 实现。
+- 清理 IL 中剩余 CoreLib `String` / `Exception` 入口，尽量改为 `std::wstring` / 标准异常。
 - 每批继续执行固定验证。
 
 暂不做：

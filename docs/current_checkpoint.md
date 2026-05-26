@@ -60,6 +60,9 @@
 - `SimpleC/compiler_pipeline.cpp` 不再直接 include `Basic.h`，只在命令行边界保留对旧 CoreLib 异常的兼容捕获。
 - `SimpleC/CodeGenerator.cpp` 的 unsupported-codegen 错误已从 CoreLib `NotSupportedException` 改为标准 `std::runtime_error`。
 - 当前 SimpleC 非测试代码对 CoreLib 的直接引用只剩 compiler pipeline 的旧异常兼容捕获；CoreLib 自测入口仍故意保留 CoreLib 类型使用。
+- 将 x86 `Function_x86::Code` 从 CoreLib `LinkedList<Instruction>` 改为 `std::list<Instruction>`，并把 x86 peephole 优化改为标准迭代器擦除。
+- 将 IL `Function::Instructions` 和 `ControlFlowNode::Code` 从 CoreLib `LinkedList<Instruction>` 改为本地 `InstructionList` 过渡层；该层内部使用 `std::list`，保留稳定 `InstructionNode*` 语义以兼容 SSA/out-of-SSA 和优化器。
+- 当前 SimpleC/IL 主链路已经没有 CoreLib `LinkedList` / `LinkedNode` 类型命中；剩余命中只在 `corelib_regression_tests.cpp` 中测试 CoreLib 自身。
 
 ## 最近完成的 correctness 修复
 
@@ -83,7 +86,7 @@
 
 纠偏状态：
 
-- 最新一批已经转向更高价值的 IL CoreLib 依赖拆除，完成 IR/x86 文本输出的 `std::wstring` 化、`Instruction::Operands` 的 `std::vector` 化、`ControlFlowGraph::Variables` / `Nodes` 的 `std::vector` 化、CFG 支配树列表和 CFG edge `Entries` 的 `std::vector` 化，并把 optimizer 的 CFG 所有权边界、CFG 节点所有权、IL 变量所有权和 out-of-SSA `PhiClasses` 改为 `std::shared_ptr`；本轮继续清掉 CFG 局部 `List<IntSet>`、SimpleC codegen 的 CoreLib unsupported 异常，以及 SimpleC/IL 主链路中的 broad CoreLib namespace import。
+- 最新一批已经转向更高价值的 IL CoreLib 依赖拆除，完成 IR/x86 文本输出的 `std::wstring` 化、`Instruction::Operands` 的 `std::vector` 化、`ControlFlowGraph::Variables` / `Nodes` 的 `std::vector` 化、CFG 支配树列表和 CFG edge `Entries` 的 `std::vector` 化，并把 optimizer 的 CFG 所有权边界、CFG 节点所有权、IL 变量所有权和 out-of-SSA `PhiClasses` 改为 `std::shared_ptr`；本轮继续清掉 CFG 局部 `List<IntSet>`、SimpleC codegen 的 CoreLib unsupported 异常、SimpleC/IL 主链路中的 broad CoreLib namespace import，以及 IL/x86 指令链表对 CoreLib `LinkedList` / `LinkedNode` 的依赖。
 - 后续目标应继续拆 SimpleC/IL 主链路中的 `RefPtr`、`List`、`LinkedList`、`String` 入口，而不是做低价值风格化清理或新增后端功能。
 
 ## 续接步骤
@@ -96,7 +99,7 @@
 
 ## 下一小目标
 
-- 最高优先级：继续拆 SimpleC/IL 主链路 CoreLib 依赖，下一步评估 IL 中剩余 CoreLib `LinkedList<Instruction>` / `LinkedNode<Instruction>` 指令链表边界。
+- 最高优先级：继续拆 SimpleC/IL 主链路 CoreLib 依赖，下一步评估 IL 中剩余 `IntSet` / `BitIntSet` / `Math` 和旧 `Exception` / `String` 兼容边界。
 - 避免机械 cast、visitor 小修和纯风格化改动，除非它们直接服务于 CoreLib 依赖移除。
 - CoreLib 内部 `String`、`Stream`、`TextIO`、`LibIO` correctness 仍保留，但低于“主链路甩掉 CoreLib”。
 - 暂停扩展 x86/codegen 新功能。
