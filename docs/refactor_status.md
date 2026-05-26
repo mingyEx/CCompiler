@@ -87,6 +87,7 @@
 - 当前 `IL` 目录已经没有 `RefPtr<...>` 命中。
 - out-of-SSA parallel-copy 临时变量已从裸 `new Variable` 改为 `std::unique_ptr` 托管。
 - CFG liveness 和 SSA phi placement 的局部 `List<IntSet>` 工作集已改为 `std::vector<IntSet>`。
+- CFG dominator visitor 的旧 `FakedList` 辅助容器已改为 `std::span<ControlFlowNode*>`。
 - SimpleC/IL 主链路中的 broad `using namespace CoreLib::Basic` 已清掉，剩余 CoreLib 类型通过精确 using 或显式限定暴露。
 - x86 `Function_x86::Code` 已从 CoreLib `LinkedList<Instruction>` 改为 `std::list<Instruction>`。
 - IL `Function::Instructions` 和 `ControlFlowNode::Code` 已从 CoreLib `LinkedList<Instruction>` 改为本地 `InstructionList` 过渡层；该层内部使用 `std::list`，保留稳定 `InstructionNode*` 以兼容现有 SSA/out-of-SSA 和优化器节点引用。

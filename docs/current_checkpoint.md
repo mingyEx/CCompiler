@@ -69,6 +69,7 @@
 - `SimpleC/compiler_pipeline.cpp` 已移除 CoreLib 异常兼容 catch；SimpleC 非测试代码没有 `CoreLib::Basic` 直接引用。
 - `SimpleC.vcxproj` 已移除 CoreLib include directory；仅为 `--corelib-self-test` 保留 CoreLib project reference。
 - out-of-SSA parallel-copy 临时变量已从裸 `new Variable` 改为 `std::unique_ptr` 托管，保留现有 raw pointer IR 引用语义。
+- CFG dominator visitor 的旧 `FakedList` 辅助容器已移除，改用 `std::span<ControlFlowNode*>` 表示临时边视图。
 
 ## 最近完成的 correctness 修复
 

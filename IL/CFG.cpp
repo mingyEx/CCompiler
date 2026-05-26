@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <span>
 #include <unordered_map>
 #include <vector>
 
@@ -336,28 +337,6 @@ namespace Compiler
 			return rs;
 		}
 
-		//一个vector一样的东西，用来干嘛? 为什么不用list呢？操作少了很多，只有一个取值。
-		template <typename T>
-		class FakedList
-		{
-		public:
-			int _count;
-			T * _buffer;
-			FakedList(int count, T* buffer)
-			{
-				this->_count = count;
-				this->_buffer = buffer;
-			}
-			int Count()
-			{
-				return _count;
-			}
-			T & operator [](int idx)
-			{
-				return _buffer[idx];
-			}
-		};
-
 		class ForwardGraphVisitor
 		{
 		public:
@@ -403,9 +382,9 @@ namespace Compiler
 			{
 				return g.GetPostOrder();
 			}
-			inline FakedList<ControlFlowNode *> GetEntries(ControlFlowNode * node)
+			inline std::span<ControlFlowNode *> GetEntries(ControlFlowNode * node)
 			{
-				return FakedList<ControlFlowNode*>(static_cast<int>(node->Entries.size()), node->Entries.data());
+				return std::span<ControlFlowNode *>(node->Entries.data(), node->Entries.size());
 			}
 			inline void AddDomFrontier(ControlFlowNode * node, ControlFlowNode * frontier)
 			{
@@ -454,14 +433,14 @@ namespace Compiler
 			{
 				return g.GetPostOrderOnReverseCFG();
 			}
-			inline FakedList<ControlFlowNode *> GetEntries(ControlFlowNode * node)
+			inline std::span<ControlFlowNode *> GetEntries(ControlFlowNode * node)
 			{
-				int count = 0;
+				std::size_t count = 0;
 				if (node->Exits[0] != 0)
 					count++;
 				if (node->Exits[1] != 0)
 					count++;
-				return FakedList<ControlFlowNode*>(count, node->Exits);
+				return std::span<ControlFlowNode *>(node->Exits, count);
 			}
 			inline void AddDomFrontier(ControlFlowNode * node, ControlFlowNode * frontier)
 			{
@@ -508,7 +487,7 @@ namespace Compiler
 
 					// 从当前节点的所有前驱中找出一个已处理前驱，作为支配者交集的初始值。
 					
-					for (int j = 0; j<entries.Count(); j++)		//遍历所有当前节点的进入节点的指针
+					for (int j = 0; j < static_cast<int>(entries.size()); j++)		//遍历所有当前节点的进入节点的指针
 					{
 						if (processed.Contains(entries[j]->Id))	
 						{
@@ -521,7 +500,7 @@ namespace Compiler
 							break;
 						}
 					}
-					for (int j = 0; j<entries.Count(); j++)		//同样的循环是在干嘛? 如果此次j等于上次循环的j,就继续，否则？
+					for (int j = 0; j < static_cast<int>(entries.size()); j++)		//同样的循环是在干嘛? 如果此次j等于上次循环的j,就继续，否则？
 					{
 						if (j == firstProceedPrecedant)			//这里的j应该是第j个块，如果这个块等于 那个玩意.. 就跳过，意思是？
 							continue;
@@ -564,9 +543,9 @@ namespace Compiler
 			{
 				auto curNode = graph.Nodes[i].get();
 				auto entries = visitor.GetEntries(curNode);
-				if (entries.Count() > 1)
+				if (entries.size() > 1)
 				{
-					for (int j = 0; j<entries.Count(); j++)	//遍历每个节点的进入点
+					for (int j = 0; j < static_cast<int>(entries.size()); j++)	//遍历每个节点的进入点
 					{
 						auto p = entries[j];
 						while (p && p != visitor.GetIDom(curNode))	//若此进入点存在且不为当前节点的idom	 
