@@ -1,28 +1,28 @@
 #ifndef CODE_GEN_X86_H
 #define CODE_GEN_X86_H
 
+#include <vector>
+
 #include "Assembly_x86.h"
 
 namespace Compiler
 {
 	namespace x86
 	{
-		using namespace CoreLib::Basic;
-
 		class BinaryCodeEmitter
 		{
 		private:
-			List<unsigned char> code;
+			std::vector<unsigned char> code;
 			void EmitInstruction(int opLen, const char * opCode, unsigned char opCodePlus, unsigned char extDigit, Operand op);
 			void EmitInstruction(int opLen, const char * opCode, unsigned char opCodePlus, Register reg, Operand op);	
 		public:
 			int Size()
 			{
-				return code.Count();
+				return static_cast<int>(code.size());
 			}
-			List<unsigned char> && GetCode()
+			std::vector<unsigned char> & GetCode()
 			{
-				return _Move(code);
+				return code;
 			}
 			void Emit(const Instruction & instr);
 			void Emit_ADC(int paramCount, const Operand & op1, const Operand & op2);

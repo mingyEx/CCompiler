@@ -1,4 +1,5 @@
 #include "Parser.h"
+#include <cwchar>
 
 namespace SimpleC
 {
@@ -6,14 +7,14 @@ namespace SimpleC
 	{
 		Token & Parser::ReadToken(TokenType type)
 		{
-			if (pos >= tokens.Count())
+			if (pos >= TokenCount())
 			{
-				errors.Add(CompileError(TokenTypeToString(type) + String(L" expected but end of file encountered."), fileName, 0, 0, 0));
+				errors.push_back(CompileError(TokenTypeToString(type) + L" expected but end of file encountered.", fileName, 0, 0, 0));
 				throw 0;
 			}
 			else if(tokens[pos].Type != type)
 			{
-				errors.Add(CompileError(TokenTypeToString(type) + String(L" expected"), fileName, 20001, tokens[pos].Line, tokens[pos].Col));
+				errors.push_back(CompileError(TokenTypeToString(type) + L" expected", fileName, 20001, tokens[pos].Line, tokens[pos].Col));
 				throw 20001;
 			}
 			return tokens[pos++];
@@ -21,9 +22,9 @@ namespace SimpleC
 
 		bool Parser::LookAheadToken(TokenType type)
 		{
-			if (pos >= tokens.Count())
+			if (pos >= TokenCount())
 			{
-				errors.Add(CompileError(TokenTypeToString(type) + String(L" expected but end of file encountered."), fileName, 0, 0, 0));
+				errors.push_back(CompileError(TokenTypeToString(type) + L" expected but end of file encountered.", fileName, 0, 0, 0));
 				return false;
 			}
 			else
@@ -37,14 +38,14 @@ namespace SimpleC
 
 		Token & Parser::ReadTypeKeyword()
 		{
-			if (pos >= tokens.Count())
+			if (pos >= TokenCount())
 			{
-				errors.Add(CompileError(String(L"type name expected but end of file encountered."), fileName, 0, tokens[pos].Line, tokens[pos].Col));
+				errors.push_back(CompileError(L"type name expected but end of file encountered.", fileName, 0, tokens[pos].Line, tokens[pos].Col));
 				throw 0;
 			}
 			if(!IsTypeKeyword())
 			{
-				errors.Add(CompileError(String(L"type name expected but end of file encountered."), fileName, 20001, tokens[pos].Line, tokens[pos].Col));
+				errors.push_back(CompileError(L"type name expected but end of file encountered.", fileName, 20001, tokens[pos].Line, tokens[pos].Col));
 				throw 20001;
 			}
 			return tokens[pos++];
@@ -52,9 +53,9 @@ namespace SimpleC
 
 		bool Parser::IsTypeKeyword()
 		{
-			if (pos >= tokens.Count())
+			if (pos >= TokenCount())
 			{
-				errors.Add(CompileError(String(L"TypeKeyword expected but end of file encountered."), fileName, 0, tokens[pos].Line, tokens[pos].Col));
+				errors.push_back(CompileError(L"TypeKeyword expected but end of file encountered.", fileName, 0, tokens[pos].Line, tokens[pos].Col));
 				throw 0;
 			}
 
@@ -64,11 +65,11 @@ namespace SimpleC
 				tokens[pos].Type != TokenType::KeywordString &&
 				tokens[pos].Type != TokenType::KeywordVoid)
 				return false;
-			else	//÷ß≥÷µƒ¿‡–Õ
+			else	//ÊîØÊåÅÁöÑÁ±ªÂûã
 				return true;
 		}
 
-		String Parser::TokenTypeToString(TokenType type)
+		std::wstring Parser::TokenTypeToString(TokenType type)
 		{
 			switch (type)
 			{
@@ -102,7 +103,7 @@ namespace SimpleC
 				return L"\"while\"";
 			case TokenType::KeywordDo:
 				return L"\"do\"";
-			case TokenType::IntLiterial:	//◊÷∑˚◊÷√Ê¡øµƒ÷µ
+			case TokenType::IntLiterial:	//Â≠óÁ¨¶Â≠óÈù¢ÈáèÁöÑÂÄº
 				return L"Int Literial";
 			case TokenType::DoubleLiterial:
 				return L"Double Literial";
@@ -177,28 +178,28 @@ namespace SimpleC
 			}
 		}
 
-		RefPtr<ProgramSyntaxNode> Parser::Parse()
+		std::shared_ptr<ProgramSyntaxNode> Parser::Parse()
 		{
 			return ParseProgram();
 		}
 
-		RefPtr<ProgramSyntaxNode> Parser::ParseProgram()
+		std::shared_ptr<ProgramSyntaxNode> Parser::ParseProgram()
 		{
-			RefPtr<ProgramSyntaxNode> program = new ProgramSyntaxNode();
+			auto program = std::make_shared<ProgramSyntaxNode>();
 			try
 			{
-				while(pos < tokens.Count())
+				while(pos < TokenCount())
 				{
-					program->Functions.Add(ParseFunction());
+					program->Functions.push_back(ParseFunction());
 				}
 			}
 			catch(int){}
 			return program;
 		}
 
-		RefPtr<FunctionSyntaxNode> Parser::ParseFunction()
+		std::shared_ptr<FunctionSyntaxNode> Parser::ParseFunction()
 		{
-			RefPtr<FunctionSyntaxNode> function = new FunctionSyntaxNode();
+			auto function = std::make_shared<FunctionSyntaxNode>();
 			function->ReturnType = ParseType();
 			try
 			{
@@ -208,9 +209,9 @@ namespace SimpleC
 				function->FileName = fileName;
 				function->Col = name.Col;
 				ReadToken(TokenType::LParent);
-				while(pos < tokens.Count() && tokens[pos].Type != TokenType::RParent)
+				while(pos < TokenCount() && tokens[pos].Type != TokenType::RParent)
 				{
-					function->Parameters.Add(ParseParameter());
+					function->Parameters.push_back(ParseParameter());
 					if(LookAheadToken(TokenType::Comma))
 						ReadToken(TokenType::Comma);
 					else
@@ -222,7 +223,7 @@ namespace SimpleC
 			{
 				if (e == 0)
 					return function;
-				while (pos < tokens.Count() && tokens[pos].Type != TokenType::LBrace)
+				while (pos < TokenCount() && tokens[pos].Type != TokenType::LBrace)
 				{
 					pos++;
 				}
@@ -231,9 +232,9 @@ namespace SimpleC
 			return function;
 		}
 
-		RefPtr<StatementSyntaxNode> Parser::ParseStatement()
+		std::shared_ptr<StatementSyntaxNode> Parser::ParseStatement()
 		{
-			RefPtr<StatementSyntaxNode> statement;
+			std::shared_ptr<StatementSyntaxNode> statement;
 			if (LookAheadToken(TokenType::LBrace))
 				statement = ParseBlockStatement();
 			else if (IsTypeKeyword())
@@ -256,7 +257,7 @@ namespace SimpleC
 				statement = ParseExpressionStatement();
 			else if (LookAheadToken(TokenType::Semicolon))
 			{
-				statement = new EmptyStatementSyntaxNode();
+				statement = std::make_shared<EmptyStatementSyntaxNode>();
 				statement->Line = tokens[pos].Line;
 				statement->Col = tokens[pos].Col;
 				statement->FileName = fileName;
@@ -264,52 +265,52 @@ namespace SimpleC
 			}
 			else
 			{
-				errors.Add(CompileError(String(L"Syntax error."), fileName, 20002, tokens[pos].Line, tokens[pos].Col));
+				errors.push_back(CompileError(L"Syntax error.", fileName, 20002, tokens[pos].Line, tokens[pos].Col));
 				throw 20002;
 			}
 			return statement;
 		}
 
-		RefPtr<BlockStatementSyntaxNode> Parser::ParseBlockStatement()
+		std::shared_ptr<BlockStatementSyntaxNode> Parser::ParseBlockStatement()
 		{
-			RefPtr<BlockStatementSyntaxNode> blockStatement = new BlockStatementSyntaxNode();
+			auto blockStatement = std::make_shared<BlockStatementSyntaxNode>();
 			ReadToken(TokenType::LBrace);
 			try
 			{
-				if(pos < tokens.Count())
+				if(pos < TokenCount())
 				{
 					blockStatement->Line = tokens[pos].Line;
 					blockStatement->Col = tokens[pos].Col;
 					blockStatement->FileName = fileName;
 				}
 
-				while(pos < tokens.Count() && !LookAheadToken(TokenType::RBrace))
-					blockStatement->Statements.Add(ParseStatement());
+				while(pos < TokenCount() && !LookAheadToken(TokenType::RBrace))
+					blockStatement->Statements.push_back(ParseStatement());
 			}
 			catch(int e)
 			{
 				if(e == 0)
 					return blockStatement;
-				while(pos < tokens.Count() && tokens[pos].Type != TokenType::RBrace)
+				while(pos < TokenCount() && tokens[pos].Type != TokenType::RBrace)
 					pos++;
 			}
 			ReadToken(TokenType::RBrace);
 			return blockStatement;
 		}
 
-		RefPtr<VarDeclrStatementSyntaxNode> Parser::ParseVarDeclrStatement()
+		std::shared_ptr<VarDeclrStatementSyntaxNode> Parser::ParseVarDeclrStatement()
 		{
-			RefPtr<VarDeclrStatementSyntaxNode>varDeclrStatement = new VarDeclrStatementSyntaxNode();
+			auto varDeclrStatement = std::make_shared<VarDeclrStatementSyntaxNode>();
 			try
 			{
 				varDeclrStatement->Type = ParseType();
 				varDeclrStatement->Line = varDeclrStatement->Type->Line;
 				varDeclrStatement->Col = varDeclrStatement->Type->Col;
 				varDeclrStatement->FileName = fileName;
-				while(pos < tokens.Count())
+				while(pos < TokenCount())
 				{
 					Token & name = ReadToken(TokenType::Identifier);
-					RefPtr<VarDeclrStatementSyntaxNode::Variable> var = new VarDeclrStatementSyntaxNode::Variable();
+					auto var = std::make_shared<VarDeclrStatementSyntaxNode::Variable>();
 					var->Name = name.Content;
 					var->Line = name.Line;
 					var->Col = name.Col;
@@ -320,7 +321,7 @@ namespace SimpleC
 						var->Expression = ParseExpression();
 					}
 
-					varDeclrStatement->Variables.Add(var);
+					varDeclrStatement->Variables.push_back(var);
 					if (LookAheadToken(TokenType::Comma))
 						ReadToken(TokenType::Comma);
 					else
@@ -332,15 +333,15 @@ namespace SimpleC
 			{
 				if (e == 0)
 					return varDeclrStatement;
-				while (pos < tokens.Count() && tokens[pos].Type != TokenType::Semicolon)
+				while (pos < TokenCount() && tokens[pos].Type != TokenType::Semicolon)
 					pos++;
 			}
 			return varDeclrStatement;
 		}
 
-		RefPtr<IfStatementSyntaxNode> Parser::ParseIfStatement()
+		std::shared_ptr<IfStatementSyntaxNode> Parser::ParseIfStatement()
 		{
-			RefPtr<IfStatementSyntaxNode> ifStatement = new IfStatementSyntaxNode();
+			auto ifStatement = std::make_shared<IfStatementSyntaxNode>();
 			Token & ifToken = ReadToken(TokenType::KeywordIf);
 			ifStatement->Line = ifToken.Line;
 			ifStatement->Col = ifToken.Col;
@@ -357,9 +358,9 @@ namespace SimpleC
 			return ifStatement;
 		}
 
-		RefPtr<ForStatementSyntaxNode> Parser::ParseForStatement()
+		std::shared_ptr<ForStatementSyntaxNode> Parser::ParseForStatement()
 		{
-			RefPtr<ForStatementSyntaxNode> stmt = new ForStatementSyntaxNode();
+			auto stmt = std::make_shared<ForStatementSyntaxNode>();
 			Token & token = ReadToken(TokenType::KeywordFor);
 			stmt->Line = token.Line;
 			stmt->Col = token.Col;
@@ -384,9 +385,9 @@ namespace SimpleC
 			return stmt;
 		}
 
-		RefPtr<WhileStatementSyntaxNode> Parser::ParseWhileStatement()
+		std::shared_ptr<WhileStatementSyntaxNode> Parser::ParseWhileStatement()
 		{
-			RefPtr<WhileStatementSyntaxNode> whileStatement = new WhileStatementSyntaxNode();
+			auto whileStatement = std::make_shared<WhileStatementSyntaxNode>();
 			Token & whileToken = ReadToken(TokenType::KeywordWhile);
 			whileStatement->Line = whileToken.Line;
 			whileStatement->Col = whileToken.Col;
@@ -398,9 +399,9 @@ namespace SimpleC
 			return whileStatement;
 		}
 
-		RefPtr<DoWhileStatementSyntaxNode> Parser::ParseDoWhileStatement()
+		std::shared_ptr<DoWhileStatementSyntaxNode> Parser::ParseDoWhileStatement()
 		{
-			RefPtr<DoWhileStatementSyntaxNode> doWhileStatement = new DoWhileStatementSyntaxNode();
+			auto doWhileStatement = std::make_shared<DoWhileStatementSyntaxNode>();
 			Token & doToken = ReadToken(TokenType::KeywordDo);
 			doWhileStatement->Line = doToken.Line;
 			doWhileStatement->Col = doToken.Col;
@@ -414,9 +415,9 @@ namespace SimpleC
 			return doWhileStatement;
 		}
 
-		RefPtr<BreakStatementSyntaxNode> Parser::ParseBreakStatement()
+		std::shared_ptr<BreakStatementSyntaxNode> Parser::ParseBreakStatement()
 		{
-			RefPtr<BreakStatementSyntaxNode> breakStatement = new BreakStatementSyntaxNode();
+			auto breakStatement = std::make_shared<BreakStatementSyntaxNode>();
 			Token & breakToken = ReadToken(TokenType::KeywordBreak);
 			breakStatement->Line = breakToken.Line;
 			breakStatement->Col = breakToken.Col;
@@ -425,9 +426,9 @@ namespace SimpleC
 			return breakStatement;
 		}
 
-		RefPtr<ContinueStatementSyntaxNode>	Parser::ParseContinueStatement()
+		std::shared_ptr<ContinueStatementSyntaxNode>	Parser::ParseContinueStatement()
 		{
-			RefPtr<ContinueStatementSyntaxNode> continueStatement = new ContinueStatementSyntaxNode();
+			auto continueStatement = std::make_shared<ContinueStatementSyntaxNode>();
 			Token & token = ReadToken(TokenType::KeywordContinue);
 			continueStatement->Line = token.Line;
 			continueStatement->Col = token.Col;
@@ -436,23 +437,23 @@ namespace SimpleC
 			return continueStatement;
 		}
 
-		RefPtr<ReturnStatementSyntaxNode> Parser::ParseReturnStatement()
+		std::shared_ptr<ReturnStatementSyntaxNode> Parser::ParseReturnStatement()
 		{
-			RefPtr<ReturnStatementSyntaxNode> returnStatement = new ReturnStatementSyntaxNode();
+			auto returnStatement = std::make_shared<ReturnStatementSyntaxNode>();
 			Token & token = ReadToken(TokenType::KeywordReturn);
 			returnStatement->Line = token.Line;
 			returnStatement->Col = token.Col;
 			returnStatement->FileName = fileName;
 			if (!LookAheadToken(TokenType::Semicolon))	
-				//»Áπ˚return ∫Û√Ê≤ª « ;æÕ ’ ∞µÙreturn xxµƒxx.
+				//Â¶ÇÊûúreturn ÂêéÈù¢‰∏çÊòØ ;Â∞±Êî∂ÊãæÊéâreturn xxÁöÑxx.
 				returnStatement->Expression = ParseExpression();
 			ReadToken(TokenType::Semicolon);
 			return returnStatement;
 		}
 
-		RefPtr<ExpressionStatementSyntaxNode> Parser::ParseExpressionStatement()
+		std::shared_ptr<ExpressionStatementSyntaxNode> Parser::ParseExpressionStatement()
 		{
-			RefPtr<ExpressionStatementSyntaxNode> returnStatement = new ExpressionStatementSyntaxNode();
+			auto returnStatement = std::make_shared<ExpressionStatementSyntaxNode>();
 			try
 			{
 				returnStatement->Expression = ParseExpression();
@@ -465,16 +466,16 @@ namespace SimpleC
 			}
 			catch (int)
 			{
-				while(pos < tokens.Count() && (tokens[pos].Type != TokenType::Semicolon || tokens[pos].Type != TokenType::RBrace))
+					while(pos < TokenCount() && (tokens[pos].Type != TokenType::Semicolon || tokens[pos].Type != TokenType::RBrace))
 					pos++;
 			}
 			ReadToken(TokenType::Semicolon);
 			return returnStatement;
 		}
 
-		RefPtr<ParameterSyntaxNode> Parser::ParseParameter()
+		std::shared_ptr<ParameterSyntaxNode> Parser::ParseParameter()
 		{
-			RefPtr<ParameterSyntaxNode> parameter = new ParameterSyntaxNode();
+			auto parameter = std::make_shared<ParameterSyntaxNode>();
 			try
 			{
 				parameter->Type = ParseType();
@@ -488,17 +489,17 @@ namespace SimpleC
 			{
 				if(e == 0)
 					return parameter;
-				while (pos < tokens.Count() && tokens[pos].Type != TokenType::Identifier)
+				while (pos < TokenCount() && tokens[pos].Type != TokenType::Identifier)
 					pos++;
-				if(pos < tokens.Count())
+				if(pos < TokenCount())
 					parameter->Name = tokens[pos].Content;
 			}
 			return parameter;
 		}
 
-		RefPtr<TypeSyntaxNode> Parser::ParseType()
+		std::shared_ptr<TypeSyntaxNode> Parser::ParseType()
 		{
-			RefPtr<TypeSyntaxNode> type = new TypeSyntaxNode();
+			auto type = std::make_shared<TypeSyntaxNode>();
 			try
 			{
 				type->Line = tokens[pos].Line;
@@ -510,16 +511,16 @@ namespace SimpleC
 			{
 				if(e == 0)
 					return type;
-				while (pos < tokens.Count() && !IsTypeKeyword())
+				while (pos < TokenCount() && !IsTypeKeyword())
 					pos++;
-				if(pos < tokens.Count())
+				if(pos < TokenCount())
 					type->TypeName = tokens[pos].Content;
 			}
 			if(LookAheadToken(TokenType::LBracket))
 			{
 				ReadToken(TokenType::LBracket);
 				type->IsArray = true;
-				type->ArrayLength = atoi(ReadToken(TokenType::IntLiterial).Content.ToMultiByteString());
+				type->ArrayLength = static_cast<int>(std::wcstol(ReadToken(TokenType::IntLiterial).Content.c_str(), nullptr, 10));
 				ReadToken(TokenType::RBracket);
 			}
 			return type;
@@ -577,7 +578,7 @@ namespace SimpleC
 			}
 		}
 
-		Operator GetOpFromToken(Token & token)	//‘ÀÀ„∑˚”≈œ»º∂
+		Operator GetOpFromToken(Token & token)	//ËøêÁÆóÁ¨¶‰ºòÂÖàÁ∫ß
 		{
 			switch(token.Type)
 			{
@@ -630,7 +631,7 @@ namespace SimpleC
 			}
 		}
 
-		RefPtr<ExpressionSyntaxNode> Parser::ParseExpression(int level)
+		std::shared_ptr<ExpressionSyntaxNode> Parser::ParseExpression(int level)
 		{
 			if (level == MaxExprLevel)
 				return ParseLeafExpression();
@@ -638,9 +639,9 @@ namespace SimpleC
 			if (GetAssociativityFromLevel(level) == Associativity::Left)
 			{
 				auto left = ParseExpression(level + 1);
-				while(pos < tokens.Count() && GetOpLevel(tokens[pos].Type) == level)
+				while(pos < TokenCount() && GetOpLevel(tokens[pos].Type) == level)
 				{
-					RefPtr<BinaryExpressionSyntaxNode> tmp = new BinaryExpressionSyntaxNode();
+					auto tmp = std::make_shared<BinaryExpressionSyntaxNode>();
 					tmp->LeftExpression = left;
 					Token & opToken = ReadToken(tokens[pos].Type);
 					tmp->Operator = GetOpFromToken(opToken);
@@ -654,9 +655,9 @@ namespace SimpleC
 			else
 			{
 				auto left = ParseExpression(level + 1);
-				if (pos < tokens.Count() && GetOpLevel(tokens[pos].Type) == level)
+				if (pos < TokenCount() && GetOpLevel(tokens[pos].Type) == level)
 				{
-					RefPtr<BinaryExpressionSyntaxNode> tmp = new BinaryExpressionSyntaxNode();
+					auto tmp = std::make_shared<BinaryExpressionSyntaxNode>();
 					tmp->LeftExpression = left;
 					Token & opToken = ReadToken(tokens[pos].Type);
 					tmp->Operator = GetOpFromToken(opToken);
@@ -669,21 +670,21 @@ namespace SimpleC
 			}
 		}
 
-		RefPtr<ExpressionSyntaxNode> Parser::ParseLeafExpression()
+		std::shared_ptr<ExpressionSyntaxNode> Parser::ParseLeafExpression()
 		{
 			if (LookAheadToken(TokenType::LParent))
 			{
 				ReadToken(TokenType::LParent);
-				RefPtr<ExpressionSyntaxNode> expr;
+				std::shared_ptr<ExpressionSyntaxNode> expr;
 				try
 				{
 					expr = ParseExpression();
 				}
 				catch(int e)
 				{
-					if (e = 0)
+					if (e == 0)
 						return expr;
-					while (pos < tokens.Count() && 
+					while (pos < TokenCount() && 
 						(tokens[pos].Type != TokenType::RParent))
 						pos++;
 				}
@@ -694,14 +695,14 @@ namespace SimpleC
 			if (LookAheadToken(TokenType::OpInc) ||
 				LookAheadToken(TokenType::OpDec) ||
 				LookAheadToken(TokenType::OpNot) ||
-				LookAheadToken(TokenType::OpSub))	// OpSub ºı∑®subtractions ∂¯≤ª «subscript
+				LookAheadToken(TokenType::OpSub))	// OpSub ÂáèÊ≥ïsubtractions ËÄå‰∏çÊòØsubscript
 			{
-				RefPtr<UnaryExpressionSyntaxNode> unaryExpr = new UnaryExpressionSyntaxNode();
+				auto unaryExpr = std::make_shared<UnaryExpressionSyntaxNode>();
 				Token & token = tokens[pos++];
 				unaryExpr->Line = token.Line;
 				unaryExpr->Col = token.Col;
 				unaryExpr->FileName = fileName;
-				unaryExpr->Operator = GetOpFromToken(token);	//Token±æ…ÌæÕ «Op,∂¯∑«∆‰÷–“ª∏ˆ∂‘œÛ.
+				unaryExpr->Operator = GetOpFromToken(token);	//TokenÊú¨Ë∫´Â∞±ÊòØOp,ËÄåÈùûÂÖ∂‰∏≠‰∏Ä‰∏™ÂØπË±°.
 				if (unaryExpr->Operator == Operator::PostInc)
 					unaryExpr->Operator = Operator::PreInc;
 				else if (unaryExpr->Operator == Operator::PostDec)
@@ -709,18 +710,18 @@ namespace SimpleC
 				else if (unaryExpr->Operator == Operator::Sub)
 					unaryExpr->Operator = Operator::Neg;
 
-				unaryExpr->Expression = ParseLeafExpression();	//≤Ÿ◊˜∑˚∫Û√Êµƒ±Ì¥Ô Ωµ›πÈœ¬ΩµΩ¯––¥¶¿Ì°£
+				unaryExpr->Expression = ParseLeafExpression();	//Êìç‰ΩúÁ¨¶ÂêéÈù¢ÁöÑË°®ËææÂºèÈÄíÂΩí‰∏ãÈôçËøõË°åÂ§ÑÁêÜ„ÄÇ
 				return unaryExpr;
 			}
 
-			RefPtr<ExpressionSyntaxNode> rs;
+			std::shared_ptr<ExpressionSyntaxNode> rs;
 
 			if (LookAheadToken(TokenType::IntLiterial) ||
 				LookAheadToken(TokenType::DoubleLiterial) ||
 				LookAheadToken(TokenType::CharLiterial) ||
 				LookAheadToken(TokenType::StringLiterial))
 			{
-				RefPtr<ConstantExpressionSyntaxNode> constExpr = new ConstantExpressionSyntaxNode();
+				auto constExpr = std::make_shared<ConstantExpressionSyntaxNode>();
 				auto token = tokens[pos++];
 				constExpr->Line = token.Line;
 				constExpr->Col = token.Col;
@@ -728,12 +729,12 @@ namespace SimpleC
 				if (token.Type == TokenType::IntLiterial)
 				{
 					constExpr->ConstType = ConstantExpressionSyntaxNode::ConstantType::Int;
-					constExpr->IntValue = StringToInt(token.Content);
+					constExpr->IntValue = static_cast<int>(std::wcstol(token.Content.c_str(), nullptr, 10));
 				}
 				else if (token.Type == TokenType::DoubleLiterial)
 				{
 					constExpr->ConstType = ConstantExpressionSyntaxNode::ConstantType::Double;
-					constExpr->DoubleValue = StringToDouble(token.Content);
+					constExpr->DoubleValue = std::wcstod(token.Content.c_str(), nullptr);
 				}
 				else if (token.Type == TokenType::CharLiterial)
 				{
@@ -749,7 +750,7 @@ namespace SimpleC
 			}
 			else if (LookAheadToken(TokenType::Identifier))
 			{
-				RefPtr<VarExpressionSyntaxNode> varExpr = new VarExpressionSyntaxNode();
+				auto varExpr = std::make_shared<VarExpressionSyntaxNode>();
 				Token & token = ReadToken(TokenType::Identifier);
 				varExpr->Variable = token.Content; 
 				varExpr->Line = token.Line;
@@ -757,7 +758,7 @@ namespace SimpleC
 				varExpr->FileName = fileName;
 				rs = varExpr;
 			}
-			while (pos < tokens.Count() &&
+			while (pos < TokenCount() &&
 					(LookAheadToken(TokenType::OpInc) ||
 					LookAheadToken(TokenType::OpDec) ||
 					LookAheadToken(TokenType::LBracket) ||
@@ -765,7 +766,7 @@ namespace SimpleC
 			{
 				if (LookAheadToken(TokenType::OpInc))
 				{
-					RefPtr<UnaryExpressionSyntaxNode> unaryExpr = new UnaryExpressionSyntaxNode();
+					auto unaryExpr = std::make_shared<UnaryExpressionSyntaxNode>();
 					Token & token = ReadToken(TokenType::OpInc);
 					unaryExpr->Line = token.Line;
 					unaryExpr->Col = token.Col;
@@ -776,7 +777,7 @@ namespace SimpleC
 				}
 				else if (LookAheadToken(TokenType::OpDec))
 				{
-					RefPtr<UnaryExpressionSyntaxNode> unaryExpr = new UnaryExpressionSyntaxNode();
+					auto unaryExpr = std::make_shared<UnaryExpressionSyntaxNode>();
 					Token & token = ReadToken(TokenType::OpDec);
 					unaryExpr->Line = token.Line;
 					unaryExpr->Col = token.Col;
@@ -785,43 +786,43 @@ namespace SimpleC
 					unaryExpr->Expression = rs;
 					rs = unaryExpr;
 				}
-				else if (LookAheadToken(TokenType::LBracket))		//bracket ∑Ω¿®∫≈
+				else if (LookAheadToken(TokenType::LBracket))		//bracket ÊñπÊã¨Âè∑
 				{
-					RefPtr<IndexExpressionSyntaxNode> indexExpr = new IndexExpressionSyntaxNode();
-					indexExpr->BaseExpression = rs;	//arr[i] µƒarr
+					auto indexExpr = std::make_shared<IndexExpressionSyntaxNode>();
+					indexExpr->BaseExpression = rs;	//arr[i] ÁöÑarr
 					Token & token = ReadToken(TokenType::LBracket);
 					indexExpr->Line = token.Line;
 					indexExpr->Col = token.Col;
 					indexExpr->FileName = fileName;
 					try
 					{
-						indexExpr->IndexExpression = ParseExpression();	//arr[i]µƒi≤ø∑÷£¨iø…ƒ‹±Ì¥Ô Ω.
+						indexExpr->IndexExpression = ParseExpression();	//arr[i]ÁöÑiÈÉ®ÂàÜÔºåiÂèØËÉΩË°®ËææÂºè.
 					}
 					catch(int e)
 					{
 						if (e == 0)
 							return rs;
-						while (pos < tokens.Count() && 
+						while (pos < TokenCount() && 
 							(tokens[pos].Type != TokenType::RBracket))
 							pos++;
 					}
 					ReadToken(TokenType::RBracket);
 					rs = indexExpr;
 				}
-				else if (LookAheadToken(TokenType::LParent))	//‘≤¿®∫≈£¨∫Ø ˝µ˜”√”Ôæ‰
+				else if (LookAheadToken(TokenType::LParent))	//ÂúÜÊã¨Âè∑ÔºåÂáΩÊï∞Ë∞ÉÁî®ËØ≠Âè•
 				{
-					RefPtr<InvokeExpressionSyntaxNode> invokeExpr = new InvokeExpressionSyntaxNode();
+					auto invokeExpr = std::make_shared<InvokeExpressionSyntaxNode>();
 					invokeExpr->FunctionExpr = rs;
 					Token & token = ReadToken(TokenType::LParent);
 					invokeExpr->Line = token.Line;
 					invokeExpr->Col = token.Col;
 					invokeExpr->FileName = fileName;
-					while (pos < tokens.Count())
+					while (pos < TokenCount())
 					{
 						try
 						{
 							if (!LookAheadToken(TokenType::RParent))
-								invokeExpr->Arguments.Add(ParseExpression());
+					invokeExpr->Arguments.push_back(ParseExpression());
 							else
 							{
 								break;
@@ -831,7 +832,7 @@ namespace SimpleC
 						{
 							if (e == 0)
 								return rs;
-							while (pos < tokens.Count() && 
+							while (pos < TokenCount() && 
 								(tokens[pos].Type != TokenType::Comma && tokens[pos].Type != TokenType::RParent))
 								pos++;
 						}
@@ -846,12 +847,12 @@ namespace SimpleC
 			if (!rs)
 			{
 				int line = 0, col = 0;
-				if (pos < tokens.Count())
+				if (pos < TokenCount())
 				{
 					line = tokens[pos].Line;
 					col = tokens[pos].Col;
 				}
-				errors.Add(CompileError(String(L"Syntax error."), fileName, 20005, line, col)); 
+				errors.push_back(CompileError(L"Syntax error.", fileName, 20005, line, col)); 
 				throw 20005;
 			}
 			return rs;

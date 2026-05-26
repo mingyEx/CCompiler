@@ -1,5 +1,9 @@
-#include "SyntaxVisitors.h"
+Ôªø#include "SyntaxVisitors.h"
+#include <algorithm>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
 #include "IL/CompileError.h"
 
 namespace SimpleC
@@ -10,54 +14,56 @@ namespace SimpleC
 		{
 			ProgramSyntaxNode * program;
 			FunctionSyntaxNode * function;		
-			List<SyntaxNode *> loops;	//why? what? how?
-			List<CompileError> & errors;
+			std::vector<SyntaxNode *> loops;	// loop nesting stack used to validate break/continue
+			std::vector<CompileError> & errors;
 
-			void Error(int id, const String & text, SyntaxNode * node)
+			void Error(int id, std::wstring text, SyntaxNode * node)
 			{
-				errors.Add(CompileError(text, node->FileName, id, node->Line, node->Col));
+				errors.push_back(CompileError(std::move(text), node->FileName, id, node->Line, node->Col));
 			}
 		public:
-			SemanticsVisitor(List<CompileError> & _errors)
+			SemanticsVisitor(std::vector<CompileError> & _errors)
 				:errors(_errors)
 			{}
 			//Check if function names are duplicated
-			virtual void VisitProgram(ProgramSyntaxNode * program)
+			virtual void VisitProgram(ProgramSyntaxNode & program_node)
 			{
-				std::set<String> funcNames;
+				auto * program = &program_node;
+				std::set<std::wstring> funcNames;
 				this->program = program;
-				program->Functions.ForEach([&](RefPtr<FunctionSyntaxNode> & func)
+				for (auto & func : program->Functions)
 				{
 					if (funcNames.find(func->Name) != funcNames.end())
-						Error(30001, L"Function \'" + func->Name + L"\' redefinition.", func.Ptr());
+						Error(30001, L"Function \'" + func->Name + L"\' redefinition.", func.get());
 					else
 						funcNames.insert(func->Name);
-					func->Accept(this);
-				});
+					func->Accept(*this);
+				}
 			}
 
 			//
-			virtual void VisitFunction(FunctionSyntaxNode *function) override 
+			virtual void VisitFunction(FunctionSyntaxNode & function_node) override 
 			{
+				auto * function = &function_node;
 				this->function = function;
 				//Check if there is a return type of the form void []
-				auto & returnType = function->ReturnType->ToExpressionType();
+				const auto & returnType = function->ReturnType->ToExpressionType();
 				if(returnType.BaseType == ExpressionType::_Void && returnType.IsArray)
-					Error(30024, L"Function return type can not be 'void' array.", function->ReturnType.Ptr());
+					Error(30024, L"Function return type can not be 'void' array.", function->ReturnType.get());
 				
 				//Detect if Parameter is duplicated
-				std::set<String> paraNames;
-				function->Parameters.ForEach([&](RefPtr<ParameterSyntaxNode> & para)
+				std::set<std::wstring> paraNames;
+				for (auto & para : function->Parameters)
 				{
 					if (paraNames.find(para->Name) != paraNames.end())
-						Error(30002, L"Parameter \'" + para->Name + L"\' already defined.", para.Ptr());
+						Error(30002, L"Parameter \'" + para->Name + L"\' already defined.", para.get());
 					else
 						paraNames.insert(para->Name);
 					if(para->Type->ToExpressionType().BaseType == ExpressionType::_Void)
-						Error(30016, L"'void' can not be parameter type.", para.Ptr());
-					para->Accept(this);
-				});
-				function->Body->Accept(this);
+						Error(30016, L"'void' can not be parameter type.", para.get());
+					para->Accept(*this);
+				}
+				function->Body->Accept(*this);
 				this->function = nullptr;
 			}
 			//class Lambda01
@@ -68,81 +74,86 @@ namespace SimpleC
 			//	Lambda01(int& _cdf, SemanticsVisitor* _this)
 			//		:cdf(_cdf), _this(_this)
 			//	{}
-			//	void operator ()(RefPtr<StatementSyntaxNode>& node)
+			//	void operator ()(std::shared_ptr<StatementSyntaxNode>& node)
 			//	{
 			//		int xx = cdf;
 			//		node->Accept(_this);
 			//	}
 			//};
-			virtual void VisitBlockStatement(BlockStatementSyntaxNode *stmt)
+			virtual void VisitBlockStatement(BlockStatementSyntaxNode & stmt_node)
 			{
+				auto * stmt = &stmt_node;
 				//int cdf = 50;
 				//Lambda01 lambda(cdf, this);
 				//stmt->Statements.ForEach(lambda);
-				stmt->Statements.ForEach([&](RefPtr<StatementSyntaxNode> & node)
-				{
-					node->Accept(this);
-				});
+				for (auto & node : stmt->Statements)
+					node->Accept(*this);
 			}
 
-			virtual void VisitBreakStatement(BreakStatementSyntaxNode *stmt)
+			virtual void VisitBreakStatement(BreakStatementSyntaxNode & stmt_node)
 			{
-				if (!loops.Count())
+				auto * stmt = &stmt_node;
+				if (loops.empty())
 					Error(30003, L"'break' must appear inside loop constructs.", stmt);
 			}
-			virtual void VisitContinueStatement(ContinueStatementSyntaxNode *stmt)
+			virtual void VisitContinueStatement(ContinueStatementSyntaxNode & stmt_node)
 			{
-				if (!loops.Count())
+				auto * stmt = &stmt_node;
+				if (loops.empty())
 					Error(30004, L"'continue' must appear inside loop constructs.", stmt);
 			}
 
-			virtual void VisitDoWhileStatement(DoWhileStatementSyntaxNode *stmt)	
-				//DoWhileStatementSyntaxNode ”–÷¥––”Ôæ‰∫ÕŒΩ¥ 
+			virtual void VisitDoWhileStatement(DoWhileStatementSyntaxNode & stmt_node)	
+				// Enter loop scope before checking the predicate and body.
 			{
-				loops.Add(stmt);	//loops ¿‡–Õ «list<node>.ƒøµƒ «∞—À˘”–µƒ—≠ª∑”Ôæ‰∑≈‘⁄“ª∆
+				auto * stmt = &stmt_node;
+				loops.push_back(stmt);
 				if(stmt->Predicate != nullptr)
-					stmt->Predicate->Accept(this);
+					stmt->Predicate->Accept(*this);
 				if(stmt->Predicate->Type != ExpressionType::Error && stmt->Predicate->Type != ExpressionType::Int)
 					Error(30005, L"'while': expression must evaluate to int.", stmt);
-				stmt->Statement->Accept(this);	
-				loops.RemoveAt(loops.Count() - 1);
+				stmt->Statement->Accept(*this);	
+				loops.pop_back();
 			}
-			virtual void VisitEmptyStatement(EmptyStatementSyntaxNode *stmt){}
-			virtual void VisitForStatement(ForStatementSyntaxNode *stmt)
+			virtual void VisitEmptyStatement(EmptyStatementSyntaxNode & stmt){}
+			virtual void VisitForStatement(ForStatementSyntaxNode & stmt_node)
 			{
-				loops.Add(stmt);
+				auto * stmt = &stmt_node;
+				loops.push_back(stmt);
 
 				if (stmt->VarDeclr != nullptr)		
-					stmt->VarDeclr->Accept(this);
+					stmt->VarDeclr->Accept(*this);
 
 				if (stmt->InitialExpression != nullptr)
-					stmt->InitialExpression->Accept(this);
+					stmt->InitialExpression->Accept(*this);
 
 				if (stmt->MarginExpression != nullptr)
-					stmt->MarginExpression->Accept(this);
+					stmt->MarginExpression->Accept(*this);
 
 				if (stmt->SideEffectExpression != nullptr)
-					stmt->SideEffectExpression->Accept(this);
+					stmt->SideEffectExpression->Accept(*this);
 
-				stmt->Statement->Accept(this);
+				stmt->Statement->Accept(*this);
 
-				loops.RemoveAt(loops.Count() - 1);
+				loops.pop_back();
 			}
-			virtual void VisitIfStatement(IfStatementSyntaxNode *stmt)
+			virtual void VisitIfStatement(IfStatementSyntaxNode & stmt_node)
 			{
+				auto * stmt = &stmt_node;
 				if (stmt->Predicate != nullptr)
-					stmt->Predicate->Accept(this);
+					stmt->Predicate->Accept(*this);
 				if (stmt->Predicate->Type != ExpressionType::Error && stmt->Predicate->Type != ExpressionType::Int)
 					Error(30006, L"'if': expression must evaluate to int.", stmt);
 
 				if (stmt->PositiveStatement != nullptr)
-					stmt->PositiveStatement->Accept(this);
+					stmt->PositiveStatement->Accept(*this);
 				
 				if (stmt->NegativeStatement != nullptr)
-					stmt->NegativeStatement->Accept(this);
+					stmt->NegativeStatement->Accept(*this);
 			}
-			virtual void VisitReturnStatement(ReturnStatementSyntaxNode *stmt)
+			virtual void VisitReturnStatement(ReturnStatementSyntaxNode & stmt_node)
 			{
+				auto * stmt = &stmt_node;
 				if (stmt->Expression == nullptr)
 				{
 					if(function->ReturnType->ToExpressionType() != ExpressionType::Void)
@@ -150,19 +161,21 @@ namespace SimpleC
 				}
 				else
 				{
-					stmt->Expression->Accept(this);
+					stmt->Expression->Accept(*this);
 					if(stmt->Expression->Type != ExpressionType::Error && stmt->Expression->Type != function->ReturnType->ToExpressionType())
 						Error(30007, L"Expression type '" + stmt->Expression->Type.ToString() + L"' does not match function's return type '" + function->ReturnType->ToExpressionType().ToString() + L"'", stmt);
 				}
 			}
-			virtual void VisitVarDeclrStatement(VarDeclrStatementSyntaxNode *stmt)
+			virtual void VisitVarDeclrStatement(VarDeclrStatementSyntaxNode & stmt_node)
 			{
-				stmt->Variables.ForEach([&](RefPtr<VarDeclrStatementSyntaxNode::Variable> para)
+				auto * stmt = &stmt_node;
+				for (auto & para : stmt->Variables)
 				{
 					VariableDeclr varDeclr;
 					varDeclr.Name = para->Name;
-					if(function->Variables.IndexOf(varDeclr) != -1)
-						Error(30008, L"Variable " + para->Name + L" already defined.", para.Ptr());
+					const auto existing = std::find(function->Variables.begin(), function->Variables.end(), varDeclr);
+					if(existing != function->Variables.end())
+						Error(30008, L"Variable " + para->Name + L" already defined.", para.get());
 					
 					varDeclr.Type = stmt->Type->ToExpressionType();
 					if(varDeclr.Type.BaseType == ExpressionType::_Void)
@@ -170,33 +183,35 @@ namespace SimpleC
 					if(varDeclr.Type.IsArray && varDeclr.Type.ArrayLength <= 0)
 						Error(30025, L"Array size must larger than zero.", stmt);
 
-					function->Variables.Add(varDeclr);
+					function->Variables.push_back(varDeclr);
 					if(para->Expression != nullptr)
-						para->Expression->Accept(this);
-				});
+						para->Expression->Accept(*this);
+				}
 			}
-			virtual void VisitWhileStatement(WhileStatementSyntaxNode *stmt)
+			virtual void VisitWhileStatement(WhileStatementSyntaxNode & stmt_node)
 			{
-				loops.Add(stmt);
-				stmt->Predicate->Accept(this);
+				auto * stmt = &stmt_node;
+				loops.push_back(stmt);
+				stmt->Predicate->Accept(*this);
 				if (stmt->Predicate->Type != ExpressionType::Error && stmt->Predicate->Type != ExpressionType::Int)
 					Error(30010, L"'while': expression must evaluate to int.", stmt);
-				stmt->Statement->Accept(this);
-				loops.RemoveAt(loops.Count() - 1);
+				stmt->Statement->Accept(*this);
+				loops.pop_back();
 			}
-			virtual void VisitExpressionStatement(ExpressionStatementSyntaxNode *stmt)
+			virtual void VisitExpressionStatement(ExpressionStatementSyntaxNode & stmt_node)
 			{
-				stmt->Expression->Accept(this);
+				auto * stmt = &stmt_node;
+				stmt->Expression->Accept(*this);
 			}
-			virtual void VisitBinaryExpression(BinaryExpressionSyntaxNode *expr)
+			virtual void VisitBinaryExpression(BinaryExpressionSyntaxNode & expr_node)
 			{
-				expr->LeftExpression->Accept(this);	//’‚∏ˆthis «µ±«∞visitor,Accept∫Ø ˝ «”Ô∑®Ω⁄µ„µƒ£¨’‚—˘µ›πÈµ˜”√£¨ª·µ›πÈµΩ∞—’˚ø√ ˜±È¿˙µΩ“∂◊”Ω⁄µ„°£
-				//œÎ∆¿¥ƒ« È…œÀµ£¨¿‡–ÕºÏ≤È◊‘µ◊œÚ…œ£¨’‚∏ˆ¥Û∏≈≤ª «¿‡–ÕºÏ≤È°£	
-				//AcceptæÕ÷ª «”√¿¥ÕÍ≥…µ›πÈµ˜”√µƒ“ª∏ˆ–°∂¥∂¯“—£¨≤ª“™œÎ ≤√¥°∞Ω” ’◊¥Ã¨°±÷Æ¿‡µƒ¿¨ª¯¡À°£
-				expr->RightExpression->Accept(this);
+				auto * expr = &expr_node;
+				// Visit both sides first so their inferred expression types are available below.
+				expr->LeftExpression->Accept(*this);
+				expr->RightExpression->Accept(*this);
 				auto & leftType = expr->LeftExpression->Type;
 				auto & rightType = expr->RightExpression->Type;
-				//∏˘æ›≤Œ ˝¿‡–Õ¿¥æˆ∂®¥ÀΩ⁄µ„±æ…Ìµƒ¿‡–Õ°£’‚æÕ «◊‘µ◊œÚ…œµƒ¿‡–ÕºÏ≤È¡À°£œÎœÎ…œ√Ê,”–µ›πÈ°£
+				// Then compute the result type from the operator and operand types.
 				switch (expr->Operator)
 				{
 				case Operator::Add:
@@ -269,7 +284,7 @@ namespace SimpleC
 					break;
 				case Operator::Assign:
 					if (!leftType.IsLeftValue && leftType != ExpressionType::Error)	
-						Error(30011, L"Only variables or array elements can be assigned a value.", expr->LeftExpression.Ptr());
+						Error(30011, L"Only variables or array elements can be assigned a value.", expr->LeftExpression.get());
 					expr->LeftExpression->Access = ExpressionAccess::Write;
 					if (leftType == rightType)
 						expr->Type = leftType;
@@ -287,8 +302,9 @@ namespace SimpleC
 					leftType != ExpressionType::Error && rightType != ExpressionType::Error)
 					Error(30012, L"Type mismatch: '" + leftType.ToString() + L"' and '" + rightType.ToString() + L"'.", expr);
 			}
-			virtual void VisitConstantExpression(ConstantExpressionSyntaxNode *expr)
+			virtual void VisitConstantExpression(ConstantExpressionSyntaxNode & expr_node)
 			{
+				auto * expr = &expr_node;
 				switch (expr->ConstType)
 				{
 				case ConstantExpressionSyntaxNode::ConstantType::Int:
@@ -309,10 +325,11 @@ namespace SimpleC
 					break;
 				}
 			}
-			virtual void VisitIndexExpression(IndexExpressionSyntaxNode *expr)
+			virtual void VisitIndexExpression(IndexExpressionSyntaxNode & expr_node)
 			{
-				expr->BaseExpression->Accept(this);
-				expr->IndexExpression->Accept(this);
+				auto * expr = &expr_node;
+				expr->BaseExpression->Accept(*this);
+				expr->IndexExpression->Accept(*this);
 				if (expr->BaseExpression->Type == ExpressionType::Error)
 					expr->Type = ExpressionType::Error;
 				else
@@ -336,27 +353,28 @@ namespace SimpleC
 				expr->Type.IsLeftValue = true;
 				expr->Type.IsReference = true;
 			}
-			virtual void VisitInvokeExpression(InvokeExpressionSyntaxNode *expr)
+			virtual void VisitInvokeExpression(InvokeExpressionSyntaxNode & expr_node)
 			{
-				expr->FunctionExpr->Accept(this);
+				auto * expr = &expr_node;
+				expr->FunctionExpr->Accept(*this);
 				if (expr->FunctionExpr->Type.BaseType == ExpressionType::_Function &&
 					expr->FunctionExpr->Type.ArrayLength == 0)
 				{
 					auto & func = *(expr->FunctionExpr->Type.Func);
 					expr->Type = func.ReturnType->ToExpressionType();
-					if(expr->Arguments.Count() != func.Parameters.Count())
-						Error(30017, L"Function '" + func.Name + L"' does not take " + String(expr->Arguments.Count()) + L"arguments.", expr);
+					if(expr->Arguments.size() != func.Parameters.size())
+						Error(30017, L"Function '" + func.Name + L"' does not take " + std::to_wstring(expr->Arguments.size()) + L"arguments.", expr);
 					else
-						for(int i = 0; i < expr->Arguments.Count(); i++)
+						for(size_t i = 0; i < expr->Arguments.size(); i++)
 						{
-							expr->Arguments[i]->Accept(this);
+							expr->Arguments[i]->Accept(*this);
 							auto paraType = func.Parameters[i]->Type->ToExpressionType();
 							if(expr->Arguments[i]->Type != ExpressionType::Error &&
 								expr->Arguments[i]->Type != paraType)
 							{
 								if(!(expr->Arguments[i]->Type == ExpressionType::Int && paraType == ExpressionType::Double))
-									Error(30018, L"Argument " + String(i+1) + L" does not evaluate to parameter type '" + paraType.ToString() + L"'", expr);
-							}//÷ª◊ˆ¡À”Ô∑®ºÏ≤È
+									Error(30018, L"Argument " + std::to_wstring(i + 1) + L" does not evaluate to parameter type '" + paraType.ToString() + L"'", expr);
+							}
 						}
 				}
 				else
@@ -367,7 +385,7 @@ namespace SimpleC
 				}
 			}
 
-			String OperatorToString(Operator op)
+			std::wstring OperatorToString(Operator op)
 			{
 				switch (op)
 				{
@@ -425,9 +443,10 @@ namespace SimpleC
 					return L"ERROR";
 				}
 			}
-			virtual void VisitUnaryExpression(UnaryExpressionSyntaxNode *expr)
+			virtual void VisitUnaryExpression(UnaryExpressionSyntaxNode & expr_node)
 			{
-				expr->Expression->Accept(this);
+				auto * expr = &expr_node;
+				expr->Expression->Accept(*this);
 				
 				switch (expr->Operator)
 				{
@@ -457,22 +476,23 @@ namespace SimpleC
 				if(expr->Type == ExpressionType::Error && expr->Expression->Type != ExpressionType::Error)
 					Error(30020, L"Operator " + OperatorToString(expr->Operator) + L" can not be applied to " + expr->Expression->Type.ToString(), expr);
 			}
-			virtual void VisitVarExpression(VarExpressionSyntaxNode *expr)
+			virtual void VisitVarExpression(VarExpressionSyntaxNode & expr_node)
 			{
-				int index = function->Variables.IndexOf(expr->Variable);
-				if (index != -1)
+				auto * expr = &expr_node;
+				auto variable_iter = std::find(function->Variables.begin(), function->Variables.end(), expr->Variable);
+				if (variable_iter != function->Variables.end())
 				{
-					expr->Type = function->Variables[index].Type;
+					expr->Type = variable_iter->Type;
 					expr->Type.IsLeftValue = true;
 				}
 				else
 				{
-					index = -1;
-					for(int i = 0; i < function->Parameters.Count(); i++)
+					int index = -1;
+					for(size_t i = 0; i < function->Parameters.size(); i++)
 					{
 						if(function->Parameters[i]->Name == expr->Variable)
 						{
-							index = i;
+							index = static_cast<int>(i);
 							break;
 						}
 					}
@@ -484,18 +504,18 @@ namespace SimpleC
 					else
 					{
 						index = -1;
-						for(int i = 0; i < program->Functions.Count(); i++)
+						for(size_t i = 0; i < program->Functions.size(); i++)
 						{
 							if(program->Functions[i]->Name == expr->Variable)
 							{
-								index = i;
+								index = static_cast<int>(i);
 								break;
 							}
 						}
 						if (index != -1)
 						{
 							expr->Type.BaseType = ExpressionType::_Function;
-							expr->Type.Func = program->Functions[index].Ptr();
+							expr->Type.Func = program->Functions[index].get();
 						}
 						else
 						{
@@ -505,15 +525,15 @@ namespace SimpleC
 					}
 				}
 			}
-			//printer ¿Ô”–÷ÿ‘ÿ.
-			virtual void VisitParameter(ParameterSyntaxNode *para){}	
-			virtual void VisitType(TypeSyntaxNode *type){}
-			virtual void VisitDeclrVariable(VarDeclrStatementSyntaxNode::Variable * variable){}
+			// These node kinds carry no extra semantic checks in this visitor.
+			virtual void VisitParameter(ParameterSyntaxNode & para){}	
+			virtual void VisitType(TypeSyntaxNode & type){}
+			virtual void VisitDeclrVariable(VarDeclrStatementSyntaxNode::Variable & variable){}
 		};
 
-		SyntaxVisitor * CreateSemanticsVisitor(List<CompileError> & errors)
+		std::unique_ptr<SyntaxVisitor> CreateSemanticsVisitor(std::vector<CompileError> & errors)
 		{
-			return new SemanticsVisitor(errors);
+			return std::make_unique<SemanticsVisitor>(errors);
 		}
 	}
 }

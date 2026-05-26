@@ -1,5 +1,8 @@
 #include "X86CodeGen.h"
 #include "CodeEmitter_x86.h"
+#include <utility>
+#include <unordered_map>
+#include <vector>
 
 namespace Compiler
 {
@@ -21,7 +24,7 @@ namespace Compiler
 		class X86CodeGeneratorImpl : public X86CodeGenerator
 		{
 		private:
-			Dictionary<Variable *, int> ptrVarOffset;
+			std::unordered_map<Variable *, int> ptr_var_offset;
 			Function_x86 * curFunc;
 			int labelGenerator;
 		private:
@@ -53,8 +56,8 @@ namespace Compiler
 				FloatConstant f;
 				f.Type = FloatType::Float;
 				f.FloatValue = val;
-				curFunc->FloatConsts.Add(f);
-				return curFunc->FloatConsts.Count()-1;
+				curFunc->FloatConsts.push_back(f);
+				return static_cast<int>(curFunc->FloatConsts.size()) - 1;
 			}
 
 			int EmitFloatConst(double val)
@@ -62,8 +65,8 @@ namespace Compiler
 				FloatConstant f;
 				f.Type = FloatType::Double;
 				f.DoubleValue = val;
-				curFunc->FloatConsts.Add(f);
-				return curFunc->FloatConsts.Count()-1;
+				curFunc->FloatConsts.push_back(f);
+				return static_cast<int>(curFunc->FloatConsts.size()) - 1;
 			}
 
 			void EmitLoad(Register dest, int offset) // dest = [EBP+offset]
@@ -121,14 +124,12 @@ namespace Compiler
 					else if (op.Type == OperandType::ConstDouble)
 					{
 						int constId = EmitFloatConst(op.DoubleValue);
-						auto & ins = Emit(x86::Instruction::FLD, x86::Operand::FromMemory(MemoryOperandType::Float64, constId));
-						curFunc->FloatConstLinkPoints.Add((int*)&ins.Op1.Value);
+						Emit(x86::Instruction::FLD, x86::Operand::FromMemory(MemoryOperandType::Float64, constId));
 					}
 					else if (op.Type == OperandType::ConstFloat)
 					{
 						int constId = EmitFloatConst(op.FloatValue);
-						auto & ins = Emit(x86::Instruction::FLD, x86::Operand::FromMemory(MemoryOperandType::Float64, constId));
-						curFunc->FloatConstLinkPoints.Add((int*)&ins.Op1.Value);
+						Emit(x86::Instruction::FLD, x86::Operand::FromMemory(MemoryOperandType::Float32, constId));
 					}
 				}
 				return x86::Operand(Register::None);
@@ -147,6 +148,8 @@ namespace Compiler
 						memType = MemoryOperandType::Float32;
 					else if (op.Var->Type == DataType::Double)
 						memType = MemoryOperandType::Float64; 
+					else
+						throw InvalidProgramException(L"Unsupported operand data type.");
 					return x86::Operand::FromMemory(memType, Register::EBP, op.Var->Location.Value);
 				}
 				if (op.Type == OperandType::ConstDouble || op.Type == OperandType::ConstFloat)
@@ -161,8 +164,114 @@ namespace Compiler
 				return x86::Operand(Register::None);
 			}
 
+			static bool IsFloatingDataType(DataType type)
+			{
+				return type == DataType::Float || type == DataType::Double;
+			}
+
+			x86::Operand GetFloatMemoryOp(Operand & op)
+			{
+				if (!op.IsVariable())
+					throw InvalidProgramException(L"Floating-point result must be stored in a variable.");
+				if (op.Var->Location.Type == MemoryLocationType::Register)
+					throw InvalidProgramException(L"Floating-point variables cannot use general registers.");
+				if (op.Var->Type == DataType::Double)
+					return x86::Operand::FromMemory(MemoryOperandType::Float64, Register::EBP, op.Var->Location.Value);
+				if (op.Var->Type == DataType::Float)
+					return x86::Operand::FromMemory(MemoryOperandType::Float32, Register::EBP, op.Var->Location.Value);
+				throw InvalidProgramException(L"Unsupported floating-point operand.");
+			}
+
+			void LoadFloatOp(Operand & op)
+			{
+				if (op.IsVariable())
+				{
+					if (op.Var->Location.Type == MemoryLocationType::Register)
+						throw InvalidProgramException(L"Floating-point variables cannot use general registers.");
+					if (op.Var->Type == DataType::Double)
+					{
+						Emit(x86::Instruction::FLD, x86::Operand::FromMemory(MemoryOperandType::Float64, Register::EBP, op.Var->Location.Value));
+						return;
+					}
+					if (op.Var->Type == DataType::Float)
+					{
+						Emit(x86::Instruction::FLD, x86::Operand::FromMemory(MemoryOperandType::Float32, Register::EBP, op.Var->Location.Value));
+						return;
+					}
+				}
+				else if (op.Type == OperandType::ConstDouble)
+				{
+					int constId = EmitFloatConst(op.DoubleValue);
+					Emit(x86::Instruction::FLD, x86::Operand::FromMemory(MemoryOperandType::Float64, constId));
+					return;
+				}
+				else if (op.Type == OperandType::ConstFloat)
+				{
+					int constId = EmitFloatConst(op.FloatValue);
+					Emit(x86::Instruction::FLD, x86::Operand::FromMemory(MemoryOperandType::Float32, constId));
+					return;
+				}
+				throw InvalidProgramException(L"Unsupported floating-point operand.");
+			}
+
+			void LoadIntAsFloat(Operand & op)
+			{
+				auto sourceOp = GetOp(op);
+				if (sourceOp.Type == x86::OperandType::Memory)
+				{
+					if (sourceOp.MemoryType != MemoryOperandType::Int16 &&
+						sourceOp.MemoryType != MemoryOperandType::Int32 &&
+						sourceOp.MemoryType != MemoryOperandType::Int64)
+						throw InvalidProgramException(L"Unsupported integer conversion operand.");
+					Emit(x86::Instruction::FILD, sourceOp);
+					return;
+				}
+				Emit(x86::Instruction::PUSH, sourceOp);
+				Emit(x86::Instruction::FILD, x86::Operand::FromMemory(MemoryOperandType::Int32, Register::ESP, 0));
+				Emit(x86::Instruction::ADD, x86::Operand(Register::ESP), x86::Operand((unsigned int)4));
+			}
+
+			void StoreFloatResult(Operand & op)
+			{
+				Emit(x86::Instruction::FSTP, GetFloatMemoryOp(op));
+			}
+
+			void EmitFloatBinary(Intermediate::Instruction & instr, x86::Instruction::InstructionName instrName)
+			{
+				if (IsFloatingDataType(instr.Operands[0].GetDataType()))
+					LoadFloatOp(instr.Operands[0]);
+				else
+					LoadIntAsFloat(instr.Operands[0]);
+				if (IsFloatingDataType(instr.Operands[1].GetDataType()))
+					LoadFloatOp(instr.Operands[1]);
+				else
+					LoadIntAsFloat(instr.Operands[1]);
+				Emit(instrName);
+				StoreFloatResult(instr.LeftOperand);
+			}
+
+			void EmitI2D(Intermediate::Instruction & instr)
+			{
+				LoadIntAsFloat(instr.Operands[0]);
+				StoreFloatResult(instr.LeftOperand);
+			}
+
 			void EmitMov(Intermediate::Instruction & instr)
 			{
+				auto leftType = instr.LeftOperand.GetDataType();
+				auto rightType = instr.Operands[0].GetDataType();
+				if (IsFloatingDataType(leftType))
+				{
+					if (IsFloatingDataType(rightType))
+						LoadFloatOp(instr.Operands[0]);
+					else
+						LoadIntAsFloat(instr.Operands[0]);
+					StoreFloatResult(instr.LeftOperand);
+					return;
+				}
+				if (IsFloatingDataType(rightType))
+					throw InvalidProgramException(L"Unsupported floating-point to integer move.");
+
 				auto op1 = GetOp(instr.LeftOperand);
 				if (!instr.Operands[0].IsIntegral())
 				{
@@ -400,8 +509,25 @@ namespace Compiler
 				auto op1 = LoadOp(instr.Operands[0]);
 				Emit(x86::Instruction::TEST, op1, x86::Operand(0xFFFFFFFFu));
 				Emit(x86::Instruction::XOR, x86::Operand(Register::EDX), x86::Operand(Register::EDX));
-				Emit(x86::Instruction::SETNZ, x86::Operand(Register::EDX));
+				Emit(x86::Instruction::SETZ, x86::Operand(Register::EDX, 8));
 				StoreResult(Register::EDX, instr.LeftOperand);
+			}
+
+			void EmitIntUnary(Intermediate::Instruction & instr, x86::Instruction::InstructionName instrName)
+			{
+				if (instr.Operands[0].GetDataType() != DataType::Int)
+					throw InvalidProgramException(L"Unsupported unary operand type.");
+
+				auto sourceOp = GetOp(instr.Operands[0]);
+				if (sourceOp != x86::Operand(Register::EDX))
+					Emit(x86::Instruction::MOV, x86::Operand(Register::EDX), sourceOp);
+				Emit(instrName, x86::Operand(Register::EDX));
+				StoreResult(Register::EDX, instr.LeftOperand);
+			}
+
+			void EmitNeg(Intermediate::Instruction & instr)
+			{
+				EmitIntUnary(instr, x86::Instruction::NEG);
 			}
 
 			void EmitBitAnd(Intermediate::Instruction & instr)
@@ -421,7 +547,7 @@ namespace Compiler
 
 			void EmitBitNot(Intermediate::Instruction & instr)
 			{
-				Emit(x86::Instruction::NOT, LoadOp(instr.Operands[0]));
+				EmitIntUnary(instr, x86::Instruction::NOT);
 			}
 
 			void EmitCall(Intermediate::Instruction & instr)
@@ -431,12 +557,11 @@ namespace Compiler
 				Emit(x86::Instruction::PUSH, x86::Operand(Register::ECX));
 				//Emit(x86::Instruction::PUSH, x86::Operand(Register::EDX));
 				// push parameters
-				for (int i = instr.Operands.Count()-1; i>=1; i--)
+				for (size_t i = instr.Operands.size(); i-- > 1;)
 				{
 					Emit(x86::Instruction::PUSH, GetOp(instr.Operands[i]));
 				}
-				auto & ins = Emit(x86::Instruction::CALL, x86::Operand((unsigned int)instr.Operands[0].IntValue));
-				curFunc->FunctionLinkPoints.Add((int*)&ins.Op1.Value);
+				Emit(x86::Instruction::CALL, x86::Operand((unsigned int)instr.Operands[0].IntValue));
 				// restore register
 				//Emit(x86::Instruction::POP, x86::Operand(Register::EDX));
 				Emit(x86::Instruction::POP, x86::Operand(Register::ECX));
@@ -445,11 +570,18 @@ namespace Compiler
 
 			void EmitRet(Intermediate::Instruction & instr)
 			{
-				if (instr.Operands.Count() == 2)
+				if (instr.Operands.size() == 2)
 				{
-					auto op = GetOp(instr.Operands[1]);
-					if (op != x86::Operand(Register::EAX))
-						Emit(x86::Instruction::MOV, x86::Operand(Register::EAX), GetOp(instr.Operands[1]));
+					if (IsFloatingDataType(instr.Operands[1].GetDataType()))
+					{
+						LoadFloatOp(instr.Operands[1]);
+					}
+					else
+					{
+						auto op = GetOp(instr.Operands[1]);
+						if (op != x86::Operand(Register::EAX))
+							Emit(x86::Instruction::MOV, x86::Operand(Register::EAX), op);
+					}
 				}
 				Emit(x86::Instruction::POP, x86::Operand(Register::EBX));
 				Emit(x86::Instruction::POP, x86::Operand(Register::EDI));
@@ -460,13 +592,13 @@ namespace Compiler
 				Emit(x86::Instruction::RET, x86::Operand((unsigned short)instr.Operands[0].IntValue));
 			}
 
-			void EmitJump(Intermediate::Instruction & instr, List<LabelPoint> & labels)
+			void EmitJump(Intermediate::Instruction & instr, std::vector<LabelPoint> & labels)
 			{
 				auto & ins = Emit(x86::Instruction::JMP, x86::Operand((unsigned int)instr.Operands[0].IntValue));
-				labels.Add(LabelPoint(instr.Operands[0].IntValue, (int*)&ins.Op1.Value));
+				labels.push_back(LabelPoint(instr.Operands[0].IntValue, (int*)&ins.Op1.Value));
 			}
 
-			void EmitBranch(Intermediate::Instruction & instr, List<LabelPoint> & labels)
+			void EmitBranch(Intermediate::Instruction & instr, std::vector<LabelPoint> & labels)
 			{
 				int branchType = instr.Operands[2].IntValue;
 				if (branchType < 2)
@@ -493,7 +625,7 @@ namespace Compiler
 					ins = &Emit(x86::Instruction::JNE, x86::Operand((unsigned int)instr.Operands[1].IntValue));
 				else
 					throw InvalidProgramException("unkown branch type");
-				labels.Add(LabelPoint(instr.Operands[1].IntValue, (int*)&ins->Op1.Value));
+				labels.push_back(LabelPoint(instr.Operands[1].IntValue, (int*)&ins->Op1.Value));
 			}
 
 			void EmitLoad(Intermediate::Instruction & instr)
@@ -580,7 +712,7 @@ namespace Compiler
 
 			void EmitLea(Intermediate::Instruction & instr)
 			{
-				ptrVarOffset[instr.LeftOperand.Var] = instr.Operands[0].Var->Location.Value;
+				ptr_var_offset[instr.LeftOperand.Var] = instr.Operands[0].Var->Location.Value;
 				auto leftOp = GetOp(instr.LeftOperand);
 				if (leftOp.Type == x86::OperandType::Register)
 					Emit(x86::Instruction::LEA, leftOp, x86::Operand::FromMemory(MemoryOperandType::Int32, Register::EBP, instr.Operands[0].Var->Location.Value));
@@ -612,7 +744,11 @@ namespace Compiler
 					Emit(x86::Instruction::ADD, x86::Operand(Register::EAX), GetOp(instr.Operands[0]));
 					op1 = x86::Operand(Register::EAX);
 				}
-				if (!ptrVarOffset.TryGetValue(instr.Operands[0].Var, displacement))
+				if (auto iter = ptr_var_offset.find(instr.Operands[0].Var); iter != ptr_var_offset.end())
+				{
+					displacement = iter->second;
+				}
+				else
 				{
 					base = Register::EDX;
 					Emit(x86::Instruction::MOV, Register::EDX, GetOp(instr.Operands[0]));
@@ -625,11 +761,11 @@ namespace Compiler
 			Function_x86 GenerateFunction(Function & function)
 			{
 				Function_x86 rs;
-				List<LabelPoint> labels;
-				List<int> labelMap;
+				std::vector<LabelPoint> labels;
+				std::vector<int> labelMap;
 				rs.Name = function.Name;
 				curFunc = &rs;
-				labelMap.Reserve(function.Instructions.Count());
+				labelMap.reserve(function.Instructions.Count());
 				Emit(x86::Instruction::PUSH, x86::Operand(Register::EBP));
 				Emit(x86::Instruction::MOV, x86::Operand(Register::EBP), x86::Operand(Register::ESP));
 				if (function.VariableSize > 0)
@@ -639,19 +775,29 @@ namespace Compiler
 				Emit(x86::Instruction::PUSH, x86::Operand(Register::EBX));
 				for (auto & instr : function.Instructions)
 				{
-					labelMap.Add(labelGenerator);
+					labelMap.push_back(labelGenerator);
 					if (instr.Func == 0)
 						EmitMov(instr);
 					else if (instr.Func == Operation::Add)
 						EmitAdd(instr);
+					else if (instr.Func == Operation::FAdd)
+						EmitFloatBinary(instr, x86::Instruction::FADDP);
 					else if (instr.Func == Operation::Sub)
 						EmitSub(instr);
+					else if (instr.Func == Operation::FSub)
+						EmitFloatBinary(instr, x86::Instruction::FSUBP);
 					else if (instr.Func == Operation::Mul)
 						EmitMul(instr);
+					else if (instr.Func == Operation::FMul)
+						EmitFloatBinary(instr, x86::Instruction::FMULP);
 					else if (instr.Func == Operation::Div)
 						EmitDiv(instr);
+					else if (instr.Func == Operation::FDiv)
+						EmitFloatBinary(instr, x86::Instruction::FDIVP);
 					else if (instr.Func == Operation::Mod)
 						EmitMod(instr);
+					else if (instr.Func == Operation::I2D)
+						EmitI2D(instr);
 					else if (instr.Func == Operation::Lsh)
 						EmitLsh(instr);
 					else if (instr.Func == Operation::Rsh)
@@ -666,6 +812,8 @@ namespace Compiler
 						EmitAnd(instr);
 					else if (instr.Func == Operation::Or)
 						EmitOr(instr);
+					else if (instr.Func == Operation::Neg)
+						EmitNeg(instr);
 					else if (instr.Func == Operation::Not)
 						EmitNot(instr);
 					else if (instr.Func == Operation::BitAnd)
@@ -692,6 +840,8 @@ namespace Compiler
 						EmitSInc(instr);
 					else if (instr.Func == Operation::Lea)
 						EmitLea(instr);
+					else
+						throw InvalidProgramException(L"Unsupported x86 operation.");
 				}
 				// fill in jump labels
 				for (auto label : labels)
@@ -811,19 +961,21 @@ namespace Compiler
 			}
 			void PeepHoleOptimize(Function_x86 & func)
 			{
-				for (auto instrNode = func.Code.begin(); instrNode != func.Code.end(); ++instrNode)
+				for (auto instrNode = FirstInstructionNode(func.Code); instrNode != nullptr; )
 				{
-					auto &instr = instrNode.Current->Value;
+					auto nextNode = NextInstructionNode(instrNode);
+					auto &instr = GetInstruction(instrNode);
 					x86::Instruction * prevInstr = 0;
 					x86::Instruction * nextInstr = 0;
-					if (instrNode.Current->GetPrevious())
-						prevInstr = &instrNode.Current->GetPrevious()->Value;
-					if (instrNode.Current->GetNext())
-						nextInstr = &instrNode.Current->GetNext()->Value;
+					if (auto prevNode = PreviousInstructionNode(instrNode))
+						prevInstr = &GetInstruction(prevNode);
+					if (nextNode)
+						nextInstr = &GetInstruction(nextNode);
 					if (instr.Name == x86::Instruction::MOV &&
 						instr.Op1 == instr.Op2)
 					{
-						instrNode.Current->Delete();
+						RemoveInstruction(instrNode);
+						instrNode = nextNode;
 						continue;
 					}
 					if (instr.Name == x86::Instruction::MOV &&
@@ -840,7 +992,8 @@ namespace Compiler
 						(nextInstr->Name == x86::Instruction::JE || nextInstr->Name == x86::Instruction::JNE ||
 						nextInstr->Name == x86::Instruction::JZ || nextInstr->Name == x86::Instruction::JNZ))
 					{
-						instrNode.Current->Delete();
+						RemoveInstruction(instrNode);
+						instrNode = nextNode;
 						continue;
 					}
 					if (prevInstr && nextInstr && prevInstr->IsJump() && prevInstr->Op1.Value == nextInstr->Label
@@ -851,10 +1004,12 @@ namespace Compiler
 						{
 							prevInstr->Op1 = instr.Op1;
 							prevInstr->Name = oppo;
-							instrNode.Current->Delete();
+							RemoveInstruction(instrNode);
 						}
+						instrNode = nextNode;
 						continue;
 					}
+					instrNode = nextNode;
 				}
 			}
 		public:
@@ -865,22 +1020,20 @@ namespace Compiler
 			virtual Program_x86 GenerateCode(Program * program) override
 			{
 				Program_x86 rs;
-				program->Dump(L"d:\\programdump.asm");	
-				//这里可以摸到命令行参数的位置，把自己塞到那里吧，lyt的写法很好！
-				ptrVarOffset.Clear();
+				ptr_var_offset.clear();
 				for (auto & func : program->Functions)
 				{
 					auto compiledFunc = GenerateFunction(func);
 					PeepHoleOptimize(compiledFunc);
-					rs.Functions.Add(compiledFunc);
+					rs.Functions.push_back(std::move(compiledFunc));
 				}
 				return rs;
 			}
 		};
 
-		X86CodeGenerator * CreateX86CodeGenerator()
+		std::unique_ptr<X86CodeGenerator> CreateX86CodeGenerator()
 		{
-			return new X86CodeGeneratorImpl();
+			return std::make_unique<X86CodeGeneratorImpl>();
 		}
 	}
 }

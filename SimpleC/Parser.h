@@ -3,6 +3,9 @@
 
 #include "Lexer.h"
 #include "Syntax.h"
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace SimpleC
 {
@@ -14,37 +17,41 @@ namespace SimpleC
 		{
 		private:
 			int pos;
-			List<Token>& tokens;
-			List<CompileError>& errors;
-			String fileName;
+			std::vector<Token>& tokens;
+			std::vector<CompileError>& errors;
+			std::wstring fileName;
+			int TokenCount() const
+			{
+				return static_cast<int>(tokens.size());
+			}
 		public:
-			Parser(List<Token>& _tokens, List<CompileError>& _errors, String _fileName)
-				:tokens(_tokens), errors(_errors), pos(0), fileName(_fileName)
+			Parser(std::vector<Token>& _tokens, std::vector<CompileError>& _errors, std::wstring _fileName)
+				:tokens(_tokens), errors(_errors), pos(0), fileName(std::move(_fileName))
 			{}
-			RefPtr<ProgramSyntaxNode> Parse();	//一个返回该程序根节点的parse函数.
+			std::shared_ptr<ProgramSyntaxNode> Parse();	//涓�涓繑鍥炶绋嬪簭鏍硅妭鐐圭殑parse鍑芥暟.
 		private:
 			Token& ReadToken(TokenType type);
 			bool LookAheadToken(TokenType type);
 			Token& ReadTypeKeyword();
 			bool IsTypeKeyword();
-			String TokenTypeToString(TokenType type);
-			RefPtr<ProgramSyntaxNode> ParseProgram();
-			RefPtr<FunctionSyntaxNode> ParseFunction();
-			RefPtr<StatementSyntaxNode>			ParseStatement();
-			RefPtr<BlockStatementSyntaxNode>		ParseBlockStatement();
-			RefPtr<VarDeclrStatementSyntaxNode>	ParseVarDeclrStatement();
-			RefPtr<IfStatementSyntaxNode>			ParseIfStatement();
-			RefPtr<ForStatementSyntaxNode>		ParseForStatement();
-			RefPtr<WhileStatementSyntaxNode>		ParseWhileStatement();
-			RefPtr<DoWhileStatementSyntaxNode>	ParseDoWhileStatement();
-			RefPtr<BreakStatementSyntaxNode>		ParseBreakStatement();
-			RefPtr<ContinueStatementSyntaxNode>	ParseContinueStatement();
-			RefPtr<ReturnStatementSyntaxNode>		ParseReturnStatement();
-			RefPtr<ExpressionStatementSyntaxNode> ParseExpressionStatement();
-			RefPtr<ExpressionSyntaxNode>			ParseExpression(int level = 0);
-			RefPtr<ExpressionSyntaxNode>		ParseLeafExpression();
-			RefPtr<ParameterSyntaxNode> ParseParameter();
-			RefPtr<TypeSyntaxNode> ParseType();
+			std::wstring TokenTypeToString(TokenType type);
+			std::shared_ptr<ProgramSyntaxNode> ParseProgram();
+			std::shared_ptr<FunctionSyntaxNode> ParseFunction();
+			std::shared_ptr<StatementSyntaxNode>			ParseStatement();
+			std::shared_ptr<BlockStatementSyntaxNode>		ParseBlockStatement();
+			std::shared_ptr<VarDeclrStatementSyntaxNode>	ParseVarDeclrStatement();
+			std::shared_ptr<IfStatementSyntaxNode>			ParseIfStatement();
+			std::shared_ptr<ForStatementSyntaxNode>		ParseForStatement();
+			std::shared_ptr<WhileStatementSyntaxNode>		ParseWhileStatement();
+			std::shared_ptr<DoWhileStatementSyntaxNode>	ParseDoWhileStatement();
+			std::shared_ptr<BreakStatementSyntaxNode>		ParseBreakStatement();
+			std::shared_ptr<ContinueStatementSyntaxNode>	ParseContinueStatement();
+			std::shared_ptr<ReturnStatementSyntaxNode>		ParseReturnStatement();
+			std::shared_ptr<ExpressionStatementSyntaxNode> ParseExpressionStatement();
+			std::shared_ptr<ExpressionSyntaxNode>			ParseExpression(int level = 0);
+			std::shared_ptr<ExpressionSyntaxNode>		ParseLeafExpression();
+			std::shared_ptr<ParameterSyntaxNode> ParseParameter();
+			std::shared_ptr<TypeSyntaxNode> ParseType();
 		};
 	}
 }

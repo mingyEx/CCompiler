@@ -1,5 +1,9 @@
 #ifndef CORE_LIB_DICTIONARY_H
 #define CORE_LIB_DICTIONARY_H
+
+#include <cstdint>
+#include <utility>
+
 #include "List.h"
 #include "Common.h"
 #include "IntSet.h"
@@ -17,9 +21,9 @@ namespace CoreLib
 		{
 		public:
 			template<typename TKey>
-			static int GetHashCode(TKey& key)
+			static int GetHashCode(const TKey& key)
 			{
-				return (int)key;
+				return static_cast<int>(key);
 			}
 		};
 		template<>
@@ -27,7 +31,7 @@ namespace CoreLib
 		{
 		public:
 			template<typename TKey>
-			static int GetHashCode(TKey& key)
+			static int GetHashCode(const TKey& key)
 			{
 				return key.GetHashCode();
 			}
@@ -41,9 +45,10 @@ namespace CoreLib
 		{
 		public:
 			template<typename TKey>
-			static int GetHashCode(TKey& key)
+			static int GetHashCode(const TKey& key)
 			{
-				return ((int)key) / sizeof(typename std::remove_pointer<TKey>::type);
+				using Pointee = typename std::remove_pointer<TKey>::type;
+				return static_cast<int>(reinterpret_cast<std::uintptr_t>(key) / sizeof(Pointee));
 			}
 		};
 		template<>
@@ -51,7 +56,7 @@ namespace CoreLib
 		{
 		public:
 			template<typename TKey>
-			static int GetHashCode(TKey& key)
+			static int GetHashCode(const TKey& key)
 			{
 				return Hash <std::is_integral<TKey>::value || std::is_enum<TKey>::value> ::GetHashCode(key);
 			}
@@ -63,15 +68,9 @@ namespace CoreLib
 			return PointerHash<std::is_pointer<TKey>::value>::GetHashCode(key);
 		}
 
-		template<typename TKey>
-		int GetHashCode(TKey& key)
-		{
-			return PointerHash<std::is_pointer<TKey>::value>::GetHashCode(key);//定义了non-const版本.
-		}
-
 		inline int GetHashCode(double key)
 		{
-			return FloatAsInt((float)key);
+			return FloatAsInt(static_cast<float>(key));
 		}
 		inline int GetHashCode(float key)
 		{
@@ -93,12 +92,12 @@ namespace CoreLib
 			}
 			KeyValuePair(TKey&& key, TValue&& value)
 			{
-				Key = _Move(key);
-				Value = _Move(value);
+				Key = std::move(key);
+				Value = std::move(value);
 			}
 			KeyValuePair(TKey&& key, const TValue& value)
 			{
-				Key = _Move(key);
+				Key = std::move(key);
 				Value = value;
 			}
 			KeyValuePair(const KeyValuePair<TKey, TValue>& _that)
@@ -106,17 +105,29 @@ namespace CoreLib
 				Key = _that.Key;
 				Value = _that.Value;
 			}
+			KeyValuePair& operator=(const KeyValuePair<TKey, TValue>& that)
+			{
+				if (this != &that)
+				{
+					Key = that.Key;
+					Value = that.Value;
+				}
+				return *this;
+			}
 			KeyValuePair(KeyValuePair<TKey, TValue>&& _that)
 			{
-				operator=(_Move(_that));
+				operator=(std::move(_that));
 			}
 			KeyValuePair& operator=(KeyValuePair<TKey, TValue>&& that)
 			{
-				Key = _Move(that.Key);
-				Value = _Move(that.Value);
+				if (this != &that)
+				{
+					Key = std::move(that.Key);
+					Value = std::move(that.Value);
+				}
 				return *this;
 			}
-			int GetHashCode()
+			int GetHashCode() const
 			{
 				return Hash<TKey>::GetHashCode(Key);	//这个调用的就是最大的那个了。
 			}
@@ -185,13 +196,13 @@ namespace CoreLib
 				}
 
 			};
-			inline int GetHashPos(TKey& key) const
+			inline int GetHashPos(const TKey& key) const
 			{
 				return GetHashCode(key) & bucketSizeMinusOne;
 			}
 			FindPositionResult FindPosition(const TKey& key) const
 			{
-				int hashPos = GetHashPos((TKey&)key);
+				int hashPos = GetHashPos(key);
 				int insertPos = -1;
 				int numProbes = 0;
 				while (numProbes <= bucketSizeMinusOne)
@@ -219,14 +230,14 @@ namespace CoreLib
 			}
 			TValue& _Insert(KeyValuePair<TKey, TValue>&& kvPair, int pos)
 			{
-				hashMap[pos] = _Move(kvPair);
+				hashMap[pos] = std::move(kvPair);
 				SetEmpty(pos, false);
 				SetDeleted(pos, false);	//放置然后设置对应的标志位
 				return hashMap[pos].Value;
 			}
 			void Rehash()
 			{
-				if (bucketSizeMinusOne == -1 || _count / (float)bucketSizeMinusOne >= MaxLoadFactor)
+				if (bucketSizeMinusOne == -1 || _count / static_cast<float>(bucketSizeMinusOne) >= MaxLoadFactor)
 				{
 					int newSize = (bucketSizeMinusOne + 1) * 2;
 					if (newSize == 0)
@@ -239,10 +250,10 @@ namespace CoreLib
 					{
 						for (auto& kvPair : *this)
 						{
-							newDict.Add(_Move(kvPair));
+							newDict.Add(std::move(kvPair));
 						}
 					}
-					*this = _Move(newDict);
+					*this = std::move(newDict);
 				}
 			}
 
@@ -255,7 +266,7 @@ namespace CoreLib
 				else if (pos.InsertionPosition != -1)
 				{
 					_count++;
-					_Insert(_Move(kvPair), pos.InsertionPosition);
+					_Insert(std::move(kvPair), pos.InsertionPosition);
 					return true;
 				}
 				else
@@ -263,7 +274,7 @@ namespace CoreLib
 			}
 			void Add(KeyValuePair<TKey, TValue>&& kvPair)
 			{
-				if (!AddIfNotExists(_Move(kvPair)))
+				if (!AddIfNotExists(std::move(kvPair)))
 					throw KeyExistsException(L"The key already exists in Dictionary.");
 			}
 			TValue& Set(KeyValuePair<TKey, TValue>&& kvPair)
@@ -271,11 +282,11 @@ namespace CoreLib
 				Rehash();
 				auto pos = FindPosition(kvPair.Key);
 				if (pos.ObjectPosition != -1)
-					return _Insert(_Move(kvPair), pos.ObjectPosition);
+					return _Insert(std::move(kvPair), pos.ObjectPosition);
 				else if (pos.InsertionPosition != -1)
 				{
 					_count++;
-					return _Insert(_Move(kvPair), pos.InsertionPosition);
+					return _Insert(std::move(kvPair), pos.InsertionPosition);
 				}
 				else
 					throw InvalidOperationException(L"Inconsistent find result returned. This is a bug in Dictionary implementation.");
@@ -313,11 +324,11 @@ namespace CoreLib
 					operator++();			//啊，我想起来了，这是前置与后置的区别！
 					return rs;				//++i 运算符重载时不需要加形参,i++ 运算符重载时需要加形参.
 				}							//i++ 的版本，为返回的是拷贝的临时变量，所以不能是左值. 那么，要给这里添加const限定吗？
-				bool operator != (const Iterator& _that)
+				bool operator != (const Iterator& _that) const
 				{
 					return pos != _that.pos || dict != _that.dict;
 				}
-				bool operator == (const Iterator& _that)
+				bool operator == (const Iterator& _that) const
 				{
 					return pos == _that.pos && dict == _that.dict;
 				}
@@ -328,7 +339,7 @@ namespace CoreLib
 				}
 				Iterator()
 				{
-					this->dict = 0;
+					this->dict = nullptr;
 					this->pos = 0;
 				}
 			};
@@ -356,7 +367,7 @@ namespace CoreLib
 			}
 			void Add(TKey&& key, TValue&& value)
 			{
-				Add(KeyValuePair<TKey, TValue>(_Move(key), _Move(value)));
+				Add(KeyValuePair<TKey, TValue>(std::move(key), std::move(value)));
 			}
 			bool AddIfNotExists(const TKey& key, const TValue& value)
 			{
@@ -364,7 +375,7 @@ namespace CoreLib
 			}
 			bool AddIfNotExists(TKey&& key, TValue&& value)
 			{
-				return AddIfNotExists(KeyValuePair<TKey, TValue>(_Move(key), _Move(value)));
+				return AddIfNotExists(KeyValuePair<TKey, TValue>(std::move(key), std::move(value)));
 			}
 			void Remove(const TKey& key)
 			{
@@ -413,7 +424,7 @@ namespace CoreLib
 				ItemProxy(TKey&& _key, const Dictionary<TKey, TValue>* _dict)
 				{
 					this->dict = _dict;
-					this->key = _Move(_key);
+					this->key = std::move(_key);
 				}
 				TValue& GetValue() const
 				{
@@ -431,11 +442,11 @@ namespace CoreLib
 				}
 				TValue& operator = (const TValue& val)
 				{
-					return ((Dictionary<TKey, TValue>*)dict)->Set(KeyValuePair<TKey, TValue>(_Move(key), val));
+					return const_cast<Dictionary<TKey, TValue>*>(dict)->Set(KeyValuePair<TKey, TValue>(std::move(key), val));
 				}
 				TValue& operator = (TValue&& val)
 				{
-					return ((Dictionary<TKey, TValue>*)dict)->Set(KeyValuePair<TKey, TValue>(_Move(key), _Move(val)));
+					return const_cast<Dictionary<TKey, TValue>*>(dict)->Set(KeyValuePair<TKey, TValue>(std::move(key), std::move(val)));
 				}
 			};
 			ItemProxy operator [](const TKey& key) const
@@ -444,7 +455,7 @@ namespace CoreLib
 			}
 			ItemProxy operator [](TKey&& key) const
 			{
-				return ItemProxy(_Move(key), this);
+				return ItemProxy(std::move(key), this);
 			}
 			int Count() const
 			{
@@ -455,20 +466,22 @@ namespace CoreLib
 			{
 				bucketSizeMinusOne = -1;
 				_count = 0;
-				hashMap = 0;
+				hashMap = nullptr;
 			}
 			Dictionary(const Dictionary<TKey, TValue>& other)
-				: hashMap(0), _count(0), bucketSizeMinusOne(-1)
+				: hashMap(nullptr), _count(0), bucketSizeMinusOne(-1)
 			{
 				*this = other;
 			}
 			Dictionary(Dictionary<TKey, TValue>&& other)
-				: hashMap(0), _count(0), bucketSizeMinusOne(-1)
+				: hashMap(nullptr), _count(0), bucketSizeMinusOne(-1)
 			{
-				*this = (_Move(other));
+				*this = std::move(other);
 			}
 			Dictionary<TKey, TValue>& operator = (const Dictionary<TKey, TValue>& other)
 			{
+				if (this == &other)
+					return *this;
 				Free();
 				bucketSizeMinusOne = other.bucketSizeMinusOne;
 				_count = other._count;
@@ -480,12 +493,14 @@ namespace CoreLib
 			}
 			Dictionary<TKey, TValue>& operator = (Dictionary<TKey, TValue>&& other)
 			{
+				if (this == &other)
+					return *this;
 				Free();
 				bucketSizeMinusOne = other.bucketSizeMinusOne;
 				_count = other._count;
 				hashMap = other.hashMap;
-				marks = _Move(other.marks);
-				other.hashMap = 0;
+				marks = std::move(other.marks);
+				other.hashMap = nullptr;
 				other._count = 0;
 				other.bucketSizeMinusOne = -1;
 				return *this;
@@ -512,16 +527,16 @@ namespace CoreLib
 			}
 			HashSet(HashSet&& set)
 			{
-				operator=(_Move(set));
+				operator=(std::move(set));
 			}
 			HashSet& operator = (const HashSet& set)
 			{
-				dict = set;
+				dict = set.dict;
 				return *this;
 			}
 			HashSet& operator = (HashSet&& set)
 			{
-				dict = _Move(set.dict);
+				dict = std::move(set.dict);
 				return *this;
 			}
 		public:
@@ -549,11 +564,11 @@ namespace CoreLib
 					operator++();
 					return rs;
 				}
-				bool operator != (const Iterator& _that)
+				bool operator != (const Iterator& _that) const
 				{
 					return iter != _that.iter;
 				}
-				bool operator == (const Iterator& _that)
+				bool operator == (const Iterator& _that) const
 				{
 					return iter == _that.iter;
 				}
@@ -562,11 +577,11 @@ namespace CoreLib
 					this->iter = _iter;
 				}
 			};
-			Iterator begin()
+			Iterator begin() const
 			{
 				return Iterator(dict.begin());
 			}
-			Iterator end()
+			Iterator end() const
 			{
 				return Iterator(dict.end());
 			}
@@ -585,13 +600,13 @@ namespace CoreLib
 			}
 			bool Add(T&& obj)
 			{
-				return dict.AddIfNotExists(_Move(obj), _DummyClass());
+				return dict.AddIfNotExists(std::move(obj), _DummyClass());
 			}
 			void Remove(const T& obj)
 			{
 				dict.Remove(obj);
 			}
-			bool Contains(const T& obj)
+			bool Contains(const T& obj) const
 			{
 				return dict.ContainsKey(obj);
 			}

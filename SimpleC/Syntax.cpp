@@ -1,5 +1,6 @@
 #include "Syntax.h"
 #include "SyntaxVisitors.h"
+#include <string>
 
 namespace SimpleC
 {
@@ -11,37 +12,37 @@ namespace SimpleC
 		ExpressionType ExpressionType::String(ExpressionType::_String);
 		ExpressionType ExpressionType::Void(ExpressionType::_Void);
 		ExpressionType ExpressionType::Error(ExpressionType::_Error);
-		CoreLib::Basic::String ExpressionType::ToString()
+		std::wstring ExpressionType::ToString()
 		{
-			CoreLib::Basic::StringBuilder res;
+			std::wstring res;
 
 			switch (BaseType)
 			{
 			case SimpleC::Compiler::ExpressionType::_Int:
-				res.Append(L"int");
+				res += L"int";
 				break;
 			case SimpleC::Compiler::ExpressionType::_Double:
-				res.Append(L"double");
+				res += L"double";
 				break;
 			case SimpleC::Compiler::ExpressionType::_Char:
-				res.Append(L"char");
+				res += L"char";
 				break;
 			case SimpleC::Compiler::ExpressionType::_String:
-				res.Append(L"string");
+				res += L"string";
 				break;
 			case SimpleC::Compiler::ExpressionType::_Function:
-				res.Append(L"(");
-				for (int i = 0; i < Func->Parameters.Count(); i++)
+				res += L"(";
+				for (size_t i = 0; i < Func->Parameters.size(); i++)
 				{
 					if (i > 0)
-						res.Append(L",");
-					res.Append(Func->Parameters[i]->Type->ToExpressionType().ToString());
+						res += L",";
+					res += Func->Parameters[i]->Type->ToExpressionType().ToString();
 				}
-				res.Append(L") => ");
-				res.Append(Func->ReturnType->ToExpressionType().ToString());
+				res += L") => ";
+				res += Func->ReturnType->ToExpressionType().ToString();
 				break;
 			case SimpleC::Compiler::ExpressionType::_Void:
-				res.Append("void");
+				res += L"void";
 				break;
 			default:
 				break;
@@ -49,101 +50,101 @@ namespace SimpleC
 
 			if (ArrayLength != 0)
 			{
-				res.Append(L"[");
-				res.Append(CoreLib::Basic::String(ArrayLength));
-				res.Append(L"]");
+				res += L"[";
+				res += std::to_wstring(ArrayLength);
+				res += L"]";
 			}
-			return res.ToString();
+			return res;
 		}
 
 
-		void ProgramSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void ProgramSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitProgram(this);
+			visitor.VisitProgram(*this);
 		}
-		void FunctionSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void FunctionSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitFunction(this);
+			visitor.VisitFunction(*this);
 		}
-		void BlockStatementSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void BlockStatementSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitBlockStatement(this);
+			visitor.VisitBlockStatement(*this);
 		}
-		void BreakStatementSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void BreakStatementSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitBreakStatement(this);
+			visitor.VisitBreakStatement(*this);
 		}
-		void ContinueStatementSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void ContinueStatementSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitContinueStatement(this);
+			visitor.VisitContinueStatement(*this);
 		}
-		void DoWhileStatementSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void DoWhileStatementSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitDoWhileStatement(this);
+			visitor.VisitDoWhileStatement(*this);
 		}
-		void EmptyStatementSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void EmptyStatementSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitEmptyStatement(this);
+			visitor.VisitEmptyStatement(*this);
 		}
-		void ForStatementSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void ForStatementSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitForStatement(this);
+			visitor.VisitForStatement(*this);
 		}
-		void IfStatementSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void IfStatementSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitIfStatement(this);
+			visitor.VisitIfStatement(*this);
 		}
-		void ReturnStatementSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void ReturnStatementSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitReturnStatement(this);
+			visitor.VisitReturnStatement(*this);
 		}
-		void VarDeclrStatementSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void VarDeclrStatementSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitVarDeclrStatement(this);
+			visitor.VisitVarDeclrStatement(*this);
 		}
-		void VarDeclrStatementSyntaxNode::Variable::Accept(SyntaxVisitor * visitor)
+		void VarDeclrStatementSyntaxNode::Variable::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitDeclrVariable(this);
+			visitor.VisitDeclrVariable(*this);
 		}
-		void WhileStatementSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void WhileStatementSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitWhileStatement(this);
+			visitor.VisitWhileStatement(*this);
 		}
-		void ExpressionStatementSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void ExpressionStatementSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitExpressionStatement(this);
+			visitor.VisitExpressionStatement(*this);
 		}
-		void BinaryExpressionSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void BinaryExpressionSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitBinaryExpression(this);
+			visitor.VisitBinaryExpression(*this);
 		}
-		void ConstantExpressionSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void ConstantExpressionSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitConstantExpression(this);
+			visitor.VisitConstantExpression(*this);
 		}
-		void IndexExpressionSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void IndexExpressionSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitIndexExpression(this);
+			visitor.VisitIndexExpression(*this);
 		}
-		void InvokeExpressionSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void InvokeExpressionSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitInvokeExpression(this);
+			visitor.VisitInvokeExpression(*this);
 		}
-		void UnaryExpressionSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void UnaryExpressionSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitUnaryExpression(this);
+			visitor.VisitUnaryExpression(*this);
 		}
-		void VarExpressionSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void VarExpressionSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitVarExpression(this);
+			visitor.VisitVarExpression(*this);
 		}
-		void ParameterSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void ParameterSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitParameter(this);
+			visitor.VisitParameter(*this);
 		}
-		void TypeSyntaxNode::Accept(SyntaxVisitor * visitor)
+		void TypeSyntaxNode::Accept(SyntaxVisitor & visitor)
 		{
-			visitor->VisitType(this);
+			visitor.VisitType(*this);
 		}
 	}
 }

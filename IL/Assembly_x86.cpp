@@ -1,172 +1,170 @@
-#include "Assembly_x86.h"
+Ôªø#include "Assembly_x86.h"
 #include "CodeEmitter_x86.h"
-#include "LibIO.h"
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <unordered_map>
+#include <vector>
 
-using namespace CoreLib::IO;
 namespace Compiler
 {
 	namespace x86
 	{
 		struct ConstantMap
 		{
-			Dictionary<double, int> DoubleValues;
-			Dictionary<float, int> FloatValues;
+			std::unordered_map<double, int> double_values;
+			std::unordered_map<float, int> float_values;
 		};
 
-		wchar_t * InstructionNameToString(Instruction::InstructionName name);
+		const wchar_t * InstructionNameToString(Instruction::InstructionName name);
 
-		void RegToString(StringBuilder & sb, Register reg)
+		void RegToString(std::wstring & text, Register reg)
 		{
 		switch (reg)
 			{
 			case Register::EAX:
-				sb.Append(L"EAX");
+				text += L"EAX";
 				break;
 			case Register::EBX:
-				sb.Append(L"EBX");
+				text += L"EBX";
 				break;
 			case Register::ECX:
-				sb.Append(L"ECX");
+				text += L"ECX";
 				break;
 			case Register::EDX:
-				sb.Append(L"EDX");
+				text += L"EDX";
 				break;
 			case Register::ESP:
-				sb.Append(L"ESP");
+				text += L"ESP";
 				break;
 			case Register::EBP:
-				sb.Append(L"EBP");
+				text += L"EBP";
 				break;
 			case Register::ESI:
-				sb.Append(L"ESI");
+				text += L"ESI";
 				break;
 			case Register::EDI:
-				sb.Append(L"EDI");
+				text += L"EDI";
 				break;
 			}
 		}
 
-		void OperandToString(StringBuilder & sb, Operand & op)
+		void OperandToString(std::wstring & text, const Operand & op)
 		{
 			switch (op.Type)
 			{
 			case OperandType::Register:
-				RegToString(sb, op.Reg);
+				RegToString(text, op.Reg);
 				break;
 			case OperandType::ST:
-				sb.Append(L"ST");
-				sb.Append((int)op.Value);
+				text += L"ST";
+				text += std::to_wstring(static_cast<int>(op.Value));
 				break;
 			case OperandType::Immediate8:
 			case OperandType::Immediate16:
 			case OperandType::Immediate32:
-				sb.Append((int)op.Value);
+				text += std::to_wstring(static_cast<int>(op.Value));
 				break;
 			case OperandType::Memory:
-				sb.Append(L"ptr[");
+				text += L"ptr[";
 				if (op.AddressingMode == OperandAddressingMode::Disp32)
 				{
-					sb.Append((int)op.Value);
+					text += std::to_wstring(static_cast<int>(op.Value));
 				}
 				else if (op.AddressingMode == OperandAddressingMode::RegisterDisp32 ||
 					op.AddressingMode == OperandAddressingMode::RegisterDisp8)
 				{
-					RegToString(sb, op.Reg);
+					RegToString(text, op.Reg);
 					if (op.Value != 0)
 					{
-						sb.Append(L"+");
-						sb.Append((int)op.Value);
+						text += L"+";
+						text += std::to_wstring(static_cast<int>(op.Value));
 					}
 				}
 				else if (op.AddressingMode == OperandAddressingMode::RegisterPointer)
 				{
-					RegToString(sb, op.Reg);
+					RegToString(text, op.Reg);
 				}
 				else if (op.AddressingMode == OperandAddressingMode::SIB)
 				{
-					RegToString(sb, op.Reg);
+					RegToString(text, op.Reg);
 					if (op.IndexReg != Register::None)
 					{
-						sb.Append(L"+");
-						RegToString(sb, op.IndexReg);
-						sb.Append(L"*");
-						sb.Append((int)op.Scale);
+						text += L"+";
+						RegToString(text, op.IndexReg);
+						text += L"*";
+						text += std::to_wstring(static_cast<int>(op.Scale));
 					}
 				}
 				else if (op.AddressingMode == OperandAddressingMode::SIBDisp32 ||
 					op.AddressingMode == OperandAddressingMode::SIBDisp8)
 				{
-					RegToString(sb, op.Reg);
+					RegToString(text, op.Reg);
 					if (op.IndexReg != Register::None)
 					{
-						sb.Append(L"+");
-						RegToString(sb, op.IndexReg);
-						sb.Append(L"*");
-						sb.Append((int)op.Scale);
+						text += L"+";
+						RegToString(text, op.IndexReg);
+						text += L"*";
+						text += std::to_wstring(static_cast<int>(op.Scale));
 					}
 					if (op.Value != 0)
 					{
-						sb.Append(L"+");
-						sb.Append((int)op.Value);
+						text += L"+";
+						text += std::to_wstring(static_cast<int>(op.Value));
 					}
 				}
-				sb.Append(L']');
+				text += L']';
 				break;
 			}
 		}
 
-		String Instruction::ToString()
+		std::wstring Instruction::ToString() const
 		{
-			StringBuilder sb;
-			sb.Append(Label);
-			sb.Append(L":\t");
-			sb.Append(InstructionNameToString(Name));
-			sb.Append(L'\t');
+			std::wstring text;
+			text += std::to_wstring(Label);
+			text += L":\t";
+			text += InstructionNameToString(Name);
+			text += L'\t';
 			if (OperandCount > 0)
-				OperandToString(sb, Op1);
+				OperandToString(text, Op1);
 			if (OperandCount > 1)
 			{
-				sb.Append(L',');
-				OperandToString(sb, Op2);
+				text += L',';
+				OperandToString(text, Op2);
 			}
-			return sb.ProduceString();
+			return text;
 		}
 
-		void Function_x86::Dump(const String & fileName)
+		void Function_x86::Dump(const std::filesystem::path & fileName)
 		{
-			StreamWriter writer(fileName);
+			std::wofstream writer(fileName);
 			for (auto & instr : Code)
 			{
-				writer<<instr.ToString()<<EndLine;
+				writer << instr.ToString() << L'\n';
 			}
 		}
 
-		void LinkFunction(int funcId, ConstantMap & consts, Assembly_x86 & assembly, Function_x86 & func)
+		void LinkFunction(ConstantMap & consts, Assembly_x86 & assembly, Function_x86 & func)
 		{
-			FunctionMeta meta;
-			meta.Name = func.Name;
-			meta.Id = funcId;
-			meta.Offset = assembly.CodeBuffer.Count();
-			assembly.Functions.Add(meta);
 			BinaryCodeEmitter emitter;
-			Dictionary<int, int> labelMap;
-			List<int> labels;
+			std::unordered_map<int, int> label_map;
+			std::vector<int> labels;
 			for (auto & instr : func.Code)
 			{
 				if (instr.IsJump())
-					labelMap[instr.Op1.Value] = -1;
+					label_map[instr.Op1.Value] = -1;
 			}
 			for (auto & instr : func.Code)
 			{
-				if (labelMap.ContainsKey(instr.Label))
+				if (label_map.contains(instr.Label))
 				{
-					labelMap[instr.Label] = emitter.GetCode().Count();
+					label_map[instr.Label] = static_cast<int>(emitter.GetCode().size());
 				}
 				emitter.Emit(instr);
 				if (instr.IsJump())
-					labels.Add(emitter.GetCode().Count()-4);
+					labels.push_back(static_cast<int>(emitter.GetCode().size()) - 4);
 				if (instr.Name == Instruction::CALL && instr.Op1.Type == OperandType::Immediate32)
-					assembly.FunctionPointerLinkPoints.Add(FunctionLinkPoint(instr.Op1.Value, emitter.GetCode().Count()-4+assembly.CodeBuffer.Count()));
+					assembly.FunctionPointerLinkPoints.push_back(FunctionLinkPoint(instr.Op1.Value, static_cast<int>(emitter.GetCode().size()) - 4 + static_cast<int>(assembly.CodeBuffer.size())));
 				if (instr.Name == Instruction::FLD && instr.Op1.Type == x86::OperandType::Memory && instr.Op1.AddressingMode == OperandAddressingMode::Disp32)
 				{
 					int constId = instr.Op1.Value;
@@ -174,41 +172,51 @@ namespace Compiler
 					int newPosVal = 0;
 					if (c.Type == FloatType::Float)
 					{
-						if (!consts.FloatValues.TryGetValue(c.FloatValue, newPosVal))
+						if (auto iter = consts.float_values.find(c.FloatValue); iter != consts.float_values.end())
+						{
+							newPosVal = iter->second;
+						}
+						else
 						{
 							newPosVal = assembly.AddConstant(c.FloatValue);
-							consts.FloatValues[c.FloatValue] = newPosVal;
+							consts.float_values[c.FloatValue] = newPosVal;
 						}
 					}
 					else
 					{
-						if (!consts.DoubleValues.TryGetValue(c.DoubleValue, newPosVal))
+						if (auto iter = consts.double_values.find(c.DoubleValue); iter != consts.double_values.end())
+						{
+							newPosVal = iter->second;
+						}
+						else
 						{
 							newPosVal = assembly.AddConstant(c.DoubleValue);
-							consts.DoubleValues[c.DoubleValue] = newPosVal;
+							consts.double_values[c.DoubleValue] = newPosVal;
 						}
 					}
-					assembly.ConstantLinkPoints.Add(emitter.GetCode().Count()-4+assembly.CodeBuffer.Count());
+					assembly.ConstantLinkPoints.push_back(static_cast<int>(emitter.GetCode().size()) - 4 + static_cast<int>(assembly.CodeBuffer.size()));
 					auto & code = emitter.GetCode();
-					*(int*)(code.Buffer()-4) = newPosVal;
+					std::memcpy(code.data() + code.size() - 4, &newPosVal, sizeof(newPosVal));
 				}
 			}
 			auto & code = emitter.GetCode();
 			for (int pos : labels)
 			{
-				int * pLabel = (int*)(code.Buffer() + pos);
-				*pLabel = labelMap[*pLabel] - pos - 4;
+				int labelValue = 0;
+				std::memcpy(&labelValue, code.data() + pos, sizeof(labelValue));
+				labelValue = label_map[labelValue] - pos - 4;
+				std::memcpy(code.data() + pos, &labelValue, sizeof(labelValue));
 			}
-			assembly.CodeBuffer.AddRange(code);
+			assembly.CodeBuffer.insert(assembly.CodeBuffer.end(), code.begin(), code.end());
 		}
 
-		//∞—¥˙¬Î¿Ôµƒ÷˜∫Ø ˝¡¥Ω”µΩø…÷¥––Œƒº˛¿Ô£ø
+		//Êää‰ª£Á†ÅÈáåÁöÑ‰∏ªÂáΩÊï∞ÈìæÊé•Âà∞ÂèØÊâßË°åÊñá‰ª∂ÈáåÔºü
 		Assembly_x86 Program_x86::Link()
 		{
 			Assembly_x86 rs;
 			Function_x86 * mainFunc = 0;
 			ConstantMap constMapping;
-			Dictionary<int, int> funcPositions;
+			std::unordered_map<int, int> func_positions;
 			int mainFuncId = 0;
 			for (auto & func : Functions)
 			{
@@ -219,37 +227,37 @@ namespace Compiler
 				}
 				mainFuncId++;
 			}
-			LinkFunction(mainFuncId, constMapping, rs, *mainFunc);
-			funcPositions[mainFuncId] = 0;
+			LinkFunction(constMapping, rs, *mainFunc);
+			func_positions[mainFuncId] = 0;
 			int id = 0;
 			for (auto & func : Functions)
 			{
 				if (&func != mainFunc)
 				{
-					funcPositions[id] = rs.CodeBuffer.Count();
-					LinkFunction(id, constMapping, rs, func);
+					func_positions[id] = static_cast<int>(rs.CodeBuffer.size());
+					LinkFunction(constMapping, rs, func);
 				}
 				id++;
 			}
 			for (auto & link : rs.FunctionPointerLinkPoints)
 			{
-				int * pFunc = (int*)(rs.CodeBuffer.Buffer() + link.Position);
-				*pFunc = funcPositions[link.FuncId] - link.Position - 4;
+				int funcOffset = func_positions[link.FuncId] - link.Position - 4;
+				std::memcpy(rs.CodeBuffer.data() + link.Position, &funcOffset, sizeof(funcOffset));
 			}
 			return rs;
 		}
 
-		MemoryExecutable_x86 Assembly_x86::CreateMemoryExecutable()	//‘⁄ƒ⁄¥Ê¿Ô¥¥Ω®ø…÷¥––£¨»ª∫Û∞—ø…÷¥––¥˙¬Î–¥Ω¯»•°£
+		MemoryExecutable_x86 Assembly_x86::CreateMemoryExecutable()	//Âú®ÂÜÖÂ≠òÈáåÂàõÂª∫ÂèØÊâßË°åÔºåÁÑ∂ÂêéÊääÂèØÊâßË°å‰ª£Á†ÅÂÜôËøõÂéª„ÄÇ
 		{
 			MemoryExecutable_x86 rs;
-			rs.BufferSize = CodeBuffer.Count() + ConstBuffer.Count();
+			rs.BufferSize = static_cast<int>(CodeBuffer.size() + ConstBuffer.size());
 
-			//‘⁄µ˜”√Ω¯≥Ãµƒ–Èµÿ÷∑ø’º‰,‘§∂®ªÚ’ﬂÃ·Ωª“ª≤ø∑÷“≥°£
+			//Âú®Ë∞ÉÁî®ËøõÁ®ãÁöÑËôöÂú∞ÂùÄÁ©∫Èó¥,È¢ÑÂÆöÊàñËÄÖÊèê‰∫§‰∏ÄÈÉ®ÂàÜÈ°µ„ÄÇ
 			rs.Buffer = VirtualAlloc(0, rs.BufferSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
 
-			memcpy(rs.Buffer, CodeBuffer.Buffer(), CodeBuffer.Count());
-			char * pConst = (char*)rs.Buffer + CodeBuffer.Count();
-			memcpy(pConst, ConstBuffer.Buffer(), ConstBuffer.Count());
+			std::memcpy(rs.Buffer, CodeBuffer.data(), CodeBuffer.size());
+			char * pConst = static_cast<char*>(rs.Buffer) + CodeBuffer.size();
+			std::memcpy(pConst, ConstBuffer.data(), ConstBuffer.size());
 			// runtime linking
 			/*for (auto flink : FunctionPointerLinkPoints)
 			{
@@ -258,13 +266,15 @@ namespace Compiler
 			}*/
 			for (auto clink : ConstantLinkPoints)
 			{
-				int * ptr = (int*)((char*)rs.Buffer + clink);
-				*ptr = *ptr + (int)(pConst);
+				int value = 0;
+				std::memcpy(&value, static_cast<char*>(rs.Buffer) + clink, sizeof(value));
+				value = value + static_cast<int>(reinterpret_cast<intptr_t>(pConst));
+				std::memcpy(static_cast<char*>(rs.Buffer) + clink, &value, sizeof(value));
 			}
 			return rs;
 		}
 
-		wchar_t * InstructionNameToString(Instruction::InstructionName name)	//»´∂º «x64÷∏¡Ó
+		const wchar_t * InstructionNameToString(Instruction::InstructionName name)	//ÂÖ®ÈÉΩÊòØx64Êåá‰ª§
 		{
 			switch (name)
 			{

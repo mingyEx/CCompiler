@@ -1,10 +1,13 @@
-#ifndef FUNDAMENTAL_LIB_LIST_H
+ï»¿#ifndef FUNDAMENTAL_LIB_LIST_H
 #define FUNDAMENTAL_LIB_LIST_H
+#include <cstring>
 #include <type_traits>
+#include <utility>
+#include "Exception.h"
 
 const int MIN_QSORT_SIZE = 32;	
-//²Â²âÒ»ÏÂÊÇÐ¡ÓÚ32Ê±ºò²»Ö´ÐÐ¿ìÅÅ£¿
-//Êý¾ÝÁ¿Ð¡¾Í²åÈë£¬´ó²Å¿ìÅÅ,¾ÍÊÇÕâÑù¡£
+//ï¿½Â²ï¿½Ò»ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½32Ê±ï¿½ï¿½Ö´ï¿½Ð¿ï¿½ï¿½Å£ï¿½
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½Í²ï¿½ï¿½ë£¬ï¿½ï¿½Å¿ï¿½ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 namespace CoreLib
 {
@@ -15,6 +18,8 @@ namespace CoreLib
 		{
 		private:
 			static const int InitialSize = 16;
+			static constexpr bool CanCopyWithMemcpy =
+				std::is_trivially_copyable_v<T>;
 		private:
 			T * buffer;
 			int _count;
@@ -38,19 +43,18 @@ namespace CoreLib
 			}
 		public:
 			List()
-				: buffer(0), _count(0), bufferSize(0)
+				: buffer(nullptr), _count(0), bufferSize(0)
 			{
 			}
 			List(const List<T> & list)
-				: buffer(0), _count(0), bufferSize(0)
+				: buffer(nullptr), _count(0), bufferSize(0)
 			{
 				this->operator=(list);
 			}
 			List(List<T> && list)
-				: buffer(0), _count(0), bufferSize(0)
+				: buffer(nullptr), _count(0), bufferSize(0)
 			{
-				//int t = static_cast<int>(1.0f); reinterpret_cast<double*>(&t), dynamic_cast<> 
-				this->operator=(static_cast<List<T>&&>(list));
+				this->operator=(std::move(list));
 			}
 			~List()
 			{
@@ -58,6 +62,8 @@ namespace CoreLib
 			}
 			List<T> & operator=(const List<T> & list)
 			{
+				if (this == &list)
+					return *this;
 				Free();
 				AddRange(list);
 
@@ -66,12 +72,14 @@ namespace CoreLib
 
 			List<T> & operator=(List<T> && list)
 			{
+				if (this == &list)
+					return *this;
 				Free();
 				_count = list._count;
 				bufferSize = list.bufferSize;
 				buffer = list.buffer;
 
-				list.buffer = 0;
+				list.buffer = nullptr;
 				list._count = 0;
 				list.bufferSize = 0;
 				return *this;
@@ -105,7 +113,7 @@ namespace CoreLib
 
 					Reserve(newBufferSize);
 				}
-				buffer[_count++] = static_cast<T&&>(obj);
+				buffer[_count++] = std::move(obj);
 			}
 
 			void Add(const T & obj)
@@ -150,23 +158,20 @@ namespace CoreLib
 					while (newBufferSize < _count + n)
 						newBufferSize = newBufferSize << 1;
 
-					T * newBuffer = new T[newBufferSize];
+					T * newBuffer = new T[static_cast<size_t>(newBufferSize)];
 					if (bufferSize)
 					{
-						//if (std::has_trivial_assign<T>::value ||
-						//	std::has_trivial_copy<T>::value)
-						if (std::is_trivially_copy_assignable<T>::value ||
-							std::is_trivially_copy_constructible<T>::value)
+						if constexpr (CanCopyWithMemcpy)
 						{
-							memcpy(newBuffer, buffer, sizeof(T) * id);
-							memcpy(newBuffer + id + n, buffer + id, sizeof(T) * (_count - id));
+							std::memcpy(newBuffer, buffer, sizeof(T) * static_cast<size_t>(id));
+							std::memcpy(newBuffer + id + n, buffer + id, sizeof(T) * static_cast<size_t>(_count - id));
 						}
 						else
 						{
 							for (int i = 0; i < id; i++)
 								newBuffer[i] = buffer[i];
 							for (int i = id; i < _count; i++)
-								newBuffer[i + n] = T(static_cast<T&&>(buffer[i]));
+								newBuffer[i + n] = T(std::move(buffer[i]));
 						}
 						delete [] buffer;
 					}
@@ -175,18 +180,16 @@ namespace CoreLib
 				}
 				else
 				{
-					if (std::is_trivially_copy_assignable<T>::value ||
-						std::is_trivially_copy_constructible<T>::value)
-						memmove(buffer + id + n, buffer + id, sizeof(T) * (_count - id));
+					if constexpr (CanCopyWithMemcpy)
+						std::memmove(buffer + id + n, buffer + id, sizeof(T) * static_cast<size_t>(_count - id));
 					else
 					{
 						for (int i = _count - 1; i >= id; i--)
-							buffer[i + n] = static_cast<T&&>(buffer[i]);
+							buffer[i + n] = std::move(buffer[i]);
 					}
 				}
-				if (std::is_trivially_copy_assignable<T>::value ||
-					std::is_trivially_copy_constructible<T>::value)
-					memcpy(buffer + id, vals, sizeof(T) * n);
+				if constexpr (CanCopyWithMemcpy)
+					std::memcpy(buffer + id, vals, sizeof(T) * static_cast<size_t>(n));
 				else
 					for (int i = 0; i < n; i++)
 						buffer[id + i] = vals[i];
@@ -217,9 +220,11 @@ namespace CoreLib
 				if(deleteCount < 0)
 					throw "Remove: deleteCount smaller than zero.";
 #endif
+				if (id < 0 || id >= _count || deleteCount <= 0)
+					return;
 				int actualDeleteCount = ((id + deleteCount) >= _count)? (_count - id) : deleteCount;
 				for (int i = id + actualDeleteCount; i < _count; i++)
-					buffer[i - actualDeleteCount] = static_cast<T&&>(buffer[i]);
+					buffer[i - actualDeleteCount] = std::move(buffer[i]);
 				_count -= actualDeleteCount;
 			}
 
@@ -238,9 +243,11 @@ namespace CoreLib
 			void FastRemove(const T & val)
 			{
 				int idx = IndexOf(val);
-				if (idx != -1 && _count-1 != idx)
+				if (idx == -1)
+					return;
+				if (_count-1 != idx)
 				{
-					buffer[idx] = _Move(buffer[_count-1]);
+					buffer[idx] = std::move(buffer[_count-1]);
 				}
 				_count--;
 			}
@@ -254,15 +261,15 @@ namespace CoreLib
 			{
 				if(size > bufferSize)
 				{
-					T * newBuffer = new T[size];
+					T * newBuffer = new T[static_cast<size_t>(size)];
 					if (bufferSize)
 					{
-						if (std::is_trivially_copy_assignable<T>::value ||std::is_trivially_copy_constructible<T>::value)
-							memcpy(newBuffer, buffer, _count * sizeof(T));
+						if constexpr (CanCopyWithMemcpy)
+							std::memcpy(newBuffer, buffer, sizeof(T) * static_cast<size_t>(_count));
 						else
 						{
 							for (int i = 0; i < _count; i++)
-								newBuffer[i] = static_cast<T&&>(buffer[i]);
+								newBuffer[i] = std::move(buffer[i]);
 						}
 						delete [] buffer;
 					}
@@ -281,9 +288,9 @@ namespace CoreLib
 			{
 				if (bufferSize > _count && _count > 0)
 				{
-					T * newBuffer = new T[_count];
+					T * newBuffer = new T[static_cast<size_t>(_count)];
 					for (int i = 0; i < _count; i++)
-						newBuffer[i] = static_cast<T&&>(buffer[i]);
+						newBuffer[i] = std::move(buffer[i]);
 					delete [] buffer;
 					buffer = newBuffer;
 					bufferSize = _count;
@@ -294,7 +301,7 @@ namespace CoreLib
 			{
 #if _DEBUG
 				if(id >= _count || id < 0)
-					throw IndexOutofRangeException(L"Operator[]: Index out of Range.");
+					throw CoreLib::Basic::IndexOutofRangeException(L"Operator[]: Index out of Range.");
 #endif
 				return buffer[id];
 			}
@@ -326,7 +333,7 @@ namespace CoreLib
 				Sort([](T& t1, T& t2){return t1<t2;});
 			}
 
-			bool Contains(const T & val)
+			bool Contains(const T & val) const
 			{
 				for (int i = 0; i<_count; i++)
 					if (buffer[i] == val)
@@ -387,14 +394,14 @@ namespace CoreLib
 			{
 				for (int i = startIndex  + 1; i <= endIndex; i++)
 				{
-					T insertValue = static_cast<T&&>(vals[i]);
+					T insertValue = std::move(vals[i]);
 					int insertIndex = i - 1;
 					while (insertIndex >= startIndex && comparer(insertValue, vals[insertIndex]))
 					{
-						vals[insertIndex + 1] = static_cast<T&&>(vals[insertIndex]);
+						vals[insertIndex + 1] = std::move(vals[insertIndex]);
 						insertIndex--;
 					}
-					vals[insertIndex + 1] = static_cast<T&&>(insertValue);
+					vals[insertIndex + 1] = std::move(insertValue);
 				}
 			}
 
@@ -402,9 +409,9 @@ namespace CoreLib
 			{
 				if (index1 != index2)
 				{
-					T tmp = static_cast<T&&>(vals[index1]);
-					vals[index1] = static_cast<T&&>(vals[index2]);
-					vals[index2] = static_cast<T&&>(tmp);
+					T tmp = std::move(vals[index1]);
+					vals[index1] = std::move(vals[index2]);
+					vals[index2] = std::move(tmp);
 				}
 			}
 

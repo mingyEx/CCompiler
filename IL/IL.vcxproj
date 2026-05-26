@@ -63,7 +63,9 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../CoreLib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <DisableSpecificWarnings>4514;5045;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -81,6 +83,8 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>../../CoreLib</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4514;5045;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -126,9 +130,6 @@
     <ClCompile Include="X86_ICode.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\CoreLib\CoreLib.vcxproj">
-      <Project>{f9be7957-8399-899e-0c49-e714fddd4b65}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\CoreLib\CoreLib.vcxproj">
       <Project>{f9be7957-8399-899e-0c49-e714fddd4b65}</Project>
     </ProjectReference>

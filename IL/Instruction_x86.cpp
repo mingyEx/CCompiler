@@ -8,22 +8,22 @@ namespace Compiler
 			if (paramCount == 2 && (op1.Type == OperandType::Register && op1.Reg == Register::EAX) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x15", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x80", 0, 2, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x83", 0, 2, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.SizeBits == 8 && op2.Type == OperandType::Register))
@@ -49,10 +49,10 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x81", 0, 2, op1);
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -63,22 +63,22 @@ namespace Compiler
 			if (paramCount == 2 && (op1.Type == OperandType::Register && op1.Reg == Register::EAX) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x5", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x80", 0, 0, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x83", 0, 0, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.SizeBits == 8 && op2.Type == OperandType::Register))
@@ -104,10 +104,10 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x81", 0, 0, op1);
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -118,22 +118,22 @@ namespace Compiler
 			if (paramCount == 2 && (op1.Type == OperandType::Register && op1.Reg == Register::EAX) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x25", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x80", 0, 4, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x83", 0, 4, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.SizeBits == 8 && op2.Type == OperandType::Register))
@@ -159,10 +159,10 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x81", 0, 4, op1);
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -213,7 +213,7 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(2, "\xf\xba", 0, 4, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -229,7 +229,7 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(2, "\xf\xba", 0, 7, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -245,7 +245,7 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(2, "\xf\xba", 0, 6, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -261,7 +261,7 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(2, "\xf\xba", 0, 5, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -272,10 +272,10 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\xe8", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			if (paramCount == 1 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)))
@@ -646,22 +646,22 @@ namespace Compiler
 			if (paramCount == 2 && (op1.Type == OperandType::Register && op1.Reg == Register::EAX) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x3d", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x80", 0, 7, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x83", 0, 7, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.SizeBits == 8 && op2.Type == OperandType::Register))
@@ -687,10 +687,10 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x81", 0, 7, op1);
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -1851,7 +1851,7 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xcd", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -1872,16 +1872,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x77", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x87", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -1892,16 +1892,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x73", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x83", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -1912,16 +1912,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x72", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x82", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -1932,16 +1932,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x76", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x86", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -1952,16 +1952,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x72", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x82", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -1972,7 +1972,7 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xe3", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -1983,16 +1983,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x74", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x84", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2003,7 +2003,7 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xe3", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2014,16 +2014,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x7f", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x8f", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2034,16 +2034,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x7d", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x8d", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2054,16 +2054,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x7c", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x8c", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2074,16 +2074,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x7e", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x8e", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2094,16 +2094,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xeb", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\xe9", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			if (paramCount == 1 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)))
@@ -2119,16 +2119,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x76", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x86", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2139,16 +2139,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x72", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x82", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2159,16 +2159,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x73", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x83", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2179,16 +2179,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x77", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x87", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2199,16 +2199,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x73", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x83", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2219,16 +2219,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x75", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x85", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2239,16 +2239,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x7e", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x8e", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2259,16 +2259,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x7c", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x8c", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2279,16 +2279,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x7d", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x8d", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2299,16 +2299,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x7f", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x8f", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2319,16 +2319,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x71", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x81", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2339,16 +2339,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x7b", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x8b", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2359,16 +2359,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x79", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x89", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2379,16 +2379,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x75", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x85", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2399,16 +2399,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x70", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x80", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2419,16 +2419,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x7a", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x8a", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2439,16 +2439,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x7a", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x8a", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2459,16 +2459,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x7b", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x8b", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2479,16 +2479,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x78", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x88", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2499,25 +2499,25 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x74", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x84", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(2, "\xf\x84", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2563,7 +2563,7 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xe2", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2574,7 +2574,7 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xe1", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2585,7 +2585,7 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xe0", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2596,7 +2596,7 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xe0", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2607,7 +2607,7 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xe1", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2618,16 +2618,16 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 8 && op1.Type == OperandType::Register) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xb0", GetRegisterCode(op1.Reg), 0, Operand());
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && op1.Type == OperandType::Register) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\xb8", GetRegisterCode(op1.Reg), 0, Operand());
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.SizeBits == 8 && op2.Type == OperandType::Register))
@@ -2653,16 +2653,16 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc6", 0, 0, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\xc7", 0, 0, op1);
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2758,22 +2758,22 @@ namespace Compiler
 			if (paramCount == 2 && (op1.Type == OperandType::Register && op1.Reg == Register::EAX) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\xd", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x80", 0, 1, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x83", 0, 1, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.SizeBits == 8 && op2.Type == OperandType::Register))
@@ -2799,10 +2799,10 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x81", 0, 1, op1);
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2848,16 +2848,16 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x6a", 0, 0, Operand());
-				code.Add((unsigned char)op1.Value);
+				code.push_back((unsigned char)op1.Value);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x68", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
-				code.Add(((unsigned char*)&(op1.Value))[2]);
-				code.Add(((unsigned char*)&(op1.Value))[3]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[2]);
+				code.push_back(((unsigned char*)&(op1.Value))[3]);
 				return;
 			}
 			if (paramCount == 1 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)))
@@ -2908,13 +2908,13 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc0", 0, 2, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc1", 0, 2, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2945,13 +2945,13 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc0", 0, 3, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc1", 0, 3, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -2972,15 +2972,15 @@ namespace Compiler
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate16))
 			{
 				EmitInstruction(1, "\xc2", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
 				return;
 			}
 			if (paramCount == 1 && (op1.Type == OperandType::Immediate16))
 			{
 				EmitInstruction(1, "\xca", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op1.Value))[0]);
-				code.Add(((unsigned char*)&(op1.Value))[1]);
+				code.push_back(((unsigned char*)&(op1.Value))[0]);
+				code.push_back(((unsigned char*)&(op1.Value))[1]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -3011,13 +3011,13 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc0", 0, 0, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc1", 0, 0, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -3048,13 +3048,13 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc0", 0, 1, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc1", 0, 1, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -3095,13 +3095,13 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc0", 0, 4, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc1", 0, 4, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -3132,13 +3132,13 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc0", 0, 7, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc1", 0, 7, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -3149,22 +3149,22 @@ namespace Compiler
 			if (paramCount == 2 && (op1.Type == OperandType::Register && op1.Reg == Register::EAX) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x1d", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x80", 0, 3, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x83", 0, 3, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.SizeBits == 8 && op2.Type == OperandType::Register))
@@ -3190,10 +3190,10 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x81", 0, 3, op1);
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -3554,13 +3554,13 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc0", 0, 4, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\xc1", 0, 4, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -3596,13 +3596,13 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xc0", 0, 5, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\xc1", 0, 5, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -3668,22 +3668,22 @@ namespace Compiler
 			if (paramCount == 2 && (op1.Type == OperandType::Register && op1.Reg == Register::EAX) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x2d", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x80", 0, 5, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x83", 0, 5, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.SizeBits == 8 && op2.Type == OperandType::Register))
@@ -3709,10 +3709,10 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x81", 0, 5, op1);
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -3723,16 +3723,16 @@ namespace Compiler
 			if (paramCount == 2 && (op1.Type == OperandType::Register && op1.Reg == Register::EAX) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\xa9", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\xf6", 0, 0, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.SizeBits == 8 && op2.Type == OperandType::Register))
@@ -3748,10 +3748,10 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\xf7", 0, 0, op1);
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");
@@ -3797,22 +3797,22 @@ namespace Compiler
 			if (paramCount == 2 && (op1.Type == OperandType::Register && op1.Reg == Register::EAX) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x35", 0, 0, Operand());
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x80", 0, 6, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate8))
 			{
 				EmitInstruction(1, "\x83", 0, 6, op1);
-				code.Add((unsigned char)op2.Value);
+				code.push_back((unsigned char)op2.Value);
 				return;
 			}
 			if (paramCount == 2 && (op1.SizeBits == 8 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.SizeBits == 8 && op2.Type == OperandType::Register))
@@ -3838,10 +3838,10 @@ namespace Compiler
 			if (paramCount == 2 && (op1.SizeBits == 32 && (op1.Type == OperandType::Register || op1.Type == OperandType::Memory)) && (op2.Type == OperandType::Immediate32))
 			{
 				EmitInstruction(1, "\x81", 0, 6, op1);
-				code.Add(((unsigned char*)&(op2.Value))[0]);
-				code.Add(((unsigned char*)&(op2.Value))[1]);
-				code.Add(((unsigned char*)&(op2.Value))[2]);
-				code.Add(((unsigned char*)&(op2.Value))[3]);
+				code.push_back(((unsigned char*)&(op2.Value))[0]);
+				code.push_back(((unsigned char*)&(op2.Value))[1]);
+				code.push_back(((unsigned char*)&(op2.Value))[2]);
+				code.push_back(((unsigned char*)&(op2.Value))[3]);
 				return;
 			}
 			throw InvalidProgramException(L"Illegal operands.");

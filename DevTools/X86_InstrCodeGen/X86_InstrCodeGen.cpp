@@ -15,7 +15,7 @@ bool InsCompare(VLS_InsFormat i1, VLS_InsFormat i2)
 	return (r1<r2);
 }
 
-int _tmain(int argc, _TCHAR* argv[])	//这个文件是干嘛的.. 意思是.. 用来生成?
+int _tmain(int argc, _TCHAR* argv[])	//杩欎釜鏂囦欢鏄共鍢涚殑.. 鎰忔�濇槸.. 鐢ㄦ潵鐢熸垚?
 {
 	const int instrCount = 246;
 	StringBuilder sb(4*1024*1024);

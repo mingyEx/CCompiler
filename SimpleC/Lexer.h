@@ -1,14 +1,15 @@
 #ifndef SIMPLE_C_LEXER_H
 #define SIMPLE_C_LEXER_H
 
-#include "Basic.h"
 #include "IL/CompileError.h"
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace SimpleC
 {
 	namespace Compiler
 	{
-		using namespace CoreLib::Basic;
 		using namespace ::Compiler;
 
 		enum class TokenType
@@ -34,7 +35,7 @@ namespace SimpleC
 		{
 		public:
 			TokenType Type;
-			String Content;
+			std::wstring Content;
 			int Line, Col;
 
 			Token()
@@ -43,19 +44,18 @@ namespace SimpleC
 				Line = Col = -1;
 			}
 
-			Token(TokenType type, const String & content, int line, int col)
-			{
-				Type = type;
-				Content = content;
-				Line = line;
-				Col = col;
-			}
+			Token(TokenType type, std::wstring content, int line, int col)
+				: Type(type)
+				, Content(std::move(content))
+				, Line(line)
+				, Col(col)
+			{}
 		};
 
 		class Lexer
 		{
 		public:
-			List<Token> Parse(const String & fileName, const String & str, List<CompileError> & errorList);
+			std::vector<Token> Parse(const std::wstring & fileName, const std::wstring & str, std::vector<CompileError> & errorList);
 		};
 	}
 }

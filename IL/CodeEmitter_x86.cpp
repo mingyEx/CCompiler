@@ -1,8 +1,7 @@
 
 #include "CodeEmitter_x86.h"
+#include <cstring>
 #include <stdio.h>
-
-using namespace CoreLib::Basic;
 
 namespace Compiler
 {
@@ -244,9 +243,9 @@ namespace Compiler
 		{
 			for (int i = 0; i<opLen; i++)
 				if (i==opLen-1)
-					code.Add(opCode[i] + opCodePlus);
+					code.push_back(opCode[i] + opCodePlus);
 				else
-					code.Add(opCode[i]);
+					code.push_back(opCode[i]);
 
 			unsigned char rmByte, sib;
 			unsigned char mod, rm;
@@ -257,12 +256,12 @@ namespace Compiler
 			{
 				op.GetOpCode(rm, mod, hasSIB, sib, postSize, postBytes);
 				rmByte = (mod<<6) + (extDigit<<3) + rm;
-				code.Add(rmByte);
+				code.push_back(rmByte);
 			}
 			if (hasSIB)
-				code.Add(sib);
+				code.push_back(sib);
 			for (int i = 0; i<postSize; i++)
-				code.Add(postBytes[i]);
+				code.push_back(postBytes[i]);
 		}
 
 		void BinaryCodeEmitter::EmitInstruction(int opLen, const char * opCode, unsigned char opCodePlus, Register reg, Operand op)
@@ -296,9 +295,9 @@ namespace Compiler
 		void * BinaryCodeEmitter::ToFunc()
 		{
 			void * addr;
-			addr = VirtualAlloc(0, code.Count(), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
-			memcpy(addr, code.Buffer(), code.Count());
-			VirtualProtect(addr, code.Count(), PAGE_EXECUTE, 0);
+			addr = VirtualAlloc(0, code.size(), MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+			std::memcpy(addr, code.data(), code.size());
+			VirtualProtect(addr, code.size(), PAGE_EXECUTE, 0);
 			return addr;
 		}
 

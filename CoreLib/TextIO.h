@@ -2,21 +2,23 @@
 #define CORE_LIB_TEXT_IO_H
 
 #include "Stream.h"
-#include <mbctype.h>
+#include <clocale>
+#include <cstring>
+#include <cwchar>
+#include <vector>
 
 namespace CoreLib
 {
 	namespace IO
 	{
-		using CoreLib::Basic::List;
 		using CoreLib::Basic::_EndLine;
 
 		//class TextReader abstract: public CoreLib::Basic::Object	
-		// abstract ÊÇmsÌØÓĞ¹Ø¼ü×Ö£¬ÎŞÒâÒå¡£
-		class TextReader : public CoreLib::Basic::Object	//ÎªÊ²Ã´Ò»ÇĞ¶¼Òª¼Ì³Ğ×ÔObjectÄØ£¬¸úQtÑ§µÄ£¿ÎªÁË·½±ãÀàĞÍ×ª»»Âğ£¿
+		// abstract æ˜¯msç‰¹æœ‰å…³é”®å­—ï¼Œæ— æ„ä¹‰ã€‚
+		class TextReader : public CoreLib::Basic::Object	//ä¸ºä»€ä¹ˆä¸€åˆ‡éƒ½è¦ç»§æ‰¿è‡ªObjectå‘¢ï¼Œè·ŸQtå­¦çš„ï¼Ÿä¸ºäº†æ–¹ä¾¿ç±»å‹è½¬æ¢å—ï¼Ÿ
 		{
 		public:
-			~TextReader()
+			virtual ~TextReader()
 			{
 				Close();
 			}
@@ -31,7 +33,7 @@ namespace CoreLib
 		class TextWriter abstract: public CoreLib::Basic::Object
 		{
 		public:
-			~TextWriter()
+			virtual ~TextWriter()
 			{
 				Close();
 			}
@@ -67,17 +69,20 @@ namespace CoreLib
 			}
 			TextWriter & operator << (const char* value)
 			{
-				Write(value, strlen(value));
+				if (value != nullptr)
+					Write(value, static_cast<int>(std::strlen(value)));
 				return *this;
 			}
 			TextWriter & operator << (const wchar_t * const val)
 			{
-				Write(val, wcslen(val));
+				if (val != nullptr)
+					Write(val, static_cast<int>(std::wcslen(val)));
 				return *this;
 			}
 			TextWriter & operator << (wchar_t * const val)
 			{
-				Write(val, wcslen(val));
+				if (val != nullptr)
+					Write(val, static_cast<int>(std::wcslen(val)));
 				return *this;
 			}
 
@@ -86,7 +91,7 @@ namespace CoreLib
 				Write(val);
 				return *this;
 			}
-			TextWriter & operator << (const _EndLine & val)
+			TextWriter & operator << (const _EndLine &)
 			{
 #ifdef WINDOWS_PLATFORM
 				Write(L"\r\n", 2);
@@ -101,11 +106,12 @@ namespace CoreLib
 		{
 		public:
 			static Encoding * Unicode, * Ansi;
-			virtual List<char> GetBytes(const String & str)=0;
-			virtual String GetString(char * buffer, int length)=0;
-			String GetString(const List<char> & buffer)
+			virtual ~Encoding() = default;
+			virtual std::vector<char> GetBytes(const String & str)=0;
+			virtual String GetString(const char * buffer, int length)=0;
+			String GetString(const std::vector<char> & buffer)
 			{
-				return GetString(buffer.Buffer(), buffer.Count());
+				return GetString(buffer.data(), static_cast<int>(buffer.size()));
 			}
 		};
 
@@ -117,12 +123,17 @@ namespace CoreLib
 		public:
 			StreamWriter(const String & path, Encoding * encoding = Encoding::Unicode);
 			StreamWriter(RefPtr<Stream> stream, Encoding * encoding = Encoding::Unicode);
+			virtual ~StreamWriter()
+			{
+				Close();
+			}
 			virtual void Write(const String & str);
 			virtual void Write(const wchar_t * str, int length=0);
 			virtual void Write(const char * str, int length=0);
 			virtual void Close()
 			{
-				stream->Close();
+				if (stream)
+					stream->Close();
 			}
 		};
 
@@ -130,11 +141,10 @@ namespace CoreLib
 		{
 		private:
 			RefPtr<Stream> stream;
-			List<char> buffer;
+			std::vector<char> buffer;
 			Encoding * encoding;
 			int ptr;
 			char ReadBufferChar();
-			char PeakBufferChar();
 			void ReadBuffer();
 			template<typename GetFunc>
 			wchar_t GetChar(GetFunc get)
@@ -142,23 +152,25 @@ namespace CoreLib
 				wchar_t rs = 0;
 				if (encoding == Encoding::Unicode)
 				{
-					((char*)&rs)[0] = get();
-					((char*)&rs)[1] = get();
+					const auto low = static_cast<unsigned char>(get());
+					const auto high = static_cast<unsigned char>(get());
+					rs = static_cast<wchar_t>(low | (high << 8));
 				}
 				else
 				{
-					char mb[2];
+					std::mbstate_t state{};
+					char mb[MB_LEN_MAX]{};
 					mb[0] = get();
-					if (_ismbblead(mb[0]))
+					for (int length = 1; length <= MB_LEN_MAX; length++)
 					{
-						mb[1] = get();
-						MultiByteToWideChar(CP_ACP, 0, mb, 2, &rs, 1);
+						const auto result = std::mbrtowc(&rs, mb, static_cast<size_t>(length), &state);
+						if (result != static_cast<size_t>(-2) && result != static_cast<size_t>(-1))
+							return rs;
+						if (length < MB_LEN_MAX)
+							mb[static_cast<size_t>(length)] = get();
 					}
-					else
-					{
-						MultiByteToWideChar(CP_ACP, 0, mb, 1, &rs, 1);
-					}
-					return rs;
+
+					throw CoreLib::Basic::InvalidOperationException(L"Invalid multibyte character sequence.");
 				}
 				return rs;
 			}
@@ -166,6 +178,10 @@ namespace CoreLib
 		public:
 			StreamReader(const String & path);
 			StreamReader(RefPtr<Stream> stream, Encoding * encoding = Encoding::Ansi);
+			virtual ~StreamReader()
+			{
+				Close();
+			}
 			
 			virtual wchar_t Read()
 			{
@@ -173,7 +189,26 @@ namespace CoreLib
 			}
 			virtual wchar_t Peak()
 			{
-				return GetChar([&]{return PeakBufferChar();});
+				const int savedPtr = ptr;
+				const std::vector<char> savedBuffer = buffer;
+				const __int64 savedPosition = stream ? stream->GetPosition() : 0;
+				try
+				{
+					const wchar_t value = Read();
+					if (stream)
+						stream->Seek(SeekOrigin::Start, savedPosition);
+					buffer = savedBuffer;
+					ptr = savedPtr;
+					return value;
+				}
+				catch (...)
+				{
+					if (stream)
+						stream->Seek(SeekOrigin::Start, savedPosition);
+					buffer = savedBuffer;
+					ptr = savedPtr;
+					throw;
+				}
 			}
 			virtual int Read(wchar_t * buffer, int count);
 			virtual String ReadLine();
@@ -181,7 +216,8 @@ namespace CoreLib
 
 			virtual void Close()
 			{
-				stream->Close();
+				if (stream)
+					stream->Close();
 			}
 		};
 	}

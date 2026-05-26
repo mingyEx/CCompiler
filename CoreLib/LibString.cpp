@@ -8,25 +8,32 @@ namespace CoreLib
 		{
 			String res;
 			res.length = leftLen + rightLen;
-			res.buffer = new wchar_t[res.length + 1];
-			wcscpy_s(res.buffer.Ptr(), res.length + 1, lhs);
-			wcscpy_s(res.buffer + leftLen, res.length + 1 - leftLen, rhs);
+			res.buffer = new wchar_t[static_cast<size_t>(res.length) + 1];
+			if (leftLen > 0)
+				std::memcpy(res.buffer.Ptr(), lhs, sizeof(wchar_t) * static_cast<size_t>(leftLen));
+			if (rightLen > 0)
+				std::memcpy(res.buffer.Ptr() + leftLen, rhs, sizeof(wchar_t) * static_cast<size_t>(rightLen));
+			res.buffer[res.length] = 0;
 			return res;
 		}
 		String operator+(const wchar_t * op1, const String & op2)
 		{
+			if (op1 == nullptr)
+				return String(op2);
 			if(!op2.buffer)
 				return String(op1);
 
-			return StringConcat(op1, wcslen(op1), op2.buffer.Ptr(), op2.length);
+			return StringConcat(op1, static_cast<int>(std::wcslen(op1)), op2.buffer.Ptr(), op2.length);
 		}
 
 		String operator+(const String & op1, const wchar_t*op2)
 		{
+			if (op2 == nullptr)
+				return String(op1);
 			if(!op1.buffer)
 				return String(op2);
 
-			return StringConcat(op1.buffer.Ptr(), op1.length, op2, wcslen(op2));
+			return StringConcat(op1.buffer.Ptr(), op1.length, op2, static_cast<int>(std::wcslen(op2)));
 		}
 
 		String operator+(const String & op1, const String & op2)
@@ -43,11 +50,11 @@ namespace CoreLib
 
 		int StringToInt(const String & str)
 		{
-			return (int)_wcstoi64(str.Buffer(), NULL, 10);
+			return static_cast<int>(_wcstoi64(str.Buffer(), nullptr, 10));
 		}
 		double StringToDouble(const String & str)
 		{
-			return (double)wcstod(str.Buffer(), NULL);
+			return static_cast<double>(std::wcstod(str.Buffer(), nullptr));
 		}
 	}
 }

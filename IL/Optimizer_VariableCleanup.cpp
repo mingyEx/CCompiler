@@ -1,63 +1,64 @@
 #include "Optimization.h"
+#include <unordered_map>
+#include <vector>
 
 namespace Compiler
 {
 	namespace Intermediate
 	{
-		//第二柱！
+		//绗簩鏌憋紒
 		class VariableCleanupOptimizer : public IntraProcOptimizer
 		{
 		public:
-			virtual ProgramOptimizationResult Optimize(RefPtr<ControlFlowGraph> program) override
+			virtual ProgramOptimizationResult Optimize(std::shared_ptr<ControlFlowGraph> program) override
 			{
 				ProgramOptimizationResult rs;
 				rs.Program = program;
-				Dictionary<Variable*, InstructionNode *> referencedVariables;
+				std::unordered_map<Variable*, InstructionNode *> referenced_variables;
 				for (auto & node : program->Nodes)
 				{
-					for (auto instrNode = node->Code.FirstNode(); instrNode; instrNode = instrNode->GetNext())
+					for (auto instrNode = FirstInstructionNode(node->Code); instrNode; instrNode = NextInstructionNode(instrNode))
 					{
-						auto & instr = instrNode->Value;	//是迭代器里的具体一条指令. Instruction
+						auto & instr = instrNode->Value;
 						if (instr.LeftOperand.IsVariable())
 						{
-							referencedVariables[instr.LeftOperand.Var] = instrNode;	// 右边是存了Instruction 的在list的一个Node. 左边是，结果.
+							referenced_variables[instr.LeftOperand.Var] = instrNode;
 						}
 						for (auto & op : instr.Operands)
 						{
 							if (op.IsVariable())
 							{
-								referencedVariables.AddIfNotExists(op.Var, 0);	//如果操作数里有不存在于此dict的就加进去.
+								referenced_variables.emplace(op.Var, nullptr);
 							}
 						}
 					}
 				}
-				program->VarDefs.Clear();	//先清空变量定义集合。 为什么是List<InstructionNode *>?
-				List<RefPtr<Variable>> newVars;
-				for (auto & var : program->Variables)	// 遍历 List<RefPtr<Variable>>
+				program->VarDefs.clear();
+				std::vector<std::shared_ptr<Variable>> newVars;
+				for (auto & var : program->Variables)
 				{
-					InstructionNode * def;
-					if (var->Id < program->ParameterCount)	//如果指向变量的此指针的Id 小于 形参数量，则说明？
+					if (var->Id < program->ParameterCount)
 					{
-						newVars.Add(_Move(var));		//总之就塞到新变量里.
-						program->VarDefs.Add(0);		//并且这个不知道是.. 哦，对于变量的定义的指令集合  为什么要加0 ? 大概还是占位.
+						newVars.push_back(std::move(var));
+						program->VarDefs.push_back(nullptr);
 					}
-					else if (referencedVariables.TryGetValue(var.Ptr(), def))	//def依旧是返回值。
+					else if (auto iter = referenced_variables.find(var.get()); iter != referenced_variables.end())
 					{
-						var->Id = newVars.Count();
-						newVars.Add(_Move(var));
-						program->VarDefs.Add(def);
+						var->Id = static_cast<int>(newVars.size());
+						newVars.push_back(std::move(var));
+						program->VarDefs.push_back(iter->second);
 					}
 					else
-						rs.Changed = true;		//干嘛用的，有地方会用到它？
+						rs.Changed = true;
 				}
-				program->Variables = _Move(newVars);
+				program->Variables = std::move(newVars);
 				return rs;
 			}
 		};
-		//看起来就是把指令里的东西都过了一遍，然后在dict里求值，遇到可以被求值的就求值，并且加入新的容器里，否则就.. 把标志位设置为欸true? 有啥用？
-		IntraProcOptimizer * CreateVariableCleanupOptimizer()
+		// Remove variables that are never referenced after previous optimization passes.
+		std::unique_ptr<IntraProcOptimizer> CreateVariableCleanupOptimizer()
 		{
-			return new VariableCleanupOptimizer();
+			return std::make_unique<VariableCleanupOptimizer>();
 		}
 	}
 }

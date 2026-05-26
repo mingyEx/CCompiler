@@ -1,5 +1,5 @@
 #include "Stream.h"
-#include <share.h>
+#include <filesystem>
 #include "LibIO.h"
 
 namespace CoreLib
@@ -16,9 +16,12 @@ namespace CoreLib
 		{
 			Init(fileName, fileMode, access, share);
 		}
-		void FileStream::Init(const CoreLib::Basic::String & fileName, FileMode fileMode, FileAccess access, FileShare share)
+		void FileStream::Init(const CoreLib::Basic::String & inputFileName, FileMode fileMode, FileAccess access, FileShare share)
 		{
-			wchar_t * mode;
+			if (inputFileName.Length() == 0)
+				throw IOException(L"Cannot open file: path is empty.");
+
+			std::ios::openmode mode = std::ios::binary;
 			switch (fileMode)
 			{
 			case CoreLib::IO::FileMode::Create:
@@ -26,47 +29,47 @@ namespace CoreLib
 					throw ArgumentException(L"Read-only access is incompatible with Create mode.");
 				else if (access == FileAccess::ReadWrite)
 				{
-					mode = L"w+b";
+					mode |= std::ios::in | std::ios::out | std::ios::trunc;
 					this->fileAccess = FileAccess::ReadWrite;
 				}
 				else
 				{
-					mode = L"wb";
+					mode |= std::ios::out | std::ios::trunc;
 					this->fileAccess = FileAccess::Write;
 				}
 				break;
 			case CoreLib::IO::FileMode::Open:
 				if (access == FileAccess::Read)
 				{
-					mode = L"rb";
+					mode |= std::ios::in;
 					this->fileAccess = FileAccess::Read;
 				}
 				else if (access == FileAccess::ReadWrite)
 				{
-					mode = L"r+b";
+					mode |= std::ios::in | std::ios::out;
 					this->fileAccess = FileAccess::ReadWrite;
 				}
 				else
 				{
-					mode = L"wb";
+					mode |= std::ios::out;
 					this->fileAccess = FileAccess::Write;
 				}
 				break;
 			case CoreLib::IO::FileMode::CreateNew:
-				if (File::Exists(fileName))
+				if (File::Exists(inputFileName))
 				{
-					throw IOException(L"Failed openning '" + fileName + L"', file alread exists.");
+					throw IOException(L"Failed opening '" + inputFileName + L"', file already exists.");
 				}
 				if (access == FileAccess::Read)
 					throw ArgumentException(L"Read-only access is incompatible with Create mode.");
 				else if (access == FileAccess::ReadWrite)
 				{
-					mode = L"w+b";
+					mode |= std::ios::in | std::ios::out | std::ios::trunc;
 					this->fileAccess = FileAccess::ReadWrite;
 				}
 				else
 				{
-					mode = L"wb";
+					mode |= std::ios::out | std::ios::trunc;
 					this->fileAccess = FileAccess::Write;
 				}
 				break;
@@ -75,41 +78,29 @@ namespace CoreLib
 					throw ArgumentException(L"Read-only access is incompatible with Append mode.");
 				else if (access == FileAccess::ReadWrite)
 				{
-					mode = L"a+b";
+					mode |= std::ios::in | std::ios::out | std::ios::app;
 					this->fileAccess = FileAccess::ReadWrite;
 				}
 				else
 				{
-					mode = L"ab";
+					mode |= std::ios::out | std::ios::app;
 					this->fileAccess = FileAccess::Write;
 				}
 				break;
 			default:
-				break;
+				throw ArgumentException(L"Invalid file mode.");
 			}
-			int shFlag;
-			switch (share)
+			if (share != FileShare::None)
 			{
-			case CoreLib::IO::FileShare::None:
-				shFlag = _SH_DENYRW;
-				break;
-			case CoreLib::IO::FileShare::ReadOnly:
-				shFlag = _SH_DENYWR;
-				break;
-			case CoreLib::IO::FileShare::WriteOnly:
-				shFlag = _SH_DENYRD;
-				break;
-			case CoreLib::IO::FileShare::ReadWrite:
-				shFlag = _SH_DENYNO;
-				break;
-			default:
-				throw ArgumentException(L"Invalid file share mode.");
-				break;
+				// std::fstream does not expose portable share flags. Keep behavior explicit.
+				throw NotSupportedException(L"Only FileShare::None is currently supported.");
 			}
-			handle = _wfsopen(fileName.Buffer(), mode, shFlag);
-			if (!handle)
+
+			handle = std::make_unique<std::fstream>(std::filesystem::path(inputFileName.Buffer()), mode);
+			if (!handle->is_open())
 			{
-				throw IOException(L"Cannot open file '" + fileName + L"'");
+				handle.reset();
+				throw IOException(L"Cannot open file '" + inputFileName + L"'");
 			}
 		}
 		FileStream::~FileStream()
@@ -118,40 +109,79 @@ namespace CoreLib
 		}
 		__int64 FileStream::GetPosition()
 		{
-			fpos_t pos;
-			fgetpos(handle, &pos);
-			return pos;
+			if (!handle)
+				throw IOException(L"FileStream is closed.");
+
+			const auto originalState = handle->rdstate();
+			handle->clear();
+			const auto readPos = handle->tellg();
+			if (readPos != static_cast<std::streampos>(-1))
+			{
+				handle->clear();
+				handle->setstate(originalState);
+				return static_cast<__int64>(readPos);
+			}
+
+			const auto writePos = handle->tellp();
+			if (writePos != static_cast<std::streampos>(-1))
+			{
+				handle->clear();
+				handle->setstate(originalState);
+				return static_cast<__int64>(writePos);
+			}
+
+			handle->clear();
+			handle->setstate(originalState);
+
+			throw IOException(L"Failed to get file position.");
 		}
 		void FileStream::Seek(SeekOrigin origin, __int64 offset)
 		{
-			int _origin;
+			if (!handle)
+				throw IOException(L"FileStream is closed.");
+
+			std::ios::seekdir seekDir;
 			switch (origin)
 			{
 			case CoreLib::IO::SeekOrigin::Start:
-				_origin = SEEK_SET;
+				seekDir = std::ios::beg;
 				break;
 			case CoreLib::IO::SeekOrigin::End:
-				_origin = SEEK_END;
+				seekDir = std::ios::end;
 				break;
 			case CoreLib::IO::SeekOrigin::Current:
-				_origin = SEEK_CUR;
+				seekDir = std::ios::cur;
 				break;
 			default:
 				throw NotSupportedException(L"Unsupported seek origin.");
-				break;
 			}
-			int rs = _fseeki64(handle, offset, _origin);
-			if (rs != 0)
-			{
+
+			handle->clear();
+			if (CanRead())
+				handle->seekg(offset, seekDir);
+			if (CanWrite())
+				handle->seekp(offset, seekDir);
+			if (handle->fail())
 				throw IOException(L"FileStream seek failed.");
-			}
 		}
 		int FileStream::Read(void * buffer, int length)
 		{
-			int bytes = fread_s(buffer, length, 1, length, handle);
+			if (!handle)
+				throw IOException(L"FileStream is closed.");
+			if (!CanRead())
+				throw IOException(L"FileStream does not support reading.");
+			if (length < 0)
+				throw ArgumentException(L"Read length cannot be negative.");
+			if (length == 0)
+				return 0;
+			if (buffer == nullptr)
+				throw ArgumentException(L"Read buffer cannot be null.");
+
+			handle->read(reinterpret_cast<char *>(buffer), length);
+			const int bytes = static_cast<int>(handle->gcount());
 			if (bytes == 0)
 			{
-				if (feof(handle))
+				if (handle->eof())
 					throw EndOfStreamException(L"End of stream reached when reading.");
 				else
 					throw IOException(L"FileStream read failed.");
@@ -160,27 +190,37 @@ namespace CoreLib
 		}
 		int FileStream::Write(const void * buffer, int length)
 		{
-			int bytes = fwrite(buffer, 1, length, handle);
-			if (bytes < length)
-			{
+			if (!handle)
+				throw IOException(L"FileStream is closed.");
+			if (!CanWrite())
+				throw IOException(L"FileStream does not support writing.");
+			if (length < 0)
+				throw ArgumentException(L"Write length cannot be negative.");
+			if (length == 0)
+				return 0;
+			if (buffer == nullptr)
+				throw ArgumentException(L"Write buffer cannot be null.");
+
+			handle->write(reinterpret_cast<const char *>(buffer), length);
+			if (handle->fail())
 				throw IOException(L"FileStream write failed.");
-			}
-			return bytes;
+
+			return length;
 		}
 		bool FileStream::CanRead()
 		{
-			return ((int)fileAccess & (int)FileAccess::Read) != 0;
+			return (static_cast<int>(fileAccess) & static_cast<int>(FileAccess::Read)) != 0;
 		}
 		bool FileStream::CanWrite()
 		{
-			return ((int)fileAccess & (int)FileAccess::Write) != 0;
+			return (static_cast<int>(fileAccess) & static_cast<int>(FileAccess::Write)) != 0;
 		}
 		void FileStream::Close()
 		{
 			if (handle)
 			{
-				fclose(handle);
-				handle = 0;
+				handle->close();
+				handle.reset();
 			}
 		}
 	}

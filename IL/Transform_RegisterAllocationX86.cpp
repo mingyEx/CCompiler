@@ -1,7 +1,11 @@
 #include "Optimization.h"
 #include "CodeEmitter_x86.h"
 #include "InterferenceAnalysis.h"
+#include <algorithm>
 #include <float.h>
+#include <string>
+#include <unordered_map>
+#include <vector>
 namespace Compiler
 {
 	namespace Intermediate
@@ -36,7 +40,7 @@ namespace Compiler
 					return Rank < var.Rank;
 				}
 			};
-			void MeasureBlockFrequency(List<double> &frequencies, ControlFlowNode * node, double freq)
+			void MeasureBlockFrequency(std::vector<double> &frequencies, ControlFlowNode * node, double freq)
 			{
 				frequencies[node->Id] = freq;
 				for (auto child : node->DomChildren)
@@ -67,60 +71,60 @@ namespace Compiler
 					return -1;
 			}
 		public:
-			virtual ProgramOptimizationResult Optimize(RefPtr<ControlFlowGraph> program) override
+			virtual ProgramOptimizationResult Optimize(std::shared_ptr<ControlFlowGraph> program) override
 			{
 				ProgramOptimizationResult rs;
 				rs.Program = program;
 				rs.Changed = true;
 				program->VariableSize = 0;
-				for (int i = 0; i<program->Variables.Count(); i++)
+				for (int i = 0; i < static_cast<int>(program->Variables.size()); i++)
 				{
 					auto var = program->Variables[i];
 					var->Location.Type = MemoryLocationType::Stack;
 					var->Location.Value = 0;
 				}
 				// Create short live ranges for contrained variables
-				auto eaxedx = new Variable(L"%eax:edx", 8);
-				eaxedx->Id = program->Variables.Count();
-				program->Variables.Add(eaxedx);
-				auto ecx = new Variable(L"%ecx", 4);
-				ecx->Id = program->Variables.Count();
-				program->Variables.Add(ecx);
-				int paramCopyStartId = program->Variables.Count();
+				auto eaxedx = std::make_shared<Variable>(std::wstring(L"%eax:edx"), 8);
+				eaxedx->Id = static_cast<int>(program->Variables.size());
+				program->Variables.push_back(eaxedx);
+				auto ecx = std::make_shared<Variable>(std::wstring(L"%ecx"), 4);
+				ecx->Id = static_cast<int>(program->Variables.size());
+				program->Variables.push_back(ecx);
+				int paramCopyStartId = static_cast<int>(program->Variables.size());
 				for (int i = 0; i<program->ParameterCount; i++)
 				{
 					auto var = program->Variables[i];
-					auto nVar = new Variable(*var);
-					nVar->Id = program->Variables.Count();
-					program->Variables.Add(nVar);
+					auto nVar = std::make_shared<Variable>(*var);
+					nVar->Id = static_cast<int>(program->Variables.size());
+					program->Variables.push_back(nVar);
 				}
 				// insert temporary variable for mul and div and call and shl and shr, replace parameter uses with corresponding copy
 				for (auto node : program->Nodes)
-					for (auto instrNode = node->Code.begin(); instrNode!=node->Code.end(); ++instrNode)
+					for (auto instrNode = FirstInstructionNode(node->Code); instrNode != nullptr; instrNode = NextInstructionNode(instrNode))
 					{
-						auto &instr = instrNode.Current->Value;
+						auto &instr = GetInstruction(instrNode);
 						if (instr.LeftOperand.IsVariable() && instr.LeftOperand.Var->Id < program->ParameterCount)
-							instr.LeftOperand.Var = program->Variables[instr.LeftOperand.Var->Id+paramCopyStartId].Ptr();
+							instr.LeftOperand.Var = program->Variables[instr.LeftOperand.Var->Id+paramCopyStartId].get();
 						for (auto & op : instr.Operands)
 						{
 							if (op.IsVariable() && op.Var->Id < program->ParameterCount)
-								op.Var = program->Variables[op.Var->Id+paramCopyStartId].Ptr();
+								op.Var = program->Variables[op.Var->Id+paramCopyStartId].get();
 						}
 						if (instr.Func == Operation::Mul || instr.Func == Operation::Div ||
 							instr.Func == Operation::Mod || instr.Func == Operation::SInc ||
 							instr.Func == Operation::Call)
 						{
 							if (instr.LeftOperand.IsVariable())
-								instrNode.Current->InsertAfter(Instruction(instr.LeftOperand, 0, eaxedx));
-							instr.LeftOperand.Var = eaxedx;
+								InsertInstructionAfter(instrNode, Instruction(instr.LeftOperand, 0, eaxedx.get()));
+							instr.LeftOperand.Var = eaxedx.get();
 						}
 						if (instr.Func == Operation::Lsh || instr.Func == Operation:: Rsh ||
 							instr.Func == Operation::Div || instr.Func == Operation::Mod)
 						{
 							if (instr.Operands[1].IsVariable())
 							{
-								instrNode.Current->InsertBefore(Instruction(ecx, 0, instr.Operands[1]));
-								instr.Operands[1].Var = ecx;
+								InsertInstructionBefore(instrNode, Instruction(ecx.get(), 0, instr.Operands[1]));
+								instr.Operands[1].Var = ecx.get();
 							}
 						}
 					}
@@ -130,21 +134,19 @@ namespace Compiler
 				{
 					for (int i = 0; i<program->ParameterCount; i++)
 					{
-						auto var = program->Variables[i].Ptr();
-						auto nVar = program->Variables[i+paramCopyStartId].Ptr();
+						auto var = program->Variables[i].get();
+						auto nVar = program->Variables[i+paramCopyStartId].get();
 						startNode->Code.AddFirst(Instruction(Operand(nVar), 0, Operand(var)));
 					}
 				}
 				// measure frequency
-				List<double> frequencies;
-				frequencies.SetSize(program->Nodes.Count());
+				std::vector<double> frequencies(program->Nodes.size(), 0.0);
 				MeasureBlockFrequency(frequencies, program->Source, 1.0);
-				List<RankedVariable> varRanks;
-				varRanks.SetSize(program->Variables.Count());
-				for (int i = 0; i<program->Variables.Count(); i++)
+				std::vector<RankedVariable> varRanks(program->Variables.size());
+				for (int i = 0; i < static_cast<int>(program->Variables.size()); i++)
 				{
-					varRanks[i].Var = program->Variables[i].Ptr();
-					if (i<program->ParameterCount || program->Variables[i]->Size == 0)
+					varRanks[i].Var = program->Variables[i].get();
+					if (i<program->ParameterCount || program->Variables[i]->Size == 0 || program->Variables[i]->Size != 4)
 						varRanks[i].Rank = -DBL_MAX;
 					else
 						varRanks[i].Rank = 0;				
@@ -164,19 +166,18 @@ namespace Compiler
 							if (op.IsVariable())
 								varRanks[op.Var->Id].Rank += frequencies[node->Id];
 					}
-				varRanks.Sort();
+				std::sort(varRanks.begin(), varRanks.end());
 				// build interference graph
-				auto interGraph = InterferenceAnalysis::BuildInterferenceGraph(program.Ptr());
-				List<List<int>> neighbours;
-				neighbours.SetSize(program->Variables.Count());
-				for (int i = 1; i<program->Variables.Count(); i++)
+				auto interGraph = InterferenceAnalysis::BuildInterferenceGraph(program.get());
+				std::vector<std::vector<int>> neighbours(program->Variables.size());
+				for (int i = 1; i < static_cast<int>(program->Variables.size()); i++)
 				{
 					for (int j = 0; j<i; j++)
 					{
 						if (interGraph.Interferes(i, j))
 						{
-							neighbours[i].Add(j);
-							neighbours[j].Add(i);
+							neighbours[i].push_back(j);
+							neighbours[j].push_back(i);
 						}
 					}
 				}
@@ -190,7 +191,7 @@ namespace Compiler
 				ecx->Location = ECX;
 				// color constrained variables first
 				for (int pass = 0; pass < 2; pass++)
-					for (int i = varRanks.Count()-1; i>=0; i--)
+					for (int i = static_cast<int>(varRanks.size()) - 1; i>=0; i--)
 					{
 						auto var = varRanks[i].Var;
 						if (varRanks[i].Rank < 0.0)
@@ -199,7 +200,7 @@ namespace Compiler
 							continue;
 						if (var->Location.Type == MemoryLocationType::Register)
 							continue;
-						int neighbourCount = neighbours[var->Id].Count();
+						int neighbourCount = static_cast<int>(neighbours[var->Id].size());
 						int regState = 0;
 						for (auto varId : neighbours[var->Id])
 						{
@@ -238,7 +239,7 @@ namespace Compiler
 					offset += var->Size;
 				}
 				offset = 0;
-				for (int i = program->ParameterCount; i<program->Variables.Count(); i++)
+				for (int i = program->ParameterCount; i < static_cast<int>(program->Variables.size()); i++)
 				{
 					auto var = program->Variables[i];
 					if (var->Location.Type == MemoryLocationType::Stack)
@@ -277,28 +278,32 @@ namespace Compiler
 				// remove unnecessary parameter copies
 				if (startNode)
 				{
-					auto instrNode = startNode->Code.begin();
-					Dictionary<Variable*, Variable*> varMap;
+					auto instrNode = FirstInstructionNode(startNode->Code);
+					std::unordered_map<Variable*, Variable*> var_map;
 					for (int i = 0; i<program->ParameterCount; i++)
 					{
-						auto & instr = instrNode.Current->Value;
+						auto & instr = GetInstruction(instrNode);
 						if (instr.LeftOperand.Var->Location.Type == MemoryLocationType::Stack)
 						{
-							varMap[instr.LeftOperand.Var] = instr.Operands[0].Var;
+							var_map[instr.LeftOperand.Var] = instr.Operands[0].Var;
 						}
-						++instrNode;
+						instrNode = NextInstructionNode(instrNode);
 					}
-					if (varMap.Count())
+					if (!var_map.empty())
 					{
 						for (auto node : program->Nodes)
 							for (auto instr : node->Code)
 							{
 								Variable * nVar = 0;
-								if (instr.LeftOperand.IsVariable() && varMap.TryGetValue(instr.LeftOperand.Var, nVar))
-									instr.LeftOperand.Var = nVar;
+								if (instr.LeftOperand.IsVariable())
+								{
+									if (auto iter = var_map.find(instr.LeftOperand.Var); iter != var_map.end())
+										instr.LeftOperand.Var = iter->second;
+								}
 								for (auto op : instr.Operands)
-									if (op.IsVariable() && varMap.TryGetValue(op.Var, nVar))
-										op.Var = nVar;
+									if (op.IsVariable())
+										if (auto iter = var_map.find(op.Var); iter != var_map.end())
+											op.Var = iter->second;
 							}
 					}
 				}
@@ -306,9 +311,9 @@ namespace Compiler
 			}
 		};
 
-		IntraProcOptimizer * CreateRegisterAllocator()
+		std::unique_ptr<IntraProcOptimizer> CreateRegisterAllocator()
 		{
-			return new RegisterAllocatorX86();
+			return std::make_unique<RegisterAllocatorX86>();
 		}
 	}
 }

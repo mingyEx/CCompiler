@@ -1,13 +1,14 @@
 #ifndef SIMPLE_C_SYNTAX_H
 #define SIMPLE_C_SYNTAX_H
 
-#include "Basic.h"
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace SimpleC
 {
 	namespace Compiler
 	{
-		using namespace CoreLib::Basic;
 		class SyntaxVisitor;
 		class FunctionSyntaxNode;
 
@@ -19,7 +20,7 @@ namespace SimpleC
 				_Int, _Double, _Char, _String, _Function, _Void, _Error
 			};
 			bool IsLeftValue;
-			bool IsReference;	// µœ÷“˝”√
+			bool IsReference;	//ÂÆûÁé∞ÂºïÁî®
 			_BaseType BaseType;
 			bool IsArray;
 			int ArrayLength;
@@ -74,24 +75,25 @@ namespace SimpleC
 				return !(this->operator==(type));
 			}
 
-			CoreLib::Basic::String ToString();
+			std::wstring ToString();
 		};
 
 		class SyntaxNode
 		{
 		public:
 			int Line, Col;
-			String FileName;
-			virtual void Accept(SyntaxVisitor * visitor) = 0;
+			std::wstring FileName;
+			virtual ~SyntaxNode() = default;
+			virtual void Accept(SyntaxVisitor & visitor) = 0;
 		};
-		//ƒ¨»œµƒ «ÀΩ”–ºÃ≥–£¨https://www.zhihu.com/question/425852397
+		//ÈªòËÆ§ÁöÑÊòØÁßÅÊúâÁªßÊâøÔºåhttps://www.zhihu.com/question/425852397
 		class TypeSyntaxNode : public SyntaxNode
 		{
 		public:
 			bool IsArray;
-			String TypeName;
+			std::wstring TypeName;
 			int ArrayLength;
-			virtual void Accept(SyntaxVisitor * visitor);
+			virtual void Accept(SyntaxVisitor & visitor);
 			TypeSyntaxNode()
 			{
 				ArrayLength = 0;
@@ -100,15 +102,15 @@ namespace SimpleC
 			ExpressionType ToExpressionType()
 			{
 				ExpressionType expType;
-				if (TypeName == "int")
+				if (TypeName == L"int")
 					expType.BaseType = ExpressionType::_Int;
-				else if (TypeName == "double")
+				else if (TypeName == L"double")
 					expType.BaseType = ExpressionType::_Double;
-				else if (TypeName == "char")
+				else if (TypeName == L"char")
 					expType.BaseType = ExpressionType::_Char;
-				else if (TypeName == "string")
+				else if (TypeName == L"string")
 					expType.BaseType = ExpressionType::_String;
-				else if (TypeName == "void")
+				else if (TypeName == L"void")
 					expType.BaseType = ExpressionType::_Void;
 
 				expType.ArrayLength = ArrayLength;
@@ -120,13 +122,9 @@ namespace SimpleC
 		class ParameterSyntaxNode : public SyntaxNode
 		{
 		public:
-			RefPtr<TypeSyntaxNode> Type;
-			String Name;
-			virtual void Accept(SyntaxVisitor * visitor);
-			/*ParameterSyntaxNode(RefPtr<TypeSyntaxNode> type, String name)
-				:Type(type), Name(name)
-			{
-			}*/
+			std::shared_ptr<TypeSyntaxNode> Type;
+			std::wstring Name;
+			virtual void Accept(SyntaxVisitor & visitor);
 			/*ParameterSyntaxNode(int line, int col)
 			{
 				Line = line;
@@ -153,8 +151,8 @@ namespace SimpleC
 		class VarExpressionSyntaxNode : public ExpressionSyntaxNode
 		{
 		public:
-			String Variable;	//var name.
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::wstring Variable;	//var name.
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class ConstantExpressionSyntaxNode : public ExpressionSyntaxNode
@@ -171,8 +169,8 @@ namespace SimpleC
 				double DoubleValue;
 				wchar_t CharValue;
 			};
-			String StringValue;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::wstring StringValue;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		enum class Operator
@@ -192,34 +190,34 @@ namespace SimpleC
 		{
 		public:
 			Operator Operator;
-			RefPtr<ExpressionSyntaxNode> Expression;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::shared_ptr<ExpressionSyntaxNode> Expression;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 		
 		class BinaryExpressionSyntaxNode : public ExpressionSyntaxNode
 		{
 		public:
 			Operator Operator;
-			RefPtr<ExpressionSyntaxNode> LeftExpression;
-			RefPtr<ExpressionSyntaxNode> RightExpression;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::shared_ptr<ExpressionSyntaxNode> LeftExpression;
+			std::shared_ptr<ExpressionSyntaxNode> RightExpression;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class IndexExpressionSyntaxNode : public ExpressionSyntaxNode
 		{
 		public:
-			RefPtr<ExpressionSyntaxNode> BaseExpression;
-			RefPtr<ExpressionSyntaxNode> IndexExpression;
+			std::shared_ptr<ExpressionSyntaxNode> BaseExpression;
+			std::shared_ptr<ExpressionSyntaxNode> IndexExpression;
 			
-			virtual void Accept(SyntaxVisitor * visitor);
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class InvokeExpressionSyntaxNode : public ExpressionSyntaxNode
 		{
 		public:
-			RefPtr<ExpressionSyntaxNode> FunctionExpr;
-			List<RefPtr<ExpressionSyntaxNode>> Arguments;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::shared_ptr<ExpressionSyntaxNode> FunctionExpr;
+			std::vector<std::shared_ptr<ExpressionSyntaxNode>> Arguments;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class StatementSyntaxNode : public SyntaxNode
@@ -229,27 +227,27 @@ namespace SimpleC
 		class EmptyStatementSyntaxNode : public StatementSyntaxNode
 		{
 		public:
-			virtual void Accept(SyntaxVisitor * visitor);
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class BlockStatementSyntaxNode : public StatementSyntaxNode
 		{
 		public:
-			List<RefPtr<StatementSyntaxNode>> Statements;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::vector<std::shared_ptr<StatementSyntaxNode>> Statements;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class VariableDeclr
 		{
 		public:
 			ExpressionType Type;
-			String Name;
+			std::wstring Name;
 
 			bool operator ==(const VariableDeclr & var)
 			{
 				return Name == var.Name;
 			}
-			bool operator ==(const String & name)	// usage?
+			bool operator ==(const std::wstring & name)	// usage?
 			{
 				return name == Name;
 			}
@@ -257,12 +255,12 @@ namespace SimpleC
 		class FunctionSyntaxNode : public SyntaxNode
 		{
 		public:
-			String Name;
-			RefPtr<TypeSyntaxNode> ReturnType;
-			List<RefPtr<ParameterSyntaxNode>> Parameters;
-			RefPtr<BlockStatementSyntaxNode> Body;
-			List<VariableDeclr> Variables;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::wstring Name;
+			std::shared_ptr<TypeSyntaxNode> ReturnType;
+			std::vector<std::shared_ptr<ParameterSyntaxNode>> Parameters;
+			std::shared_ptr<BlockStatementSyntaxNode> Body;
+			std::vector<VariableDeclr> Variables;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class ProgramSyntaxNode : public SyntaxNode
@@ -273,8 +271,8 @@ namespace SimpleC
 				Line = 0;
 				Col = 0;
 			}
-			List<RefPtr<FunctionSyntaxNode>> Functions;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::vector<std::shared_ptr<FunctionSyntaxNode>> Functions;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		//"int a=10;"
@@ -283,106 +281,108 @@ namespace SimpleC
 		public:
 			struct Variable : public SyntaxNode
 			{
-				String Name; //var name
-				RefPtr<ExpressionSyntaxNode> Expression;	//the part after `=`
-				virtual void Accept(SyntaxVisitor * visitor);
+				std::wstring Name; //var name
+				std::shared_ptr<ExpressionSyntaxNode> Expression;	//the part after `=`
+				virtual void Accept(SyntaxVisitor & visitor);
 			};
-			RefPtr<TypeSyntaxNode> Type;
-			List<RefPtr<Variable>> Variables;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::shared_ptr<TypeSyntaxNode> Type;
+			std::vector<std::shared_ptr<Variable>> Variables;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class IfStatementSyntaxNode : public StatementSyntaxNode
 		{
 		public:
-			RefPtr<ExpressionSyntaxNode> Predicate;
-			RefPtr<StatementSyntaxNode> PositiveStatement;
-			RefPtr<StatementSyntaxNode> NegativeStatement;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::shared_ptr<ExpressionSyntaxNode> Predicate;
+			std::shared_ptr<StatementSyntaxNode> PositiveStatement;
+			std::shared_ptr<StatementSyntaxNode> NegativeStatement;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
-		//ø¥ È ±º‰... È…œ√ª”–£¨’‚∏ˆπ¿º∆µ√ø¥c”Ô—‘µƒŒƒ∑®
+		//Áúã‰π¶Êó∂Èó¥...‰π¶‰∏äÊ≤°ÊúâÔºåËøô‰∏™‰º∞ËÆ°ÂæóÁúãcËØ≠Ë®ÄÁöÑÊñáÊ≥ï
 		class ForStatementSyntaxNode : public StatementSyntaxNode
 		{
 		public:
-			RefPtr<ExpressionSyntaxNode> InitialExpression;
-			RefPtr<VarDeclrStatementSyntaxNode> VarDeclr;
-			RefPtr<ExpressionSyntaxNode> MarginExpression;	// "..;i<n.size();.."
-			RefPtr<ExpressionSyntaxNode> SideEffectExpression;	//"++i"
-			RefPtr<StatementSyntaxNode> Statement;//"{...}"
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::shared_ptr<ExpressionSyntaxNode> InitialExpression;
+			std::shared_ptr<VarDeclrStatementSyntaxNode> VarDeclr;
+			std::shared_ptr<ExpressionSyntaxNode> MarginExpression;	// "..;i<n.size();.."
+			std::shared_ptr<ExpressionSyntaxNode> SideEffectExpression;	//"++i"
+			std::shared_ptr<StatementSyntaxNode> Statement;//"{...}"
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class WhileStatementSyntaxNode : public StatementSyntaxNode
 		{
 		public:
-			RefPtr<ExpressionSyntaxNode> Predicate;
-			RefPtr<StatementSyntaxNode> Statement;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::shared_ptr<ExpressionSyntaxNode> Predicate;
+			std::shared_ptr<StatementSyntaxNode> Statement;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class DoWhileStatementSyntaxNode : public StatementSyntaxNode
 		{
 		public:
-			RefPtr<StatementSyntaxNode> Statement;
-			RefPtr<ExpressionSyntaxNode> Predicate;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::shared_ptr<StatementSyntaxNode> Statement;
+			std::shared_ptr<ExpressionSyntaxNode> Predicate;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class BreakStatementSyntaxNode : public StatementSyntaxNode
 		{
 		public:
-			virtual void Accept(SyntaxVisitor * visitor);
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class ContinueStatementSyntaxNode : public StatementSyntaxNode
 		{
 		public:
-			virtual void Accept(SyntaxVisitor * visitor);
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class ReturnStatementSyntaxNode : public StatementSyntaxNode
 		{
 		public:
-			RefPtr<ExpressionSyntaxNode> Expression;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::shared_ptr<ExpressionSyntaxNode> Expression;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class ExpressionStatementSyntaxNode : public StatementSyntaxNode
 		{
 		public:
-			RefPtr<ExpressionSyntaxNode> Expression;
-			virtual void Accept(SyntaxVisitor * visitor);
+			std::shared_ptr<ExpressionSyntaxNode> Expression;
+			virtual void Accept(SyntaxVisitor & visitor);
 		};
 
 		class SyntaxVisitor
 		{
 		public:
-			virtual void VisitProgram(ProgramSyntaxNode * program)
+			virtual ~SyntaxVisitor() = default;
+			virtual void VisitProgram(ProgramSyntaxNode & program)
 			{
-				program->Functions.ForEach([&](RefPtr<FunctionSyntaxNode> f){f->Accept(this);});	//iterator every function.
+				for (auto & function : program.Functions)
+					function->Accept(*this);
 			}
-			virtual void VisitFunction(FunctionSyntaxNode* function){}	
-			virtual void VisitBlockStatement(BlockStatementSyntaxNode* stmt){}
-			virtual void VisitBreakStatement(BreakStatementSyntaxNode* stmt){}
-			virtual void VisitContinueStatement(ContinueStatementSyntaxNode* stmt){}
-			virtual void VisitDoWhileStatement(DoWhileStatementSyntaxNode* stmt){}
-			virtual void VisitEmptyStatement(EmptyStatementSyntaxNode* stmt){}
-			virtual void VisitForStatement(ForStatementSyntaxNode* stmt){}
-			virtual void VisitIfStatement(IfStatementSyntaxNode* stmt){}
-			virtual void VisitReturnStatement(ReturnStatementSyntaxNode* stmt){}
-			virtual void VisitVarDeclrStatement(VarDeclrStatementSyntaxNode* stmt){}
-			virtual void VisitWhileStatement(WhileStatementSyntaxNode* stmt){}
-			virtual void VisitExpressionStatement(ExpressionStatementSyntaxNode* stmt){}
-			virtual void VisitBinaryExpression(BinaryExpressionSyntaxNode* expr){}
-			virtual void VisitConstantExpression(ConstantExpressionSyntaxNode* expr){}
-			virtual void VisitIndexExpression(IndexExpressionSyntaxNode* expr){}
-			virtual void VisitInvokeExpression(InvokeExpressionSyntaxNode* expr){}
-			virtual void VisitUnaryExpression(UnaryExpressionSyntaxNode* expr){}
-			virtual void VisitVarExpression(VarExpressionSyntaxNode* expr){}
-			virtual void VisitParameter(ParameterSyntaxNode* para){}
-			virtual void VisitType(TypeSyntaxNode* type){}
-			virtual void VisitDeclrVariable(VarDeclrStatementSyntaxNode::Variable* variable){}
+			virtual void VisitFunction(FunctionSyntaxNode& function){}	
+			virtual void VisitBlockStatement(BlockStatementSyntaxNode& stmt){}
+			virtual void VisitBreakStatement(BreakStatementSyntaxNode& stmt){}
+			virtual void VisitContinueStatement(ContinueStatementSyntaxNode& stmt){}
+			virtual void VisitDoWhileStatement(DoWhileStatementSyntaxNode& stmt){}
+			virtual void VisitEmptyStatement(EmptyStatementSyntaxNode& stmt){}
+			virtual void VisitForStatement(ForStatementSyntaxNode& stmt){}
+			virtual void VisitIfStatement(IfStatementSyntaxNode& stmt){}
+			virtual void VisitReturnStatement(ReturnStatementSyntaxNode& stmt){}
+			virtual void VisitVarDeclrStatement(VarDeclrStatementSyntaxNode& stmt){}
+			virtual void VisitWhileStatement(WhileStatementSyntaxNode& stmt){}
+			virtual void VisitExpressionStatement(ExpressionStatementSyntaxNode& stmt){}
+			virtual void VisitBinaryExpression(BinaryExpressionSyntaxNode& expr){}
+			virtual void VisitConstantExpression(ConstantExpressionSyntaxNode& expr){}
+			virtual void VisitIndexExpression(IndexExpressionSyntaxNode& expr){}
+			virtual void VisitInvokeExpression(InvokeExpressionSyntaxNode& expr){}
+			virtual void VisitUnaryExpression(UnaryExpressionSyntaxNode& expr){}
+			virtual void VisitVarExpression(VarExpressionSyntaxNode& expr){}
+			virtual void VisitParameter(ParameterSyntaxNode& para){}
+			virtual void VisitType(TypeSyntaxNode& type){}
+			virtual void VisitDeclrVariable(VarDeclrStatementSyntaxNode::Variable& variable){}
 		};
 	}
 }

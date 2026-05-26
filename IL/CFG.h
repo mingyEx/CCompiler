@@ -1,27 +1,37 @@
 #ifndef COMPILER_CFG_H
 #define COMPILER_CFG_H
 
+#include <algorithm>
+#include <filesystem>
+#include <memory>
+#include <vector>
+
 #include "IntermediateCode.h"
+#include "BitIntSet.h"
 #include "IntSet.h"
 
 namespace Compiler
 {
 	namespace Intermediate
 	{
-		using namespace CoreLib::Basic;
+		using CoreLib::Basic::BitIntSet;
+		using CoreLib::Basic::IntSet;
+		using CoreLib::Basic::LinkedList;
 
 		class ControlFlowNode
 		{
 		public:
 			int Id;
-			List<ControlFlowNode*> Entries;	
+			std::vector<ControlFlowNode*> Entries;
 			ControlFlowNode* Exits[2];
 			LinkedList<Instruction> Code;
 		public:
 			ControlFlowNode* ImmediateDominator, * ReverseImmediateDominator;
-			List<ControlFlowNode *> DomChildren, ReverseDomChildren;		  
-			List<ControlFlowNode *> DominateFrontier, ReverseDominateFrontier;
-			IntSet LiveOut, LiveIn;	// IntSetÀ´½øĞĞ¼¯ºÏÔËËã 
+			std::vector<ControlFlowNode *> DomChildren;
+			std::vector<ControlFlowNode *> ReverseDomChildren;
+			std::vector<ControlFlowNode *> DominateFrontier;
+			std::vector<ControlFlowNode *> ReverseDominateFrontier;
+			IntSet LiveOut, LiveIn;	// IntSetæ¥è¿›è¡Œé›†åˆè¿ç®— 
 		public:
 			ControlFlowNode()
 			{
@@ -33,29 +43,37 @@ namespace Compiler
 			}
 			ControlFlowNode(ControlFlowNode && node)
 			{
-				operator=(_Move(node));
+				operator=(std::move(node));
 			}
 			ControlFlowNode & operator = (ControlFlowNode && node)
 			{
 				Id = node.Id;
-				Entries = _Move(node.Entries);
+				Entries = std::move(node.Entries);
 				Exits[0] = node.Exits[0]; Exits[1] = node.Exits[1];
-				Code = _Move(node.Code);
+				Code = std::move(node.Code);
+				ImmediateDominator = node.ImmediateDominator;
+				ReverseImmediateDominator = node.ReverseImmediateDominator;
+				DomChildren = std::move(node.DomChildren);
+				ReverseDomChildren = std::move(node.ReverseDomChildren);
+				DominateFrontier = std::move(node.DominateFrontier);
+				ReverseDominateFrontier = std::move(node.ReverseDominateFrontier);
+				LiveOut = std::move(node.LiveOut);
+				LiveIn = std::move(node.LiveIn);
 				return *this;
 			}
 			InstructionNode* FirstInstruction()
 			{
-				InstructionNode * rs = Code.FirstNode();	
-				//È¡³öµÚÒ»ÌõÖ¸Áî,InstructionNodeÊÇ LinkedNode<Instruction>£¬´æÁËÖ¸ÁîµÄÒ»¸ö½Úµã
-				//CodeÊÇLinkedList<Instruction>£¬´æÁËÖ¸ÁîµÄÁ´±í£¬ËùÒÔºóÕßµÈÓÚList<>Ç°Õß¡£ ÕâÀïÊÇÔÚ±éÀúÀ´ÕÒ¶«Î÷¡£ µ±µÚÒ»¸öÊÇphiµÄÊ±ºò¾ÍÕÒÏÂÒ»¸ö£¬ÒòÎª
-				//... À´¿´¿´Õâ¸öº¯Êıµ÷ÓÃµÄµØ·½°É£¬ÎÒ¾õµÃËüÒ»¶¨²»Ö¹ÔÚ³ÌĞò¿ªÊ¼½Úµã±»µ÷ÓÃ£¬ÖĞ¼äÓöµ½Ä³¸ö¿éµÄÊ±ºò£¬Ëû»¹ÊÇ»á±»µ÷ÓÃµÄ.µ½ÄÇÊ±ºòphi±ØĞë±»Ìø¹ı£¬ÒòÎªÄ¿±ê»úÃ»ÓĞ¶ÔÓ¦µÄÖ¸Áî ? ÔÙËµ°É~
-				//ÉÏÀ´¾ÍÊÇoutofssa,²»´òµôPhi¾ÍËûÂèµÄ¹ÖÁË..
-				while (rs && rs->Value.Func == Operation::Phi)	//Èç¹ûphi´æÔÚ¾ÍÌø¹ı£¬
-					rs = rs->GetNext();
+				InstructionNode * rs = FirstInstructionNode(Code);	
+				//å–å‡ºç¬¬ä¸€æ¡æŒ‡ä»¤,InstructionNodeæ˜¯ LinkedNode<Instruction>ï¼Œå­˜äº†æŒ‡ä»¤çš„ä¸€ä¸ªèŠ‚ç‚¹
+				//Codeæ˜¯LinkedList<Instruction>ï¼Œå­˜äº†æŒ‡ä»¤çš„é“¾è¡¨ï¼Œæ‰€ä»¥åè€…ç­‰äºList<>å‰è€…ã€‚ è¿™é‡Œæ˜¯åœ¨éå†æ¥æ‰¾ä¸œè¥¿ã€‚ å½“ç¬¬ä¸€ä¸ªæ˜¯phiçš„æ—¶å€™å°±æ‰¾ä¸‹ä¸€ä¸ªï¼Œå› ä¸º
+				//... æ¥çœ‹çœ‹è¿™ä¸ªå‡½æ•°è°ƒç”¨çš„åœ°æ–¹å§ï¼Œæˆ‘è§‰å¾—å®ƒä¸€å®šä¸æ­¢åœ¨ç¨‹åºå¼€å§‹èŠ‚ç‚¹è¢«è°ƒç”¨ï¼Œä¸­é—´é‡åˆ°æŸä¸ªå—çš„æ—¶å€™ï¼Œä»–è¿˜æ˜¯ä¼šè¢«è°ƒç”¨çš„.åˆ°é‚£æ—¶å€™phiå¿…é¡»è¢«è·³è¿‡ï¼Œå› ä¸ºç›®æ ‡æœºæ²¡æœ‰å¯¹åº”çš„æŒ‡ä»¤ ? å†è¯´å§~
+				//ä¸Šæ¥å°±æ˜¯outofssa,ä¸æ‰“æ‰Phiå°±ä»–å¦ˆçš„æ€ªäº†..
+				while (rs && rs->Value.Func == Operation::Phi)	//å¦‚æœphiå­˜åœ¨å°±è·³è¿‡ï¼Œ
+					rs = NextInstructionNode(rs);
 				return rs;
 			}
 
-			int GetExitCount() const	//»ñÈ¡³ö¿ÚÊıÁ¿.
+			int GetExitCount() const	//è·å–å‡ºå£æ•°é‡.
 			{
 				if (Exits[0] == 0)
 					return 0;
@@ -65,6 +83,24 @@ namespace Compiler
 					return 2;
 			}
 		};
+
+		inline int EntryIndexOf(const std::vector<ControlFlowNode*>& entries, ControlFlowNode* node)
+		{
+			auto iter = std::find(entries.begin(), entries.end(), node);
+			return iter == entries.end() ? -1 : static_cast<int>(iter - entries.begin());
+		}
+
+		inline void RemoveEntryAt(std::vector<ControlFlowNode*>& entries, int index)
+		{
+			entries.erase(entries.begin() + index);
+		}
+
+		inline void RemoveEntry(std::vector<ControlFlowNode*>& entries, ControlFlowNode* node)
+		{
+			auto iter = std::find(entries.begin(), entries.end(), node);
+			if (iter != entries.end())
+				entries.erase(iter);
+		}
 
 		class ControlFlowGraph
 		{
@@ -77,13 +113,13 @@ namespace Compiler
 			static void AddEdge(ControlFlowNode * node1, int outId, ControlFlowNode * node2);
 		public:
 			ControlFlowNode *Source, *Sink;
-			List<RefPtr<ControlFlowNode>> Nodes;
-			List<RefPtr<Variable>> Variables;
+			std::vector<std::shared_ptr<ControlFlowNode>> Nodes;
+			std::vector<std::shared_ptr<Variable>> Variables;
 			int ParameterCount, VariableSize;	
-			//ºÜÃ÷ÏÔÊÇĞÎ²ÎºÍÊµ²Î... ¿ÉÊÇÎªÉ¶Òª¶ÔĞÎ²ÎÇø±ğ¶Ô´ı£¿´Ó¹¹ÔìÀ´¿´£¬ĞÎ²ÎÒ²´æÔÚÉÏÒ»ĞĞÀï£¬ËùÒÔÕâÀïÊÇÎªÁËÇø·Ö¡£
-			List<InstructionNode *> VarDefs;
-			List<ControlFlowNode *> GetPostOrder();
-			List<ControlFlowNode *> GetPostOrderOnReverseCFG();
+			//å¾ˆæ˜æ˜¾æ˜¯å½¢å‚å’Œå®å‚... å¯æ˜¯ä¸ºå•¥è¦å¯¹å½¢å‚åŒºåˆ«å¯¹å¾…ï¼Ÿä»æ„é€ æ¥çœ‹ï¼Œå½¢å‚ä¹Ÿå­˜åœ¨ä¸Šä¸€è¡Œé‡Œï¼Œæ‰€ä»¥è¿™é‡Œæ˜¯ä¸ºäº†åŒºåˆ†ã€‚
+			std::vector<InstructionNode *> VarDefs;
+			std::vector<ControlFlowNode *> GetPostOrder();
+			std::vector<ControlFlowNode *> GetPostOrderOnReverseCFG();
 			ControlFlowGraph(){}
 			ControlFlowGraph(const ControlFlowGraph & graph)
 			{
@@ -97,25 +133,25 @@ namespace Compiler
 			}
 			ControlFlowGraph(ControlFlowGraph && graph)
 			{
-				Variables = _Move(graph.Variables);
-				VarDefs = _Move(graph.VarDefs);
+				Variables = std::move(graph.Variables);
+				VarDefs = std::move(graph.VarDefs);
 				ParameterCount = graph.ParameterCount;
 				VariableSize = graph.VariableSize;
-				Nodes = _Move(graph.Nodes);
+				Nodes = std::move(graph.Nodes);
 				Source = graph.Source;
 				Sink = graph.Sink;
 			}
 			ControlFlowNode * AddNode()
 			{
-				Nodes.Add(new ControlFlowNode());
-				Nodes.Last()->Id = Nodes.Count()-1;
-				return Nodes.Last().Ptr();
+				Nodes.push_back(std::make_shared<ControlFlowNode>());
+				Nodes.back()->Id = static_cast<int>(Nodes.size()) - 1;
+				return Nodes.back().get();
 			}
-			void Dump(const String & fileName);
+			void Dump(const std::filesystem::path & fileName);
 			void ConvertToSSA();
 			void ComputeDominatorTree();
 			void ComputeVariableLiveness();
-			static ControlFlowGraph * FromCode(const Function & code);
+			static std::shared_ptr<ControlFlowGraph> FromCode(const Function & code);
 			void ToCode(Function & func);
 		};
 	}

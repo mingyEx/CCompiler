@@ -1,16 +1,29 @@
 #include "IntermediateCode.h"
 
+#include <sstream>
+
 namespace Compiler
 {
 	namespace Intermediate
 	{
+		namespace
+		{
+			template <typename TValue>
+			std::wstring ToWideString(TValue value)
+			{
+				std::wostringstream writer;
+				writer << value;
+				return writer.str();
+			}
+		}
+
 		class AddSubOperation : public Operation
 		{
 		public:
 			AddSubOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
 				if (ops[0].IsIntegral() && ops[1].IsIntegral())
 				{
@@ -20,7 +33,7 @@ namespace Compiler
 						opReplace = Operand(ops[0].IntValue - ops[1].IntValue);
 					return true;
 				}
-				else if (ops[0].IsIntegral() && ops[0].IntValue == 0)
+				else if (this == Operation::Add && ops[0].IsIntegral() && ops[0].IntValue == 0)
 				{
 					opReplace = ops[1];
 					return true;
@@ -44,7 +57,7 @@ namespace Compiler
 			ModOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
 				if (ops[0].IsIntegral() && ops[1].IsIntegral())
 				{
@@ -58,14 +71,9 @@ namespace Compiler
 					opReplace = Operand(0);
 					return true;
 				}
-				else if (ops[0].IsIntegral() && ops[0].IntValue == 1)
-				{
-					opReplace = Operand(1);
-					return true;
-				}
 				else if (ops[1].IsIntegral() && ops[1].IntValue == 1)
 				{
-					opReplace = ops[0];
+					opReplace = Operand(0);
 					return true;
 				}
 				else if (ops[0].IsVariable() && ops[1].IsVariable() && ops[0].Var == ops[1].Var)
@@ -82,7 +90,7 @@ namespace Compiler
 			MulDivOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
 				if (ops[0].IsIntegral() && ops[1].IsIntegral())
 				{
@@ -133,7 +141,7 @@ namespace Compiler
 			FAddSubOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
 				bool isOpConst[2];
 				double opValue[2] = {0.0, 0.0};
@@ -162,7 +170,7 @@ namespace Compiler
 						opReplace = Operand((float)(rs));
 					return true;
 				}
-				else if (isOpConst[0] && opValue[0] == 0.0)
+				else if (this == Operation::FAdd && isOpConst[0] && opValue[0] == 0.0)
 				{
 					opReplace = ops[1];
 					return true;
@@ -174,7 +182,7 @@ namespace Compiler
 				}
 				else if (this == Operation::FSub && ops[0].IsVariable() && ops[1].IsVariable() && ops[0].Var == ops[1].Var)
 				{
-					if (ops[0].Type == OperandType::ConstDouble || ops[1].Type == OperandType::ConstDouble)
+					if (ops[0].GetDataType() == DataType::Double || ops[1].GetDataType() == DataType::Double)
 						opReplace = Operand(0.0);
 					else
 						opReplace = Operand(0.0f);
@@ -189,7 +197,7 @@ namespace Compiler
 			FMulDivOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
 				bool isOpConst[2];
 				double opValue[2] = {0.0, 0.0};
@@ -208,7 +216,7 @@ namespace Compiler
 				if (isOpConst[0] && isOpConst[1])
 				{
 					double rs;
-					if (ops[1].IntValue == 0)
+					if (this == Operation::FDiv && opValue[1] == 0.0)
 						throw CompileErrorException(L"Division by zero.");
 					if (this == Operation::FMul)
 						rs = opValue[0] * opValue[1];
@@ -232,7 +240,7 @@ namespace Compiler
 				}
 				else if (this == Operation::FMul && (isOpConst[0] && opValue[0] == 0.0 || isOpConst[1] && opValue[1] == 0.0))
 				{
-					if (ops[0].Type == OperandType::ConstDouble || ops[1].Type == OperandType::ConstDouble)
+					if (ops[0].GetDataType() == DataType::Double || ops[1].GetDataType() == DataType::Double)
 						opReplace = Operand(0.0);
 					else
 						opReplace = Operand((float)(0.0f));
@@ -240,7 +248,7 @@ namespace Compiler
 				}
 				else if (this == Operation::FDiv && ops[0].IsVariable() && ops[1].IsVariable() && ops[0].Var == ops[1].Var)
 				{
-					if (ops[0].Type == OperandType::ConstDouble || ops[1].Type == OperandType::ConstDouble)
+					if (ops[0].GetDataType() == DataType::Double || ops[1].GetDataType() == DataType::Double)
 						opReplace = Operand(1.0);
 					else
 						opReplace = Operand(1.0f);
@@ -266,7 +274,7 @@ namespace Compiler
 			ShiftOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
 				if (ops[0].IsIntegral() && ops[1].IsIntegral())
 				{
@@ -290,8 +298,10 @@ namespace Compiler
 			CompareOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
+				if (this == Operation::Compare)
+					return false;
 				if (ops[0].IsIntegral() && ops[1].IsIntegral())
 				{
 					if (this == Operation::Eql)
@@ -313,6 +323,8 @@ namespace Compiler
 				{
 					if (this == Operation::Eql)
 						opReplace = Operand(1);
+					else if (this == Operation::Leq || this == Operation::Geq)
+						opReplace = Operand(1);
 					else
 						opReplace = Operand(0);
 					return true;
@@ -326,7 +338,7 @@ namespace Compiler
 			NegNotOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
 				if (ops[0].IsIntegral())
 				{
@@ -347,7 +359,7 @@ namespace Compiler
 			AndOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
 				if (ops[0].IsIntegral() && ops[1].IsIntegral())
 				{
@@ -373,7 +385,7 @@ namespace Compiler
 			OrOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
 				if (ops[0].IsIntegral() && ops[1].IsIntegral())
 				{
@@ -399,7 +411,7 @@ namespace Compiler
 			BitOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
 				if (ops[0].IsIntegral() && ops[1].IsIntegral())
 				{
@@ -420,7 +432,7 @@ namespace Compiler
 			ConversionOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
 				if (ops[0].IsIntegral())
 				{
@@ -430,7 +442,7 @@ namespace Compiler
 						throw CompileErrorException(L"Invalid instruction d2i(int)");
 					return true;
 				}
-				else if (ops[0].Type == OperandType::ConstDouble && ops[0].Type == OperandType::ConstFloat)
+				else if (ops[0].Type == OperandType::ConstDouble || ops[0].Type == OperandType::ConstFloat)
 				{
 					if (this == Operation::D2I)
 					{
@@ -452,7 +464,7 @@ namespace Compiler
 			SIncOperation(const wchar_t * name)
 				:Operation(name)
 			{}
-			virtual bool TryEvaluate(Operand & opReplace, const List<Operand> & ops) override
+			virtual bool TryEvaluate(Operand & opReplace, std::vector<Operand> & ops) override
 			{
 				if (ops[1].IsIntegral() && ops[2].IsIntegral())
 				{
@@ -533,61 +545,61 @@ namespace Compiler
 		Operation::OperationPtr Operation::Ret = &Operation_Ret;
 		Operation::OperationPtr Operation::Phi = &Operation_Phi;
 
-		String Operand::ToString() const
+		std::wstring Operand::ToString() const
 		{
-			StringBuilder rs;
+			std::wstring rs;
 			switch (Type)
 			{
 			case Compiler::Intermediate::OperandType::None:
-				rs.Append(L"[none]");
+				rs += L"[none]";
 				break;
 			case Compiler::Intermediate::OperandType::ConstInt8:
-				rs.Append(String(IntValue));
+				rs += ToWideString(IntValue);
 				break;
 			case Compiler::Intermediate::OperandType::ConstInt16:
-				rs.Append(String(IntValue));
+				rs += ToWideString(IntValue);
 				break;
 			case Compiler::Intermediate::OperandType::ConstInt32:
-				rs.Append(String(IntValue));
+				rs += ToWideString(IntValue);
 				break;
 			case Compiler::Intermediate::OperandType::ConstFloat:
-				rs.Append(String(FloatValue));
+				rs += ToWideString(FloatValue);
 				break;
 			case Compiler::Intermediate::OperandType::ConstDouble:
-				rs.Append(String(DoubleValue));
+				rs += ToWideString(DoubleValue);
 				break;
 			case Compiler::Intermediate::OperandType::Variable:
-				rs.Append(Var->Name);
-				rs.Append(L"[");
-				rs.Append(String(Var->Id));
-				rs.Append(L"]");
+				rs += Var->Name;
+				rs += L"[";
+				rs += ToWideString(Var->Id);
+				rs += L"]";
 				break;
 			default:
 				break;
 			}
-			return rs.ProduceString();
+			return rs;
 		}
 
-		String Instruction::ToString() const
+		std::wstring Instruction::ToString() const
 		{
-			StringBuilder rs;
+			std::wstring rs;
 			if (LeftOperand.Type != OperandType::None)
 			{
-				rs.Append(LeftOperand.ToString());	//’‚∏ˆ LeftOperand  « TryEvaluate µƒµ⁄“ª∏ˆ≤Œ ˝¬£ø
-				//¿‡–Õ“ª—˘£¨µ»ø¥ø¥µ˜”√µƒµÿ∑Ω”–√ª”–∏≥÷µ∞….
-				rs.Append(L" = ");
+				rs += LeftOperand.ToString();	//Ëøô‰∏™ LeftOperand ÊòØ TryEvaluate ÁöÑÁ¨¨‰∏Ä‰∏™ÂèÇÊï∞ÂêóÔºü
+				//Á±ªÂûã‰∏ÄÊ†∑ÔºåÁ≠âÁúãÁúãË∞ÉÁî®ÁöÑÂú∞ÊñπÊúâÊ≤°ÊúâËµãÂÄºÂêß.
+				rs += L" = ";
 			}
 			if (Func)
-				rs.Append(Func->Name);//’‚∏ˆ Func  «≤Ÿ◊˜∑˚£¨»˝µÿ÷∑¥˙¬Îµƒ. 
-			rs.Append(L"(");		//≈∂£¨À˚ªπ”–¿®∫≈.
-			for (int i = 0; i<Operands.Count(); i++)
+				rs += Func->Name;//Ëøô‰∏™ Func ÊòØÊìç‰ΩúÁ¨¶Ôºå‰∏âÂú∞ÂùÄ‰ª£Á†ÅÁöÑ. 
+			rs += L"(";		//Âì¶Ôºå‰ªñËøòÊúâÊã¨Âè∑.
+			for (size_t i = 0; i < Operands.size(); i++)
 			{
 				if (i > 0)
-					rs.Append(L", ");
-				rs.Append(Operands[i].ToString());	//≤Œ ˝÷Æº‰“‘,∏Ùø™
+					rs += L", ";
+				rs += Operands[i].ToString();	//ÂèÇÊï∞‰πãÈó¥‰ª•,ÈöîÂºÄ
 			}
-			rs.Append(L")");
-			return rs.ProduceString();
+			rs += L")";
+			return rs;
 		}
 
 		DataType Operand::GetDataType()		
@@ -603,7 +615,7 @@ namespace Compiler
 			case OperandType::ConstFloat:
 				return DataType::Float;
 			default:
-				return Var->Type;	//’‚∏ˆµƒ“‚Àº «◊‘∂®“Â±‰¡øµƒ÷µ¿‡–Õ£ø
+				return Var->Type;	//Ëøô‰∏™ÁöÑÊÑèÊÄùÊòØËá™ÂÆö‰πâÂèòÈáèÁöÑÂÄºÁ±ªÂûãÔºü
 			}
 		}
 	}

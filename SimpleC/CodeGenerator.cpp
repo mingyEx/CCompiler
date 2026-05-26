@@ -1,23 +1,26 @@
-#include "SyntaxVisitors.h"
+﻿#include "SyntaxVisitors.h"
 #include "CodeGenerator.h"
 #include "IL/IntermediateCode.h"
+
+#include <stdexcept>
 
 namespace SimpleC
 {
 	namespace Compiler
 	{
-		void CodeGenerator::VisitProgram(ProgramSyntaxNode * program)
+		void CodeGenerator::VisitProgram(ProgramSyntaxNode & program_node)
 		{
+			auto * program = &program_node;
 			this->program = program;
-			CompiledCode = new Program();
+			CompiledCode = std::make_unique<Program>();
 			for (auto & f : program->Functions)
 			{
-				CompiledCode->Functions.Add(Function());
-				curFunc = &CompiledCode->Functions.Last();
-				f->Accept(this);
+				CompiledCode->Functions.emplace_back();
+				curFunc = &CompiledCode->Functions.back();
+				f->Accept(*this);
 			}
 		}
-		int GetVarSizeInBytes(ExpressionType & type)
+		int GetVarSizeInBytes(const ExpressionType & type)
 		{
 			int arrLen = type.ArrayLength == 0?1:type.ArrayLength;
 			switch (type.BaseType)
@@ -29,7 +32,7 @@ namespace SimpleC
 			case ExpressionType::_Char:
 				return (2 * arrLen + 2)/4 * 4; // 4 bytes alignment
 			case ExpressionType::_String:
-				throw NotSupportedException(L"string not supported by current back end.");
+				throw std::runtime_error("string not supported by current back end.");
 				return 4;
 			default:
 				return 0;
@@ -39,7 +42,7 @@ namespace SimpleC
 		int GetTypeId(const ExpressionType & type)
 		{
 			if (type.ArrayLength > 0)
-				throw NotSupportedException(L"unsupported type.");
+				throw std::runtime_error("unsupported type.");
 			switch (type.BaseType)
 			{
 			case ExpressionType::_Int:
@@ -49,10 +52,10 @@ namespace SimpleC
 			case ExpressionType::_Char:
 				return 2;
 			case ExpressionType::_String:
-				throw NotSupportedException(L"string not supported by current back end.");
+				throw std::runtime_error("string not supported by current back end.");
 				return 4;
 			default:
-				throw NotSupportedException(L"unsupported type.");
+				throw std::runtime_error("unsupported type.");
 				break;
 			}
 		}
@@ -69,74 +72,84 @@ namespace SimpleC
 			case ExpressionType::_Char:
 				return 2;
 			case ExpressionType::_String:
-				throw NotSupportedException(L"string not supported by current back end.");
+				throw std::runtime_error("string not supported by current back end.");
 				return 4;
 			default:
 				return 0;
 				break;
 			}
 		}
+		DataType GetIntermediateDataType(const ExpressionType & type)
+		{
+			if (type.BaseType == ExpressionType::_Double)
+				return DataType::Double;
+			return DataType::Int;
+		}
 
 		void CodeGenerator::InitTempVarStack()
 		{
-			doubleVars.Clear();
-			intVars.Clear();
+			doubleVars.clear();
+			intVars.clear();
 			doubleVarStackPtr = intVarStackPtr = 0;
 		}
 		Variable * CodeGenerator::AllocVar32()
 		{
 			Variable * rs = 0;
-			if (intVarStackPtr < intVars.Count())
+			if (intVarStackPtr < static_cast<int>(intVars.size()))
 			{
 				rs = intVars[intVarStackPtr++];
 			}
 			else
 			{
-				rs = curFunc->AddVariable(String(L"^tmp32_") + String(intVarStackPtr++), 0, 4);
-				intVars.Add(rs);
+				const std::wstring name = L"^tmp32_" + std::to_wstring(intVarStackPtr++);
+				rs = curFunc->AddVariable(name, 0, 4);
+				intVars.push_back(rs);
 			}
+			rs->Type = DataType::Int;
 			PushExprVar(rs);
 			return rs;
 		}
 		Variable * CodeGenerator::AllocVar64()
 		{
 			Variable * rs = 0;
-			if (doubleVarStackPtr < doubleVars.Count())
+			if (doubleVarStackPtr < static_cast<int>(doubleVars.size()))
 			{
 				rs = doubleVars[doubleVarStackPtr++];
 			}
 			else
 			{
-				rs = curFunc->AddVariable(String(L"^tmp64_") + String(doubleVarStackPtr++), 0, 8);
-				doubleVars.Add(rs);
+				const std::wstring name = L"^tmp64_" + std::to_wstring(doubleVarStackPtr++);
+				rs = curFunc->AddVariable(name, 0, 8);
+				doubleVars.push_back(rs);
 			}
+			rs->Type = DataType::Double;
 			PushExprVar(rs);
 			return rs;
 		}
 		void CodeGenerator::PushExprVar(Variable * var)
 		{
-			opStack.Add(var);
+			opStack.push_back(var);
 		}
 		void CodeGenerator::PushExpr(Operand op)
 		{
-			opStack.Add(op);
+			opStack.push_back(op);
 		}
 		void CodeGenerator::PushExprInt(int val)
 		{
-			opStack.Add(Operand(val));
+			opStack.push_back(Operand(val));
 		}
 		void CodeGenerator::PushExprDouble(double val)
 		{
-			opStack.Add(Operand(val));
+			opStack.push_back(Operand(val));
 		}
 		bool CodeGenerator::IsTempVar(Variable * var)
 		{
-			return var->Name.Length()>0 && var->Name[0] == L'^';
+			return !var->Name.empty() && var->Name[0] == L'^';
 		}
 		Operand CodeGenerator::PopExpr(const ExpressionType & type)
 		{
-			auto var = opStack.Last();
-			opStack.SetSize(opStack.Count()-1);
+			auto var = opStack.back();
+			opStack.pop_back();
 
 			if (var.IsVariable() && IsTempVar(var.Var))
 			{
@@ -151,18 +164,20 @@ namespace SimpleC
 			return var;
 		}
 
-		void CodeGenerator::VisitFunction(FunctionSyntaxNode* function)
+		void CodeGenerator::VisitFunction(FunctionSyntaxNode& function_node)
 		{
+			auto * function = &function_node;
 			InitTempVarStack();
-			loopLabels.Clear();
-			labelPosMap.Clear();
-			curVars.Clear();
-			curFunc->Name = function->Name;
+			loopLabels.clear();
+			labelPosMap.clear();
+			curVars.clear();
+			curFunc->SetName(function->Name);
 			curFunc->ParameterSize = 0;
 			for (auto & param : function->Parameters)
 			{
 				VarEntry entry;
 				entry.Var = curFunc->AddParameter(param->Name, 0, GetVarSizeInBytes(param->Type->ToExpressionType()));
+				entry.Var->Type = GetIntermediateDataType(param->Type->ToExpressionType());
 				curFunc->ParameterSize += entry.Var->Size;
 				entry.IsParameter = true;
 				curVars[param->Name] = entry;
@@ -174,10 +189,12 @@ namespace SimpleC
 				if (var.Type.IsArray)
 				{
 					auto ptrVar = entry.Var = curFunc->AddVariable(var.Name, 0, GetVarSizeInBytes(ExpressionType::Int));
+					ptrVar->Type = DataType::Int;
 					entry.IsParameter = false;
 					curVars[var.Name] = entry;
-					String arrName = L"^" + var.Name + L"_arr";
+					std::wstring arrName = L"^" + var.Name + L"_arr";
 					entry.Var = curFunc->AddVariable(arrName, 0, GetVarSizeInBytes(var.Type));
+					entry.Var->Type = GetIntermediateDataType(var.Type);
 					entry.IsParameter = false;
 					curVars[arrName] = entry;	
 					Emit(Instruction(ptrVar, Operation::Lea, entry.Var));
@@ -185,11 +202,12 @@ namespace SimpleC
 				else
 				{
 					entry.Var = curFunc->AddVariable(var.Name, 0, GetVarSizeInBytes(var.Type));
+					entry.Var->Type = GetIntermediateDataType(var.Type);
 					entry.IsParameter = false;
 					curVars[var.Name] = entry;	
 				}
 			}
-			function->Body->Accept(this);
+			function->Body->Accept(*this);
 			Emit(Instruction(Operation::Ret, Operand(curFunc->ParameterSize)));
 			// Replace jump labels with positions
 			for (auto & instr : curFunc->Instructions)
@@ -205,50 +223,53 @@ namespace SimpleC
 			}
 		}
 
-		void CodeGenerator::VisitBlockStatement(BlockStatementSyntaxNode* stmt)
+		void CodeGenerator::VisitBlockStatement(BlockStatementSyntaxNode& stmt_node)
 		{
+			auto * stmt = &stmt_node;
 			for (auto & node : stmt->Statements)
 			{
-				node->Accept(this);
+				node->Accept(*this);
 			}
 		}
-		void CodeGenerator::VisitBreakStatement(BreakStatementSyntaxNode* stmt)
+		void CodeGenerator::VisitBreakStatement(BreakStatementSyntaxNode& stmt)
 		{
 			Emit(Instruction(Operation::Jump, Operand(GetCurrentLoopBreakLabel())));
 		}
-		void CodeGenerator::VisitContinueStatement(ContinueStatementSyntaxNode* stmt)
+		void CodeGenerator::VisitContinueStatement(ContinueStatementSyntaxNode& stmt)
 		{
 			Emit(Instruction(Operation::Jump, Operand(GetCurrentLoopContinueLabel())));
 		}
-		void CodeGenerator::VisitDoWhileStatement(DoWhileStatementSyntaxNode* stmt)
+		void CodeGenerator::VisitDoWhileStatement(DoWhileStatementSyntaxNode& stmt_node)
 		{
+			auto * stmt = &stmt_node;
 			PushLoopLabels();
 			SetCurrentLoopBeginPosition(GetCurrentInstructionPos());
-			stmt->Statement->Accept(this);
+			stmt->Statement->Accept(*this);
 			SetCurrentLoopContinuePosition(GetCurrentInstructionPos());
-			stmt->Predicate->Accept(this);
+			stmt->Predicate->Accept(*this);
 			Emit(Instruction(Operation::Branch, PopExpr(stmt->Predicate->Type), GetCurrentLoopBeginLabel(), 0));
 			SetCurrentLoopBreakPosition(GetCurrentInstructionPos());
 			PopLoopLabels();
 		}
-		void CodeGenerator::VisitEmptyStatement(EmptyStatementSyntaxNode* stmt){}
-		void CodeGenerator::VisitForStatement(ForStatementSyntaxNode* stmt)
+		void CodeGenerator::VisitEmptyStatement(EmptyStatementSyntaxNode& stmt){}
+		void CodeGenerator::VisitForStatement(ForStatementSyntaxNode& stmt_node)
 		{
+			auto * stmt = &stmt_node;
 			if (stmt->InitialExpression)
-				stmt->InitialExpression->Accept(this);
+				stmt->InitialExpression->Accept(*this);
 			else if (stmt->VarDeclr)
-				stmt->VarDeclr->Accept(this);
+				stmt->VarDeclr->Accept(*this);
 			PushLoopLabels();
 			SetCurrentLoopBeginPosition(GetCurrentInstructionPos());
 
 			if (stmt->MarginExpression)
-				stmt->MarginExpression->Accept(this);
+				stmt->MarginExpression->Accept(*this);
 			Emit(Instruction(Operation::Branch, PopExpr(stmt->MarginExpression->Type), GetCurrentLoopBreakLabel(), 1));
-			stmt->Statement->Accept(this);
+			stmt->Statement->Accept(*this);
 			SetCurrentLoopContinuePosition(GetCurrentInstructionPos());
 			if (stmt->SideEffectExpression)
 			{
-				stmt->SideEffectExpression->Accept(this);
+				stmt->SideEffectExpression->Accept(*this);
 				PopExpr(stmt->SideEffectExpression->Type);
 			}
 			Emit(Instruction(Operation::Jump, GetCurrentLoopBeginLabel()));
@@ -256,98 +277,117 @@ namespace SimpleC
 
 			PopLoopLabels();
 		}
-		void CodeGenerator::VisitIfStatement(IfStatementSyntaxNode* stmt)
+		void CodeGenerator::VisitIfStatement(IfStatementSyntaxNode& stmt_node)
 		{
-			stmt->Predicate->Accept(this);
-			int endLabel = labelPosMap.Count();
-			labelPosMap.Add(-1);
-			int elseLabel = labelPosMap.Count();
-			labelPosMap.Add(-1);
+			auto * stmt = &stmt_node;
+			stmt->Predicate->Accept(*this);
+			int endLabel = static_cast<int>(labelPosMap.size());
+			labelPosMap.push_back(-1);
+			int elseLabel = static_cast<int>(labelPosMap.size());
+			labelPosMap.push_back(-1);
 			Emit(Instruction(Operation::Branch, PopExpr(stmt->Predicate->Type), elseLabel, 1));
-			stmt->PositiveStatement->Accept(this);
+			stmt->PositiveStatement->Accept(*this);
 			if (stmt->NegativeStatement)
 			{
 				Emit(Instruction(Operation::Jump, endLabel));
 				labelPosMap[elseLabel] = GetCurrentInstructionPos();
-				stmt->NegativeStatement->Accept(this);
+				stmt->NegativeStatement->Accept(*this);
 			}
 			else
 				labelPosMap[elseLabel] = GetCurrentInstructionPos();
 			labelPosMap[endLabel] = GetCurrentInstructionPos();
 		}
-		void CodeGenerator::VisitReturnStatement(ReturnStatementSyntaxNode* stmt)
+		void CodeGenerator::VisitReturnStatement(ReturnStatementSyntaxNode& stmt_node)
 		{
-			stmt->Expression->Accept(this);
+			auto * stmt = &stmt_node;
+			stmt->Expression->Accept(*this);
 			Emit(Instruction(Operation::Ret, Operand(curFunc->ParameterSize), PopExpr(stmt->Expression->Type)));
 		}
-		void CodeGenerator::VisitVarDeclrStatement(VarDeclrStatementSyntaxNode* stmt)
+		void CodeGenerator::VisitVarDeclrStatement(VarDeclrStatementSyntaxNode& stmt_node)
 		{
-			for (int i = 0; i < stmt->Variables.Count(); i++)
+			auto * stmt = &stmt_node;
+			for (size_t i = 0; i < stmt->Variables.size(); i++)
 			{
 				auto & variable = stmt->Variables[i];
 				if (variable->Expression)
 				{
-					variable->Expression->Accept(this);
-					Emit(Instruction(Operand(curVars[variable->Name].GetValue().Var), 0, PopExpr(variable->Expression->Type)));
+					variable->Expression->Accept(*this);
+					auto value = PopExpr(variable->Expression->Type);
+					auto targetType = stmt->Type->ToExpressionType();
+					if (targetType == ExpressionType::Double && variable->Expression->Type == ExpressionType::Int)
+					{
+						Emit(Instruction(AllocVar64(), Operation::I2D, value));
+						value = PopExpr(targetType);
+					}
+					else if (targetType == ExpressionType::Int && variable->Expression->Type == ExpressionType::Double)
+					{
+						Emit(Instruction(AllocVar32(), Operation::D2I, value));
+						value = PopExpr(targetType);
+					}
+					Emit(Instruction(Operand(curVars.at(variable->Name).Var), 0, value));
 				}
 			}
 		}
-		void CodeGenerator::VisitWhileStatement(WhileStatementSyntaxNode* stmt)
+		void CodeGenerator::VisitWhileStatement(WhileStatementSyntaxNode& stmt_node)
 		{
+			auto * stmt = &stmt_node;
 			PushLoopLabels();
 			SetCurrentLoopBeginPosition(GetCurrentInstructionPos());
 			SetCurrentLoopContinuePosition(GetCurrentInstructionPos());
-			stmt->Predicate->Accept(this);
+			stmt->Predicate->Accept(*this);
 			Emit(Instruction(Operation::Branch, PopExpr(stmt->Predicate->Type), GetCurrentLoopBreakLabel(), 1));
-			stmt->Statement->Accept(this);
+			stmt->Statement->Accept(*this);
 			Emit(Instruction(Operation::Jump, GetCurrentLoopBeginLabel()));
 			SetCurrentLoopBreakPosition(GetCurrentInstructionPos());
 			PopLoopLabels();
 		}
-		void CodeGenerator::VisitExpressionStatement(ExpressionStatementSyntaxNode* stmt)
+		void CodeGenerator::VisitExpressionStatement(ExpressionStatementSyntaxNode& stmt_node)
 		{
+			auto * stmt = &stmt_node;
 			if (stmt->Expression)
 			{
-				stmt->Expression->Accept(this);
+				stmt->Expression->Accept(*this);
 				if (stmt->Expression->Type != ExpressionType::Void)
 					PopExpr(stmt->Expression->Type);
 			}
 		}
 
-		void CodeGenerator::VisitLogicExpr(BinaryExpressionSyntaxNode * expr)
+		void CodeGenerator::VisitLogicExpr(BinaryExpressionSyntaxNode & expr_node)
 		{
+			auto * expr = &expr_node;
 			auto & leftType = expr->LeftExpression->Type;
 			auto & rightType = expr->RightExpression->Type;
-			expr->LeftExpression->Accept(this);
+			expr->LeftExpression->Accept(*this);
 			auto leftVar = PopExpr(leftType);
 			auto rs = AllocVar32();
 			Emit(Instruction(rs, 0, leftVar));
-			int labelResult = labelPosMap.Count();
-			labelPosMap.Add(-1);
+			int labelResult = static_cast<int>(labelPosMap.size());
+			labelPosMap.push_back(-1);
 			Emit(Instruction(Operation::Branch, leftVar, labelResult, expr->Operator == Operator::And));
-			expr->RightExpression->Accept(this);
+			expr->RightExpression->Accept(*this);
 			Emit(Instruction(rs, 0, PopExpr(rightType)));
 			labelPosMap[labelResult] = curFunc->Instructions.Count();
 		}
 
-		void CodeGenerator::VisitBinaryExpression(BinaryExpressionSyntaxNode* expr)
+		void CodeGenerator::VisitBinaryExpression(BinaryExpressionSyntaxNode& expr_node)
 		{
+			auto * expr = &expr_node;
 			auto & leftType = expr->LeftExpression->Type;
 			auto & rightType = expr->RightExpression->Type;
 			auto & type = leftType;
 			if (expr->Operator == Operator::And || expr->Operator == Operator::Or)
 			{
-				VisitLogicExpr(expr);
+				VisitLogicExpr(*expr);
 				return;
 			}
 			Operand leftVar, rightVar;
-			expr->LeftExpression->Accept(this);
+			expr->LeftExpression->Accept(*this);
 			if (expr->Operator != Operator::Assign && leftType == ExpressionType::Int && rightType == ExpressionType::Double)
 			{
 				Emit(Instruction(AllocVar64(), Operation::I2D, PopExpr(leftType)));
 				type = rightType;
 			}
-			expr->RightExpression->Accept(this);
+			expr->RightExpression->Accept(*this);
 			if (leftType == ExpressionType::Double && rightType == ExpressionType::Int)
 			{
 				Emit(Instruction(AllocVar64(), Operation::I2D, PopExpr(rightType)));
@@ -366,7 +406,7 @@ namespace SimpleC
 				else if (type == ExpressionType::Double)
 					Emit(Instruction(AllocVar64(), Operation::FAdd, leftVar, rightVar));
 				else if (type == ExpressionType::String)
-					throw NotSupportedException(L"string not supported");
+					throw std::runtime_error("string not supported");
 				break;
 			case Operator::Sub:
 				if (type == ExpressionType::Int)
@@ -444,8 +484,9 @@ namespace SimpleC
 				break;
 			}
 		}
-		void CodeGenerator::VisitConstantExpression(ConstantExpressionSyntaxNode* expr)
+		void CodeGenerator::VisitConstantExpression(ConstantExpressionSyntaxNode& expr_node)
 		{
+			auto * expr = &expr_node;
 			switch (expr->ConstType)
 			{
 			case ConstantExpressionSyntaxNode::ConstantType::Char:
@@ -456,16 +497,17 @@ namespace SimpleC
 				PushExprDouble(expr->DoubleValue);
 				break;
 			case ConstantExpressionSyntaxNode::ConstantType::String:
-				throw NotSupportedException(L"string is not supported");
+				throw std::runtime_error("string is not supported");
 				break;
 			default:
 				break;
 			}
 		}
-		void CodeGenerator::VisitIndexExpression(IndexExpressionSyntaxNode* expr)
+		void CodeGenerator::VisitIndexExpression(IndexExpressionSyntaxNode& expr_node)
 		{
-			expr->BaseExpression->Accept(this);
-			expr->IndexExpression->Accept(this);
+			auto * expr = &expr_node;
+			expr->BaseExpression->Accept(*this);
+			expr->IndexExpression->Accept(*this);
 			auto idx = PopExpr(expr->IndexExpression->Type);
 			auto leftOp = PopExpr(expr->BaseExpression->Type);
 			Emit(Instruction(AllocVar32(), Operation::SInc, leftOp, idx, Operand(GetTypeSizeInBytes(expr->BaseExpression->Type.GetBaseType()))));
@@ -475,37 +517,39 @@ namespace SimpleC
 				Emit(Instruction(AllocVar32(), Operation::Load, addr, Operand(GetTypeId(expr->BaseExpression->Type.GetBaseType()))));
 			}
 		}
-		void CodeGenerator::VisitInvokeExpression(InvokeExpressionSyntaxNode* expr)
+		void CodeGenerator::VisitInvokeExpression(InvokeExpressionSyntaxNode& expr_node)
 		{
-			List<Operand> arguments;
-			arguments.Reserve(expr->Arguments.Count()+1);
-			for (int i = expr->Arguments.Count()-1; i>=0; i--)
+			auto * expr = &expr_node;
+			std::vector<Operand> arguments;
+			arguments.reserve(expr->Arguments.size() + 1);
+			for (size_t i = expr->Arguments.size(); i > 0; i--)
 			{
-				expr->Arguments[i]->Accept(this);
+				expr->Arguments[i - 1]->Accept(*this);
 			}
-			expr->FunctionExpr->Accept(this);
-			arguments.Add(PopExpr(expr->FunctionExpr->Type));
-			for (int i = 0; i<expr->Arguments.Count(); i++)
+			expr->FunctionExpr->Accept(*this);
+			arguments.push_back(PopExpr(expr->FunctionExpr->Type));
+			for (size_t i = 0; i < expr->Arguments.size(); i++)
 			{
-				arguments.Add(PopExpr(expr->Arguments[i]->Type));
+				arguments.push_back(PopExpr(expr->Arguments[i]->Type));
 			}
 			if (expr->Type.IsArray)
-				throw NotSupportedException(L"back end does not support returning arrays.");
+				throw std::runtime_error("back end does not support returning arrays.");
 			Variable * rs = 0;
 			if (expr->Type == ExpressionType::Int)
 				rs = AllocVar32();
 			else if (expr->Type == ExpressionType::Double)
 				rs = AllocVar64();
 			else if (expr->Type != ExpressionType::Void)
-				throw NotSupportedException(L"unsupported function return type.");
+				throw std::runtime_error("unsupported function return type.");
 			if (rs)
-				Emit(Instruction(rs, Operation::Call, _Move(arguments)));
+				Emit(Instruction(rs, Operation::Call, std::move(arguments)));
 			else
-				Emit(Instruction(Operand(), Operation::Call, _Move(arguments)));
+				Emit(Instruction(Operand(), Operation::Call, std::move(arguments)));
 		}
-		void CodeGenerator::VisitUnaryExpression(UnaryExpressionSyntaxNode* expr)
+		void CodeGenerator::VisitUnaryExpression(UnaryExpressionSyntaxNode& expr_node)
 		{
-			expr->Expression->Accept(this);
+			auto * expr = &expr_node;
+			expr->Expression->Accept(*this);
 			auto op = PopExpr(expr->Expression->Type);
 			switch (expr->Operator)
 			{
@@ -532,36 +576,35 @@ namespace SimpleC
 				PushExpr(op);
 				break;
 			default:
-				throw NotSupportedException(L"Unsupported unary operator");
+				throw std::runtime_error("Unsupported unary operator");
 				break;
 			}
 		}
-		void CodeGenerator::VisitVarExpression(VarExpressionSyntaxNode* expr)
+		void CodeGenerator::VisitVarExpression(VarExpressionSyntaxNode& expr_node)
 		{
-			VarEntry var;
-
-			if (curVars.TryGetValue(expr->Variable, var))
+			auto * expr = &expr_node;
+			if (auto iter = curVars.find(expr->Variable); iter != curVars.end())
 			{
-				PushExprVar(var.Var);
+				PushExprVar(iter->second.Var);
 			}
 			else
 			{
-				for (int i = 0; i<program->Functions.Count(); i++)
+				for (size_t i = 0; i < program->Functions.size(); i++)
 					if (program->Functions[i]->Name == expr->Variable)
 					{
-						PushExprInt(i);
+						PushExprInt(static_cast<int>(i));
 						return;
 					}
 				throw InvalidProgramException(L"Unkown identifier");
 			}
 		}
-		void CodeGenerator::VisitParameter(ParameterSyntaxNode* param){}
-		void CodeGenerator::VisitType(TypeSyntaxNode* type){}
-		void CodeGenerator::VisitDeclrVariable(VarDeclrStatementSyntaxNode::Variable* variable){}
+		void CodeGenerator::VisitParameter(ParameterSyntaxNode& param){}
+		void CodeGenerator::VisitType(TypeSyntaxNode& type){}
+		void CodeGenerator::VisitDeclrVariable(VarDeclrStatementSyntaxNode::Variable& variable){}
 
-		SyntaxVisitor * CreateCodeGenerator()
+		std::unique_ptr<SyntaxVisitor> CreateCodeGenerator()
 		{
-			return new CodeGenerator();
+			return std::make_unique<CodeGenerator>();
 		}
 	}
 }

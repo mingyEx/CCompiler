@@ -1,10 +1,13 @@
 #include "Optimization.h"
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace Compiler
 {
 	namespace Intermediate
 	{
-		//´ó¸ÅÊÇ¼ÇÂ¼´úÂëÀï¶ÔÖ¸ÕëµÄÊ¹ÓÃµÄ£¬offsetºÍsize¶¼¼ÇÂ¼ÏÂÀ´ÁË.
+		//å¤§æ¦‚æ˜¯è®°å½•ä»£ç é‡Œå¯¹æŒ‡é’ˆçš„ä½¿ç”¨çš„ï¼Œoffsetå’Œsizeéƒ½è®°å½•ä¸‹æ¥äº†.
 		struct PointerUsage
 		{
 			int Offset;
@@ -16,85 +19,76 @@ namespace Compiler
 				Offset = offset;
 				Size = size;
 			}
-			int GetHashCode()
+			int GetHashCode() const
 			{
 				return (Size<<8) + Offset;
 			}
-			bool operator == (const PointerUsage & p)
+			bool operator == (const PointerUsage & p) const
 			{
 				return Offset == p.Offset && (Size == p.Size || Offset == -1);
 			}
-			bool operator != (const PointerUsage & p)
+			bool operator != (const PointerUsage & p) const
 			{
 				return !(*this == p);
 			}
 		};
-		//ÄÇÃ´Õâ¸öÍæÒâÊÇÎªÁË¼ÇÂ¼£¬Ö¸ÕëÈç¹ûÖ¸ÏòÍ¬Ò»¸öÖµ¾ÍÕÛµşµô£¿ 
+
+		struct PointerUsageHasher
+		{
+			size_t operator()(const PointerUsage& usage) const noexcept
+			{
+				return static_cast<size_t>(usage.GetHashCode());
+			}
+		};
+		//é‚£ä¹ˆè¿™ä¸ªç©æ„æ˜¯ä¸ºäº†è®°å½•ï¼ŒæŒ‡é’ˆå¦‚æœæŒ‡å‘åŒä¸€ä¸ªå€¼å°±æŠ˜å æ‰ï¼Ÿ 
 		class ConstIndirectionRemovalOptimizer : public IntraProcOptimizer
 		{
 		private:
-			//¼ÇÂ¼Ö¸Õë±í´ïÊ½µÄÖµ?
+			//è®°å½•æŒ‡é’ˆè¡¨è¾¾å¼çš„å€¼?
 			struct PointerValue
 			{
-				Variable * BaseVar;
-				int Offset;
+				Variable * BaseVar = nullptr;
+				int Offset = -1;
 
-				PointerValue()
-				{
-					Offset = -1;
-				}
-				PointerValue(const PointerValue & pv)
-				{
-					BaseVar = pv.BaseVar;
-					Offset = pv.Offset;
-				}
-				PointerValue(PointerValue && pv)
-				{
-					BaseVar = _Move(pv.BaseVar);
-					Offset = pv.Offset;
-				}
-				PointerValue& operator = (const PointerValue & pv)
-				{
-					BaseVar = pv.BaseVar;
-					Offset = pv.Offset;
-					return *this;
-				}
-				PointerValue& operator = (PointerValue && pv)
-				{
-					BaseVar = _Move(pv.BaseVar);
-					Offset = pv.Offset;
-					return *this;
-				}
+				PointerValue() = default;
+				PointerValue(const PointerValue & pv) = default;
+				PointerValue(PointerValue && pv) = default;
+				PointerValue& operator = (const PointerValue & pv) = default;
+				PointerValue& operator = (PointerValue && pv) = default;
 			};
 			
-			//¶ÔÖ¸ÕëÇóÖµ£¿
-			void EvalPointers(Dictionary<Variable*, PointerValue> & dict, List<HashSet<PointerUsage>> & usedPointers, ControlFlowGraph * program)
+			//å¯¹æŒ‡é’ˆæ±‚å€¼ï¼Ÿ
+			void EvalPointers(
+				std::unordered_map<Variable*, PointerValue>& dict,
+				std::vector<std::unordered_set<PointerUsage, PointerUsageHasher>>& used_pointers,
+				ControlFlowGraph* program)
 			{
-				HashSet<Variable *> unknownPtrVars;
+				std::unordered_set<Variable *> unknownPtrVars;
 				auto traverse = program->GetPostOrder();
-				for (int i = traverse.Count()-1; i>=0; i--)
+				for (int i = static_cast<int>(traverse.size()) - 1; i>=0; i--)
 				{
 					auto & node = traverse[i];
 					for (auto & instr : node->Code)
 					{
-						if (unknownPtrVars.Contains(instr.LeftOperand.Var))
+						if (unknownPtrVars.contains(instr.LeftOperand.Var))
 						{
-							usedPointers[instr.Operands[0].Var->Id].Add(PointerUsage(-1,0));
+							used_pointers[instr.Operands[0].Var->Id].insert(PointerUsage(-1, 0));
 						}
 						if (instr.Func == Operation::Lea && instr.Operands[0].IsVariable())
 						{
 							PointerValue pv;
 							pv.BaseVar = instr.Operands[0].Var;
 							pv.Offset = 0;
-							dict[instr.LeftOperand.Var] = _Move(pv);
+							dict[instr.LeftOperand.Var] = std::move(pv);
 						}
 						else if (instr.Func == Operation::Add ||
 								 instr.Func == Operation::Sub ||
 								 instr.Func == Operation::SInc)
 						{
 							PointerValue pv;
-							if (dict.TryGetValue(instr.Operands[0].Var, pv))
+							if (auto iter = dict.find(instr.Operands[0].Var); iter != dict.end())
 							{
+								pv = iter->second;
 								if (pv.Offset != -1)
 								{
 									if (instr.Func == Operation::Add &&
@@ -110,9 +104,9 @@ namespace Compiler
 									else
 										pv.Offset = -1;
 								}
-								if (unknownPtrVars.Contains(instr.LeftOperand.Var))
+								if (unknownPtrVars.contains(instr.LeftOperand.Var))
 									pv.Offset = -1;
-								dict[instr.LeftOperand.Var] = _Move(pv);
+								dict[instr.LeftOperand.Var] = std::move(pv);
 							}
 						}
 						else if (instr.Func == Operation::Phi)
@@ -123,11 +117,12 @@ namespace Compiler
 							for (auto & op : instr.Operands)
 							{
 								PointerValue pv;
-								if (dict.TryGetValue(op.Var, pv))
+								if (auto iter = dict.find(op.Var); iter != dict.end())
 								{
+									pv = iter->second;
 									hasPtr = true;
 									if (pv.BaseVar)
-										usedPointers[pv.BaseVar->Id].Add(PointerUsage(-1,0));
+										used_pointers[pv.BaseVar->Id].insert(PointerUsage(-1, 0));
 								}
 								else
 									hasUnknown = true;
@@ -136,8 +131,8 @@ namespace Compiler
 							{
 								for (auto & op : instr.Operands)
 								{
-									if (!dict.ContainsKey(op.Var))
-										unknownPtrVars.Add(op.Var);
+									if (!dict.contains(op.Var))
+										unknownPtrVars.insert(op.Var);
 								}
 								
 							}
@@ -145,15 +140,16 @@ namespace Compiler
 							{
 								rpv.Offset = -1;
 								rpv.BaseVar = 0;
-								dict[instr.LeftOperand.Var] = _Move(rpv);
+								dict[instr.LeftOperand.Var] = std::move(rpv);
 							}
 						}
 						else if (instr.Func == 0)
 						{
 							PointerValue pv;
-							if (dict.TryGetValue(instr.Operands[0].Var, pv))
+							if (auto iter = dict.find(instr.Operands[0].Var); iter != dict.end())
 							{
-								dict[instr.LeftOperand.Var] = _Move(pv);
+								pv = iter->second;
+								dict[instr.LeftOperand.Var] = std::move(pv);
 							}
 						}
 						if (instr.Func == Operation::Load ||
@@ -164,21 +160,25 @@ namespace Compiler
 							for (auto & op : instr.Operands)
 							{
 								PointerValue pv;
-								if (op.IsVariable() && dict.TryGetValue(op.Var, pv))
+								if (op.IsVariable())
 								{
-									int offset = pv.Offset;
-									int size = 0;
-									if (instr.Func == Operation::Load)
-										size = GetTypeSize(instr.Operands[1].IntValue);
-									else if (instr.Func == Operation::Store)
-										size = instr.Operands[2].IntValue;
-									else
+									if (auto iter = dict.find(op.Var); iter != dict.end())
 									{
-										size = 0;
-										offset = -1;
+										pv = iter->second;
+										int offset = pv.Offset;
+										int size = 0;
+										if (instr.Func == Operation::Load)
+											size = GetTypeSize(instr.Operands[1].IntValue);
+										else if (instr.Func == Operation::Store)
+											size = instr.Operands[2].IntValue;
+										else
+										{
+											size = 0;
+											offset = -1;
+										}
+										if (pv.BaseVar)
+											used_pointers[pv.BaseVar->Id].insert(PointerUsage(offset, size));
 									}
-									if (pv.BaseVar)
-										usedPointers[pv.BaseVar->Id].Add(PointerUsage(offset, size));
 								}
 							}
 						}
@@ -187,27 +187,27 @@ namespace Compiler
 			}
 		public:
 
-			virtual ProgramOptimizationResult Optimize(RefPtr<ControlFlowGraph> program) override
+			virtual ProgramOptimizationResult Optimize(std::shared_ptr<ControlFlowGraph> program) override
 			{
 				ProgramOptimizationResult rs;
 				rs.Changed = false;
 				rs.Program = program;
-				Dictionary<Variable*, PointerValue> pointerValues;
-				List<Dictionary<int, Variable *>> replaceVars;
-				List<HashSet<PointerUsage>> usedPointers;
-				List<PointerUsage> blocks;
-				usedPointers.SetSize(program->Variables.Count());
-				replaceVars.SetSize(program->Variables.Count());
-				EvalPointers(pointerValues, usedPointers, program.Ptr());
-				for (int i = 0; i<usedPointers.Count(); i++)
+				std::unordered_map<Variable*, PointerValue> pointer_values;
+				std::vector<std::unordered_map<int, Variable *>> replace_vars;
+				std::vector<std::unordered_set<PointerUsage, PointerUsageHasher>> used_pointers;
+				std::vector<PointerUsage> blocks;
+				used_pointers.resize(program->Variables.size());
+				replace_vars.resize(program->Variables.size());
+				EvalPointers(pointer_values, used_pointers, program.get());
+				for (int i = 0; i < static_cast<int>(used_pointers.size()); i++)
 				{
-					if (usedPointers[i].Count() == 0)
+					if (used_pointers[i].empty())
 						continue;
-					if (!usedPointers[i].Contains(PointerUsage(-1,0)))
+					if (!used_pointers[i].contains(PointerUsage(-1, 0)))
 					{
-						blocks.Clear();
+						blocks.clear();
 						bool independentAccess = true;
-						for (auto & b : usedPointers[i])
+						for (auto& b : used_pointers[i])
 						{
 							bool found = false;
 							for (auto & eb : blocks)
@@ -222,25 +222,20 @@ namespace Compiler
 							}
 							if (!independentAccess)
 								break;
-							blocks.Add(b);
+							blocks.push_back(b);
 						}
 						if (independentAccess)
 						{
 							// create a variable for each offset
 							for (auto & b: blocks)
 							{
-								auto *var = new Variable();
-								var->Id = program->Variables.Count();
-								StringBuilder sb(48);
-								sb.Append(L"^buf_");
-								sb.Append(program->Variables[i]->Name);
-								sb.Append(L"_");
-								sb.Append(String(b.Offset));
-								var->Name = sb.ProduceString();
+								auto var = std::make_shared<Variable>();
+								var->Id = static_cast<int>(program->Variables.size());
+								var->Name = L"^buf_" + program->Variables[i]->Name + L"_" + std::to_wstring(b.Offset);
 								var->Size = b.Size;
-								program->Variables.Add(var);
-								program->VarDefs.Add(0);
-								replaceVars[i].Add(b.Offset, var);
+								program->Variables.push_back(var);
+								program->VarDefs.push_back(nullptr);
+								replace_vars[i][b.Offset] = var.get();
 							}
 							rs.Changed = true;
 						}
@@ -253,21 +248,25 @@ namespace Compiler
 						for (auto & instr : node->Code)
 						{
 							PointerValue pv;
-							if (instr.Operands.Count() > 0 && instr.Operands[0].IsVariable() && pointerValues.TryGetValue(instr.Operands[0].Var, pv))
+							if (!instr.Operands.empty() && instr.Operands[0].IsVariable())
 							{
-								if (instr.Func == Operation::Load)
+								if (auto iter = pointer_values.find(instr.Operands[0].Var); iter != pointer_values.end())
 								{
-									instr.Func = 0;
-									instr.Operands.Clear();
-									instr.Operands.Add(replaceVars[pv.BaseVar->Id][pv.Offset].GetValue());
-								}
-								else if (instr.Func == Operation::Store)
-								{
-									instr.Func = 0;
-									auto opValue = instr.Operands[1];
-									instr.Operands.Clear();
-									instr.Operands.Add(opValue);
-									instr.LeftOperand = Operand(replaceVars[pv.BaseVar->Id][pv.Offset].GetValue());
+									pv = iter->second;
+									if (instr.Func == Operation::Load)
+									{
+										instr.Func = 0;
+										instr.Operands.clear();
+										instr.Operands.push_back(replace_vars[pv.BaseVar->Id].at(pv.Offset));
+									}
+									else if (instr.Func == Operation::Store)
+									{
+										instr.Func = 0;
+										auto opValue = instr.Operands[1];
+										instr.Operands.clear();
+										instr.Operands.push_back(opValue);
+										instr.LeftOperand = Operand(replace_vars[pv.BaseVar->Id].at(pv.Offset));
+									}
 								}
 							}
 						}
@@ -275,9 +274,9 @@ namespace Compiler
 				return rs;
 			}
 		};
-		IntraProcOptimizer * CreateConstIndirectionRemovalOptimizer()
+		std::unique_ptr<IntraProcOptimizer> CreateConstIndirectionRemovalOptimizer()
 		{
-			return new ConstIndirectionRemovalOptimizer();
+			return std::make_unique<ConstIndirectionRemovalOptimizer>();
 		}
 	}
 }

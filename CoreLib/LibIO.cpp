@@ -1,10 +1,7 @@
 #include "LibIO.h"
 #include "Exception.h"
-
-#ifdef WINDOWS_PLATFORM
-#include <Windows.h>
-#include "Shlwapi.h"
-#endif
+#include "TextIO.h"
+#include <filesystem>
 
 namespace CoreLib
 {
@@ -14,77 +11,79 @@ namespace CoreLib
 
 		bool File::Exists(const String & fileName)
 		{
-#ifdef WINDOWS_PLATFORM
-			return PathFileExistsW(fileName.Buffer()) != 0;
-#else
-			throw NotImplementedException(L"FileExists not implemented for current platform.");
-#endif
+			if (fileName.Length() == 0)
+				return false;
+			return std::filesystem::exists(std::filesystem::path(fileName.Buffer()));
 		}
 
 		String Path::TruncateExt(const String & path)
 		{
-			int dotPos = path.LastIndexOf(L'.');
-			if (dotPos != -1)
-				return path.SubString(0, dotPos);
-			else
-				return path;
+			if (path.Length() == 0)
+				return String();
+			auto nativePath = std::filesystem::path(path.Buffer());
+			nativePath.replace_extension();
+			return String(nativePath.wstring().c_str());
 		}
 		String Path::ReplaceExt(const String & path, const wchar_t * newExt)
 		{
-			StringBuilder sb(path.Length()+10);
-			int dotPos = path.LastIndexOf(L'.');
-			if (dotPos == -1)
-				dotPos = path.Length();
-			sb.Append(path.Buffer(), dotPos);
-			sb.Append(L'.');
-			sb.Append(newExt);
-			return sb.ProduceString();
+			if (path.Length() == 0)
+				return String();
+			auto nativePath = std::filesystem::path(path.Buffer());
+			if (newExt == nullptr || newExt[0] == 0)
+				nativePath.replace_extension();
+			else
+				nativePath.replace_extension(newExt[0] == L'.' ? std::wstring(newExt) : std::wstring(L".") + newExt);
+			return String(nativePath.wstring().c_str());
 		}
 		String Path::GetFileName(const String & path)
 		{
-			int pos = path.LastIndexOf(L'/');
-			pos = Math::Max(path.LastIndexOf(L'\\'), pos) + 1;
-			return path.SubString(pos, path.Length()-pos);
+			if (path.Length() == 0)
+				return String();
+			auto nativePath = std::filesystem::path(path.Buffer());
+			return String(nativePath.filename().wstring().c_str());
 		}
 		String Path::GetFileExt(const String & path)
 		{
-			int dotPos = path.LastIndexOf(L'.');
-			if (dotPos != -1)
-				return path.SubString(dotPos+1, path.Length()-dotPos-1);
-			else
-				return L"";
+			if (path.Length() == 0)
+				return String();
+			auto extension = std::filesystem::path(path.Buffer()).extension().wstring();
+			if (!extension.empty() && extension[0] == L'.')
+				extension.erase(0, 1);
+			return String(extension.c_str());
 		}
 		String Path::GetDirectoryName(const String & path)
 		{
-			int pos = path.LastIndexOf(L'/');
-			pos = Math::Max(path.LastIndexOf(L'\\'), pos);
-			return path.SubString(0, pos);
+			if (path.Length() == 0)
+				return String();
+			auto nativePath = std::filesystem::path(path.Buffer());
+			return String(nativePath.parent_path().wstring().c_str());
 		}
 		String Path::Combine(const String & path1, const String & path2)
 		{
-			StringBuilder sb(path1.Length()+path2.Length()+2);
-			sb.Append(path1);
-			if (!path1.EndsWith(L'\\') && !path1.EndsWith(L'/'))
-				sb.Append(L'\\');
-			sb.Append(path2);
-			return sb.ProduceString();
+			if (path1.Length() == 0)
+				return path2;
+			if (path2.Length() == 0)
+				return path1;
+			auto combined = std::filesystem::path(path1.Buffer()) / path2.Buffer();
+			return String(combined.wstring().c_str());
 		}
 		String Path::Combine(const String & path1, const String & path2, const String & path3)
 		{
-			StringBuilder sb(path1.Length()+path2.Length()+path3.Length()+3);
-			sb.Append(path1);
-			if (!path1.EndsWith(L'\\') && !path1.EndsWith(L'/'))
-				sb.Append(L'\\');
-			sb.Append(path2);
-			if (!path2.EndsWith(L'\\') && !path2.EndsWith(L'/'))
-				sb.Append(L'\\');
-			sb.Append(path3);
-			return sb.ProduceString();
+			if (path1.Length() == 0)
+				return Combine(path2, path3);
+			if (path2.Length() == 0)
+				return Combine(path1, path3);
+			if (path3.Length() == 0)
+				return Combine(path1, path2);
+			auto combined = std::filesystem::path(path1.Buffer()) / path2.Buffer() / path3.Buffer();
+			return String(combined.wstring().c_str());
 		}
 
 		CoreLib::Basic::String File::ReadAllText(const CoreLib::Basic::String & fileName)
 		{
-			StreamReader reader(new FileStream(fileName, FileMode::Open, FileAccess::Read, FileShare::ReadWrite));
+			if (fileName.Length() == 0)
+				throw IOException(L"Failed to open file: path is empty.");
+			StreamReader reader(fileName);
 			return reader.ReadToEnd();
 		}
 	}

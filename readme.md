@@ -7,3 +7,8 @@ As a practice for 《Code Reading: The Open Source Perspective》
 ### Bibliography:  
 [Towards an SSA based compiler back-end:some interesting properties of SSA and its extensions](https://bboissin.appspot.com/static/upload/bboissin-thesis-2010-09-22.pdf)  
 p81: `Algorithm 13 Parallel copy sequentialization algorithm`
+
+## Modernization Notes
+
+- Architecture overview: [docs/architecture.md](docs/architecture.md)
+- Incremental refactor plan: [docs/modernization_plan.md](docs/modernization_plan.md)

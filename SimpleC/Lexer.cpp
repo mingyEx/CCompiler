@@ -1,5 +1,6 @@
 #include "Lexer.h"
 #include <stdio.h>
+
 namespace SimpleC
 {
 	namespace Compiler
@@ -20,7 +21,7 @@ namespace SimpleC
 			return ch >= L'0' && ch <= L'9';
 		}
 
-		bool IsPunctuation(wchar_t ch)	//Punctuation ±êµã·ûºÅ
+		bool IsPunctuation(wchar_t ch)	//Punctuation æ ‡ç‚¹ç¬¦å·
 		{
 			return  ch == L'+' || ch == L'-' || ch == L'*' || ch == L'/' || ch == L'%' ||
 				ch == L'!' || ch == L'^' || ch == L'&' || ch == L'(' || ch == L')' ||
@@ -29,7 +30,7 @@ namespace SimpleC
 				ch == L'>';
 		}
 
-		TokenType GetKeywordTokenType(const String& str)
+		TokenType GetKeywordTokenType(const std::wstring& str)
 		{
 			if (str == L"void")
 				return TokenType::KeywordVoid;
@@ -61,16 +62,17 @@ namespace SimpleC
 				return TokenType::Identifier;
 		}
 
-		void ParseOperators(const String& str, List<Token>& tokens, int line, int col)
+		void ParseOperators(const std::wstring& str, std::vector<Token>& tokens, int line, int col)
 		{
+			const int length = static_cast<int>(str.length());
 			int pos = 0;
-			while (pos < str.Length())
+			while (pos < length)
 			{
 				wchar_t curChar = str[pos];
-				wchar_t nextChar = (pos < str.Length() - 1) ? str[pos + 1] : L'\0';
-				auto InsertToken = [&](TokenType type, const String& ct)
+				wchar_t nextChar = (pos < length - 1) ? str[pos + 1] : L'\0';
+				auto InsertToken = [&](TokenType type, const wchar_t* ct)
 				{
-					tokens.Add(Token(type, ct, line, col + pos));
+					tokens.emplace_back(type, ct, line, col + pos);
 				};
 				switch (curChar)
 				{
@@ -228,19 +230,20 @@ namespace SimpleC
 			}
 		}
 
-		List<Token> Lexer::Parse(const String& fileName, const String& str, List<CompileError>& errorList)
+		std::vector<Token> Lexer::Parse(const std::wstring& fileName, const std::wstring& str, std::vector<CompileError>& errorList)
 		{
-			int lastPos = 0, pos = 0;	// lastÊÇÉÏ¸öÓĞĞ§tokenµÄÄ©Î²Î»ÖÃ£¬posÊÇµ±Ç°ÕıÔÚ·ÖÎöµÄ
+			const int sourceLength = static_cast<int>(str.length());
+			int lastPos = 0, pos = 0;	// lastæ˜¯ä¸Šä¸ªæœ‰æ•ˆtokençš„æœ«å°¾ä½ç½®ï¼Œposæ˜¯å½“å‰æ­£åœ¨åˆ†æçš„
 			int line = 1, col = 0;
 			State state = State::Start;
-			StringBuilder tokenBuilder;		//·µ»Øwchar[]¡£
+			std::wstring tokenBuilder;
 			int tokenLine, tokenCol;
-			List<Token> tokenList;
+			std::vector<Token> tokenList;
 
 			auto InsertToken = [&](TokenType type)
 			{
-				tokenList.Add(Token(type, tokenBuilder.ToString(), tokenLine, tokenCol));
-				tokenBuilder.Clear();
+				tokenList.emplace_back(type, tokenBuilder, tokenLine, tokenCol);
+				tokenBuilder.clear();
 			};
 			auto ProcessTransferChar = [&](wchar_t nextChar)
 			{
@@ -249,29 +252,29 @@ namespace SimpleC
 				case L'\\':
 				case L'\"':
 				case L'\'':
-					tokenBuilder.Append(nextChar);
+					tokenBuilder.push_back(nextChar);
 					break;
 				case L't':
-					tokenBuilder.Append('\t');	//Ë®Æ½ÖÆ±í(HT) £¨Ìøµ½ÏÂÒ»¸öTABÎ»ÖÃ£©
+					tokenBuilder.push_back(L'\t');
 					break;
 				case L's':
-					tokenBuilder.Append(' ');
+					tokenBuilder.push_back(L' ');
 					break;
 				case L'n':
-					tokenBuilder.Append('\n');
+					tokenBuilder.push_back(L'\n');
 					break;
 				case L'r':
-					tokenBuilder.Append('\r');	//»Ø³µ(CR) £¬½«µ±Ç°Î»ÖÃÒÆµ½±¾ĞĞ¿ªÍ·
+					tokenBuilder.push_back(L'\r');
 					break;
 				case L'b':
-					tokenBuilder.Append('\b');	//£¨\b£© ÊÇ½«Êä³öµÄ¶¨Î»Ç°ÒÆÒ»¸ö×Ö·ûµÄÒâË¼
+					tokenBuilder.push_back(L'\b');
 					break;
 				}
 			};
-			while (pos <= str.Length())
+			while (pos <= sourceLength)
 			{
-				wchar_t curChar = (pos < str.Length() ? str[pos] : L' ');
-				wchar_t nextChar = (pos < str.Length() - 1) ? str[pos + 1] : L'\0';
+				wchar_t curChar = (pos < sourceLength ? str[pos] : L' ');
+				wchar_t nextChar = (pos < sourceLength - 1) ? str[pos + 1] : L'\0';
 				if (lastPos != pos)
 				{
 					if (curChar == L'\n')
@@ -283,7 +286,7 @@ namespace SimpleC
 					{
 						col++;
 					}
-					lastPos = pos;	//Ë¢ĞÂÉÏ´ÎµÄÎ»ÖÃ
+					lastPos = pos;	//åˆ·æ–°ä¸Šæ¬¡çš„ä½ç½®
 				}
 
 				switch (state)
@@ -335,46 +338,49 @@ namespace SimpleC
 					}
 					else
 					{
-						errorList.Add(CompileError(L"Illegal character '" + String(curChar) + L"'", fileName, 10000, line, col));
+						std::wstring message = L"Illegal character '";
+						message.push_back(curChar);
+						message += L"'";
+						errorList.push_back(CompileError(message, fileName, 10000, line, col));
 						pos++;
 					}
 					break;
 				case State::Identifier:
 					if (IsLetter(curChar) || IsDigit(curChar))
 					{
-						tokenBuilder.Append(curChar);
+						tokenBuilder.push_back(curChar);
 						pos++;
 					}
 					else
 					{
-						InsertToken(GetKeywordTokenType(tokenBuilder.ToString()));
+						InsertToken(GetKeywordTokenType(tokenBuilder));
 						state = State::Start;
 					}
 					break;
 				case State::Operator:
 					if (IsPunctuation(curChar) && (curChar != L'/' || nextChar != L'/'))
 					{
-						tokenBuilder.Append(curChar);
+						tokenBuilder.push_back(curChar);
 						pos++;
 					}
 					else
 					{
 						//do token analyze
-						ParseOperators(tokenBuilder.ToString(), tokenList, tokenLine, tokenCol);
-						tokenBuilder.Clear();
+						ParseOperators(tokenBuilder, tokenList, tokenLine, tokenCol);
+						tokenBuilder.clear();
 						state = State::Start;
 					}
 					break;
 				case State::Int:
 					if (IsDigit(curChar))
 					{
-						tokenBuilder.Append(curChar);
+						tokenBuilder.push_back(curChar);
 						pos++;
 					}
 					else if (curChar == L'.')
 					{
 						state = State::Double;
-						tokenBuilder.Append(curChar);
+						tokenBuilder.push_back(curChar);
 						pos++;
 					}
 					else
@@ -386,7 +392,7 @@ namespace SimpleC
 				case State::Double:
 					if (IsDigit(curChar))
 					{
-						tokenBuilder.Append(curChar);
+						tokenBuilder.push_back(curChar);
 						pos++;
 					}
 					else
@@ -404,7 +410,7 @@ namespace SimpleC
 							pos++;
 						}
 						else
-							tokenBuilder.Append(curChar);
+							tokenBuilder.push_back(curChar);
 					}
 					else
 					{
@@ -422,12 +428,12 @@ namespace SimpleC
 							pos++;
 						}
 						else
-							tokenBuilder.Append(curChar);
+							tokenBuilder.push_back(curChar);
 					}
 					else
 					{
-						if (tokenBuilder.Length() > 1)
-							errorList.Add(CompileError(L"Illegal character literial.", fileName, 10001, line, col - tokenBuilder.Length()));
+						if (tokenBuilder.length() > 1)
+							errorList.push_back(CompileError(L"Illegal character literial.", fileName, 10001, line, col - static_cast<int>(tokenBuilder.length())));
 						InsertToken(TokenType::CharLiterial);
 						state = State::Start;
 					}

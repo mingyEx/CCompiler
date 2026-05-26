@@ -1,13 +1,20 @@
 #ifndef ASSEMBLY_X86_H
 #define ASSEMBLY_X86_H
 
+#include <cstring>
+#include <filesystem>
+#include <string>
+#include <vector>
+#include <Windows.h>
+
 #include "Basic.h"
 
 namespace Compiler
 {
 	namespace x86
 	{
-		using namespace CoreLib::Basic;
+		using CoreLib::Basic::LinkedList;
+		using CoreLib::Basic::LinkedNode;
 
 		enum class Register
 		{
@@ -209,7 +216,7 @@ namespace Compiler
 				Op1 = op1;
 				Name = op;
 			}
-			String ToString();
+			std::wstring ToString() const;
 			bool IsJump()
 			{
 				switch (Name)
@@ -254,6 +261,44 @@ namespace Compiler
 			}
 		};
 
+		typedef LinkedNode<Instruction> InstructionNode;
+
+		inline InstructionNode * FirstInstructionNode(LinkedList<Instruction> & code)
+		{
+			return code.FirstNode();
+		}
+
+		inline InstructionNode * LastInstructionNode(LinkedList<Instruction> & code)
+		{
+			return code.LastNode();
+		}
+
+		inline InstructionNode * NextInstructionNode(InstructionNode * node)
+		{
+			return node ? node->GetNext() : nullptr;
+		}
+
+		inline InstructionNode * PreviousInstructionNode(InstructionNode * node)
+		{
+			return node ? node->GetPrevious() : nullptr;
+		}
+
+		inline Instruction & GetInstruction(InstructionNode * node)
+		{
+			return node->Value;
+		}
+
+		inline const Instruction & GetInstruction(const InstructionNode * node)
+		{
+			return node->Value;
+		}
+
+		inline void RemoveInstruction(InstructionNode * node)
+		{
+			if (node)
+				node->Delete();
+		}
+
 		struct FunctionLinkPoint
 		{
 			int FuncId;
@@ -288,30 +333,28 @@ namespace Compiler
 			Function_x86(const Function_x86 & f){}
 		public:
 			LinkedList<Instruction> Code;
-			String Name;
-			List<FloatConstant> FloatConsts;
-			List<int *> FloatConstLinkPoints, FunctionLinkPoints;
+			std::wstring Name;
+			std::vector<FloatConstant> FloatConsts;
 			Function_x86(){}
 			
 			Function_x86(Function_x86 && f)
 			{
-				this->operator=(_Move(f));
+				this->operator=(std::move(f));
 			}
 			Function_x86 & operator = (Function_x86 && f)
 			{
-				Code = _Move(f.Code);
-				Name = _Move(f.Name);
-				FloatConsts = _Move(f.FloatConsts);
-				FunctionLinkPoints = _Move(f.FunctionLinkPoints);
+				Code = std::move(f.Code);
+				Name = std::move(f.Name);
+				FloatConsts = std::move(f.FloatConsts);
 				return *this;
 			}
 
 			// add const & version operator=
-			//ÓÃÄ¬ÈÏµÄ×ã¹»Âð£¿¸´ÖÆ¹¹ÔìÊÇ¿ÕµÄ»¹ÊÇË½ÓÐ£¬ÒÆ¶¯¹¹ÔìÒ²Ö»ÊÇmoveÁËÒ»ÏÂ
-			//ÕâÀïÊÇÎÒÌí¼ÓµÄ²¿·Ö.
+			//ç”¨é»˜è®¤çš„è¶³å¤Ÿå—ï¼Ÿå¤åˆ¶æž„é€ æ˜¯ç©ºçš„è¿˜æ˜¯ç§æœ‰ï¼Œç§»åŠ¨æž„é€ ä¹Ÿåªæ˜¯moveäº†ä¸€ä¸‹
+			//è¿™é‡Œæ˜¯æˆ‘æ·»åŠ çš„éƒ¨åˆ†.
 			Function_x86& operator = (const Function_x86& f) = default;
 
-			void Dump(const String & fileName);
+			void Dump(const std::filesystem::path & fileName);
 		};
 
 		class MemoryExecutable_x86
@@ -342,7 +385,7 @@ namespace Compiler
 			MemoryExecutable_x86(MemoryExecutable_x86 && exe)
 				: Buffer(0), BufferSize(0)
 			{
-				this->operator=(_Move(exe));
+				this->operator=(std::move(exe));
 			}
 
 			MemoryExecutable_x86 & operator=(MemoryExecutable_x86 && exe)
@@ -361,36 +404,28 @@ namespace Compiler
 				if (exe.Buffer)
 				{
 					Buffer = VirtualAlloc(0, exe.BufferSize, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-					memcpy(Buffer, exe.Buffer, exe.BufferSize);
+					std::memcpy(Buffer, exe.Buffer, exe.BufferSize);
 					BufferSize = exe.BufferSize;
 				}
 				return *this;
 			}
 		};
 
-		class FunctionMeta
+		class Assembly_x86	//æ˜Žæ˜¾æ˜¯
 		{
 		public:
-			String Name;
-			int Offset;
-			int Id;
-		};
-
-		class Assembly_x86	//Ã÷ÏÔÊÇ
-		{
-		public:
-			List<unsigned char> ConstBuffer;
-			List<unsigned char> CodeBuffer;
-			List<FunctionLinkPoint> FunctionPointerLinkPoints;
-			List<int> ConstantLinkPoints;
-			List<FunctionMeta> Functions;
+			std::vector<unsigned char> ConstBuffer;
+			std::vector<unsigned char> CodeBuffer;
+			std::vector<FunctionLinkPoint> FunctionPointerLinkPoints;
+			std::vector<int> ConstantLinkPoints;
 			MemoryExecutable_x86 CreateMemoryExecutable();
 			template<typename T>
 			int AddConstant(T val)
 			{
-				int rs = ConstBuffer.Count();
-				ConstBuffer.SetSize(ConstBuffer.Count() + sizeof(val));
-				*(T*)(ConstBuffer.Buffer()+ConstBuffer.Count()-sizeof(val)) = val;
+				int rs = static_cast<int>(ConstBuffer.size());
+				auto oldSize = ConstBuffer.size();
+				ConstBuffer.resize(oldSize + sizeof(val));
+				std::memcpy(ConstBuffer.data() + oldSize, &val, sizeof(val));
 				return rs;
 			}
 		};
@@ -398,7 +433,7 @@ namespace Compiler
 		class Program_x86
 		{
 		public:
-			List<Function_x86> Functions;
+			std::vector<Function_x86> Functions;
 			Assembly_x86 Link();
 		};
 	}

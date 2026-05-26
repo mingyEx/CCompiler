@@ -4,22 +4,22 @@ namespace Compiler
 {
 	namespace Intermediate
 	{
-		//这个函数是干嘛的?
+		//杩欎釜鍑芥暟鏄共鍢涚殑?
 		void TransformInvariant::PlacePhiAtTop(ControlFlowNode * node)
 		{
 			if (node->Code.Count() == 0)
 				return;
-			InstructionNode * firstNonPhi = node->Code.FirstNode();
+			InstructionNode * firstNonPhi = FirstInstructionNode(node->Code);
 			while (firstNonPhi->Value.Func == Operation::Phi)
-				firstNonPhi = firstNonPhi->GetNext();
-			auto inode = firstNonPhi->GetNext();
+				firstNonPhi = NextInstructionNode(firstNonPhi);
+			auto inode = NextInstructionNode(firstNonPhi);
 			while (inode)
 			{
-				auto nxt = inode->GetNext();
+				auto nxt = NextInstructionNode(inode);
 				if (inode->Value.Func == Operation::Phi)
 				{
-					firstNonPhi->InsertBefore(inode->Value);
-					inode->Delete();
+					InsertInstructionBefore(firstNonPhi, inode->Value);
+					RemoveInstruction(inode);
 				}
 				inode = nxt;
 			}
