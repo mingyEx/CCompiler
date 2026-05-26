@@ -17,6 +17,18 @@ namespace Compiler
 		class OutOfSSA_Transform : public IntraProcOptimizer
 		{
 		private:
+			std::vector<std::unique_ptr<Variable>> temporaryVariableOwners;
+
+			Variable* MakeParallelCopyTemp(Variable* source)
+			{
+				auto owner = std::make_unique<Variable>(*source);
+				auto temp = owner.get();
+				temp->Name = L"^tmpcpy_" + std::to_wstring(static_cast<int>(source->Type));
+				temp->Version = 0;
+				temporaryVariableOwners.push_back(std::move(owner));
+				return temp;
+			}
+
 			//以逆后续方式遍历整个程序，对每条指令,仅操作符为phi的时候，执行函数func.
 			template <typename F>
 			void ForEachPhi(ControlFlowGraph * program, F func)
@@ -299,9 +311,7 @@ namespace Compiler
 							}
 							else
 							{
-								tmpVar = new Variable(*b);
-								tmpVar->Name = L"^tmpcpy_" + std::to_wstring(static_cast<int>(b->Type));	
-								tmpVar->Version = 0;
+								tmpVar = MakeParallelCopyTemp(b);
 								temp_vars[b->Type] = tmpVar;
 							}
 							EmitCopy(tmpVar, b);

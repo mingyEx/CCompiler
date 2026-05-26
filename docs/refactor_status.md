@@ -85,6 +85,7 @@
 - out-of-SSA 内部 `PhiClasses` 已从 CoreLib `RefPtr<EnumerableIntSet>` 改为 `std::shared_ptr<EnumerableIntSet>`。
 - IL `Variable` 所有权已从 CoreLib `RefPtr<Variable>` 改为 `std::shared_ptr<Variable>`。
 - 当前 `IL` 目录已经没有 `RefPtr<...>` 命中。
+- out-of-SSA parallel-copy 临时变量已从裸 `new Variable` 改为 `std::unique_ptr` 托管。
 - CFG liveness 和 SSA phi placement 的局部 `List<IntSet>` 工作集已改为 `std::vector<IntSet>`。
 - SimpleC/IL 主链路中的 broad `using namespace CoreLib::Basic` 已清掉，剩余 CoreLib 类型通过精确 using 或显式限定暴露。
 - x86 `Function_x86::Code` 已从 CoreLib `LinkedList<Instruction>` 改为 `std::list<Instruction>`。

@@ -68,6 +68,7 @@
 - `IL.vcxproj` 已移除 CoreLib include 路径和 CoreLib project reference；当前 `IL` 目录没有 `CoreLib` 命中。
 - `SimpleC/compiler_pipeline.cpp` 已移除 CoreLib 异常兼容 catch；SimpleC 非测试代码没有 `CoreLib::Basic` 直接引用。
 - `SimpleC.vcxproj` 已移除 CoreLib include directory；仅为 `--corelib-self-test` 保留 CoreLib project reference。
+- out-of-SSA parallel-copy 临时变量已从裸 `new Variable` 改为 `std::unique_ptr` 托管，保留现有 raw pointer IR 引用语义。
 
 ## 最近完成的 correctness 修复
 
