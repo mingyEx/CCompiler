@@ -61,7 +61,6 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../CoreLib</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>4514;5045;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -82,7 +81,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../CoreLib</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4514;5045;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -95,11 +93,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Assembly_x86.h" />
+    <ClInclude Include="BitIntSet.h" />
     <ClInclude Include="CFG.h" />
     <ClInclude Include=".\CodeEmitter_x86.h" />
     <ClInclude Include="CompileError.h" />
     <ClInclude Include="InterferenceAnalysis.h" />
     <ClInclude Include="IntermediateCode.h" />
+    <ClInclude Include="IntSet.h" />
     <ClInclude Include="Optimization.h" />
     <ClInclude Include="ScopeDictionary.h" />
     <ClInclude Include="stdafx.h" />
@@ -128,11 +128,6 @@
     <ClCompile Include=".\Transform_RegisterAllocationX86.cpp" />
     <ClCompile Include=".\X86CodeGen.cpp" />
     <ClCompile Include="X86_ICode.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CoreLib\CoreLib.vcxproj">
-      <Project>{f9be7957-8399-899e-0c49-e714fddd4b65}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,6 +1,5 @@
 ﻿#include "Optimization.h"
 #include "BitIntSet.h"
-#include "Exception.h"
 #include "TransformInvariant.h"
 #include <algorithm>
 #include <vector>

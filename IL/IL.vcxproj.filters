@@ -54,6 +54,12 @@
     <ClInclude Include=".\X86CodeGen.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="BitIntSet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IntSet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

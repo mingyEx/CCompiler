@@ -16,9 +16,9 @@
 | 阶段 | 状态 | 粗略进度 | 说明 |
 | --- | --- | ---: | --- |
 | 1. 稳定 CoreLib 内部 | 进行中 | 75% | `String`、`Stream`、`TextIO`、`LibIO`、容器和 `RefPtr` 已修过一批真实边界问题，并有自测覆盖。 |
-| 2. 减少自定义容器和资源管理依赖 | 已开始 | 83% | `SimpleC` 前端 AST/lexer/parser/semantic/printer 已基本使用标准库字符串和智能指针，visitor 分派接口已改为引用；IL/x86 名称字段、IR/x86 文本输出已开始改为 `std::wstring`；`Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表和 CFG edge `Entries` 已从 CoreLib `List` 改为 `std::vector`；CFG liveness / SSA phi placement 局部 `List<IntSet>` 已改为 `std::vector<IntSet>`；IL/x86 指令链表已脱离 CoreLib `LinkedList` / `LinkedNode`，改由标准库链表支撑稳定节点语义；optimizer 的 CFG 所有权边界、CFG 节点、IL 变量和 out-of-SSA `PhiClasses` 所有权已改为 `std::shared_ptr`；当前 `IL` 目录已无 `RefPtr<...>` 命中，SimpleC 非测试代码只剩 compiler pipeline 的 CoreLib 异常兼容边界。 |
+| 2. 减少自定义容器和资源管理依赖 | 已开始 | 88% | `SimpleC` 前端 AST/lexer/parser/semantic/printer 已基本使用标准库字符串和智能指针，visitor 分派接口已改为引用；IL/x86 名称字段、IR/x86 文本输出已开始改为 `std::wstring`；`Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表和 CFG edge `Entries` 已从 CoreLib `List` 改为 `std::vector`；CFG liveness / SSA phi placement 局部 `List<IntSet>` 已改为 `std::vector<IntSet>`；IL/x86 指令链表已脱离 CoreLib `LinkedList` / `LinkedNode`；IL 本地 `IntSet` / `BitIntSet` 已替代 CoreLib 版本；IL 项目已移除 CoreLib include 路径和 project reference。 |
 | 3. 加强最小回归测试 | 进行中 | 60% | `--corelib-self-test` 已建立，但仍不是完整编译器测试体系。 |
-| 4. 压缩兼容层暴露面 | 少量开始 | 10% | 兼容层更安全了，但 `String`、`RefPtr`、`List`、`Dictionary`、`HashSet` 的公共使用仍很多。 |
+| 4. 压缩兼容层暴露面 | 少量开始 | 18% | IL 已清掉 CoreLib `Exception/String/IntSet/BitIntSet/Math` 边界；SimpleC 已移除 CoreLib include directory，但 CoreLib 自测仍绑定在 SimpleC 可执行文件内。 |
 | 5. 公共接口替换 | 暂缓 | 0% | 应放在内部依赖和测试护栏更多之后。 |
 
 ## 已完成的主线工作桶
@@ -58,6 +58,8 @@
 - `SimpleC/compiler_pipeline.cpp` 不再直接 include `Basic.h`。
 - 将 x86 `Function_x86::Code` 迁移到 `std::list<Instruction>`。
 - 将 IL `Function::Instructions` 和 `ControlFlowNode::Code` 迁移到本地 `InstructionList`，内部使用 `std::list`，主链路不再依赖 CoreLib `LinkedList` / `LinkedNode`。
+- 将 IL `IntSet` / `BitIntSet` 迁移到 IL 本地标准库 backed 实现，并移除 IL 对 CoreLib 项目的直接引用。
+- 将 IL 旧 CoreLib 异常边界改为 `std::runtime_error` / `std::logic_error`。
 - 将 `ScopeDictionary` 的 key 存储从 CoreLib hash helper 迁移到标准 `std::unordered_map` 默认 hash/equality。
 - 清掉 IL 非测试路径中的 CoreLib `StringBuilder` 残留。
 - 将 interference analysis 的 `LiveRange` 结果所有权从 CoreLib `RefPtr` 迁移到 `std::shared_ptr`。
@@ -98,7 +100,7 @@
 
 已经纠偏的地方：
 
-- 最新一批转向更高价值的主链路 CoreLib 依赖拆除，已完成 IL `Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表、CFG edge `Entries`、CFG 局部 liveness/phi 工作集的 `std::vector` 化，IL/x86 指令链表的标准库链表迁移，optimizer CFG、CFG 节点、IL 变量和 out-of-SSA `PhiClasses` 所有权的 `std::shared_ptr` 化，以及 IR/x86 文本输出的 `std::wstring` 化。
+- 最新一批转向更高价值的主链路 CoreLib 依赖拆除，已完成 IL `Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表、CFG edge `Entries`、CFG 局部 liveness/phi 工作集的 `std::vector` 化，IL/x86 指令链表的标准库链表迁移，optimizer CFG、CFG 节点、IL 变量和 out-of-SSA `PhiClasses` 所有权的 `std::shared_ptr` 化，IR/x86 文本输出的 `std::wstring` 化，以及 IL 项目对 CoreLib 的直接引用拆除。
 - 后续不再优先做 visitor/cast/格式类小修，除非它们直接服务于 CoreLib 依赖移除。
 
 ## 当前焦点
@@ -109,8 +111,8 @@
 
 ## 下一小目标
 
-1. 继续评估 IL 中剩余 `IntSet` / `BitIntSet` / `Math` 依赖，优先看是否可迁移到本地或标准库 backed 实现。
-2. 清理 IL 中剩余 CoreLib `String` / `Exception` 兼容边界，保留必要兼容重载但不扩展新用法。
+1. 评估是否把 `--corelib-self-test` 从 SimpleC 主目标拆到独立测试目标，避免 SimpleC 项目继续硬引用 CoreLib。
+2. 继续扫描 SimpleC 非测试源码的自定义容器/资源管理残留，优先处理会阻塞 CoreLib 脱钩的接口边界。
 3. 不做机械 cast、visitor 小修或 x86 后端功能扩展，除非它直接阻塞 CoreLib 依赖移除。
 4. 每批保持 `SimpleC Debug|Win32`、`--corelib-self-test`、`SimpleC/in.txt` smoke 通过。
 

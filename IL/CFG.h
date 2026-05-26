@@ -14,9 +14,6 @@ namespace Compiler
 {
 	namespace Intermediate
 	{
-		using CoreLib::Basic::BitIntSet;
-		using CoreLib::Basic::IntSet;
-
 		class ControlFlowNode
 		{
 		public:

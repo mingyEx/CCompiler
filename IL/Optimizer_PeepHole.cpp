@@ -1,5 +1,4 @@
 #include "Optimization.h"
-#include "Exception.h"
 #include "TransformInvariant.h"
 
 namespace Compiler

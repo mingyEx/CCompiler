@@ -5,29 +5,48 @@
 #include <fstream>
 #include <list>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
-#include "Basic.h"
 #include "CompileError.h"
 
 namespace Compiler
 {
 	namespace Intermediate
 	{
-		using CoreLib::Basic::Exception;
-		using CoreLib::Basic::InvalidOperationException;
-		using CoreLib::Basic::String;
-		class InvalidProgramException : public Exception	//满满的c#味
+		class InvalidProgramException : public std::runtime_error
 		{
 		public:
 			InvalidProgramException()
+				: std::runtime_error("")
 			{}
-			InvalidProgramException(const String & message)
-				: Exception(message)
+			explicit InvalidProgramException(const char* message)
+				: std::runtime_error(message)
+			{
+			}
+			explicit InvalidProgramException(const std::string& message)
+				: std::runtime_error(message)
+			{
+			}
+			explicit InvalidProgramException(const wchar_t* message)
+				: std::runtime_error(ToNarrow(std::wstring(message)))
+			{
+			}
+			explicit InvalidProgramException(const std::wstring& message)
+				: std::runtime_error(ToNarrow(message))
 			{
 			}
 
+		private:
+			static std::string ToNarrow(const std::wstring& message)
+			{
+				std::string result;
+				result.reserve(message.size());
+				for (const wchar_t ch : message)
+					result.push_back(static_cast<char>(ch));
+				return result;
+			}
 		};
 
 		enum class OperandType
@@ -451,14 +470,14 @@ namespace Compiler
 			Instruction& First()
 			{
 				if (nodes.empty())
-					throw InvalidOperationException(L"InstructionList is empty.");
+					throw std::logic_error("InstructionList is empty.");
 				return nodes.front().Value;
 			}
 
 			Instruction& Last()
 			{
 				if (nodes.empty())
-					throw InvalidOperationException(L"InstructionList is empty.");
+					throw std::logic_error("InstructionList is empty.");
 				return nodes.back().Value;
 			}
 
@@ -753,7 +772,7 @@ namespace Compiler
 			Variable * AddParameter(const std::wstring& name, int version=0, int size=4)
 			{
 				if (!Variables.empty())
-					throw InvalidOperationException(L"Parameter cannot be inserted after variables.");
+					throw std::logic_error("Parameter cannot be inserted after variables.");
 				//形参不能放到变量之后是什么鬼.. 难道是默认参数？ 不是，可能只是指IR里，形参在前才好计算吧。
 				auto rs = std::make_shared<Variable>(name, size, version);
 				rs->Id = static_cast<int>(Parameters.size() + Variables.size());

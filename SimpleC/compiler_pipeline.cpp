@@ -194,11 +194,6 @@ namespace SimpleC
 				std::cerr << "Compiler failed: " << error.what() << '\n';
 				return 1;
 			}
-			catch (const CoreLib::Basic::Exception& error)
-			{
-				std::cerr << "Compiler failed: " << error.Message.ToMultiByteString() << '\n';
-				return 1;
-			}
 		}
 	}
 }

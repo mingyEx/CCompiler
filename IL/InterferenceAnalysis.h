@@ -3,7 +3,6 @@
 
 #include "CFG.h"
 #include "BitIntSet.h"
-#include "LibMath.h"
 #include "IntSet.h"
 #include <algorithm>
 #include <memory>
@@ -13,10 +12,6 @@ namespace Compiler
 {
 	namespace Intermediate
 	{
-		using CoreLib::Basic::BitIntSet;
-		using CoreLib::Basic::IntSet;
-		using CoreLib::Basic::Math;
-
 		class EnumerableIntSet	//可枚举的整数集 ，大概来自dotnet的概念
 		{
 		public:
@@ -111,8 +106,8 @@ namespace Compiler
 			
 			void AddEdge(int var0, int var1)
 			{
-				int id0 = Math::Min(var0, var1);
-				int id1 = Math::Max(var0, var1);
+				int id0 = (std::min)(var0, var1);
+				int id1 = (std::max)(var0, var1);
 				edges.Add((id1*(id1+1)>>1) + id0);	
 			}
 			int AddNode()
@@ -136,8 +131,8 @@ namespace Compiler
 
 			inline bool Interferes(int var0, int var1)	
 			{
-				int id0 = Math::Min(var0, var1);
-				int id1 = Math::Max(var0, var1);
+				int id0 = (std::min)(var0, var1);
+				int id1 = (std::max)(var0, var1);
 				return edges.Contains((id1*(id1+1)>>1) + id0);	
 
 			}
