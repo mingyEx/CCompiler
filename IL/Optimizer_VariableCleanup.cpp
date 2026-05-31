@@ -17,7 +17,7 @@ namespace Compiler
 				std::unordered_map<Variable*, InstructionNode *> referenced_variables;
 				for (auto & node : program->Nodes)
 				{
-					for (auto instrNode = FirstInstructionNode(node->Code); instrNode; instrNode = NextInstructionNode(instrNode))
+					for (auto instrNode = node->Code.FirstNode(); instrNode; instrNode = instrNode->GetNext())
 					{
 						auto & instr = instrNode->Value;
 						if (instr.LeftOperand.IsVariable())

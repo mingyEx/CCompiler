@@ -39,9 +39,9 @@ namespace Compiler
 				result.Changed = false;
 				for (auto & node : program->Nodes)	//对每个节点
 				{
-					for (auto instrNode = FirstInstructionNode(node->Code); instrNode != nullptr; instrNode = NextInstructionNode(instrNode))	//里面的每条指令
+					for (auto instrNode = node->Code.FirstNode(); instrNode != nullptr; instrNode = instrNode->GetNext())	//里面的每条指令
 					{
-						auto & instr = GetInstruction(instrNode);	//里面的值
+						auto & instr = instrNode->Value;	//里面的值
 						//一堆if 是在干嘛?
 
 						//如果操作指令是mod并且第一个是整数，就把此指令重写成位操作

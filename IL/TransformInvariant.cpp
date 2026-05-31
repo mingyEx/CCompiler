@@ -9,17 +9,17 @@ namespace Compiler
 		{
 			if (node->Code.Count() == 0)
 				return;
-			InstructionNode * firstNonPhi = FirstInstructionNode(node->Code);
+			InstructionNode * firstNonPhi = node->Code.FirstNode();
 			while (firstNonPhi->Value.Func == Operation::Phi)
-				firstNonPhi = NextInstructionNode(firstNonPhi);
-			auto inode = NextInstructionNode(firstNonPhi);
+				firstNonPhi = firstNonPhi->GetNext();
+			auto inode = firstNonPhi->GetNext();
 			while (inode)
 			{
-				auto nxt = NextInstructionNode(inode);
+				auto nxt = inode->GetNext();
 				if (inode->Value.Func == Operation::Phi)
 				{
-					InsertInstructionBefore(firstNonPhi, inode->Value);
-					RemoveInstruction(inode);
+					firstNonPhi->InsertBefore(inode->Value);
+					inode->Delete();
 				}
 				inode = nxt;
 			}
