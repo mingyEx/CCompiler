@@ -60,7 +60,7 @@
 - 将 IL `Function::Instructions` 和 `ControlFlowNode::Code` 迁移到本地 `InstructionList`，内部使用 `std::list`，主链路不再依赖 CoreLib `LinkedList` / `LinkedNode`。
 - 将 IL `IntSet` / `BitIntSet` 迁移到 IL 本地标准库 backed 实现，并移除 IL 对 CoreLib 项目的直接引用。
 - 将 IL 旧 CoreLib 异常边界改为 `std::runtime_error` / `std::logic_error`。
-- 将 `ScopeDictionary` 的 key 存储从 CoreLib hash helper 迁移到标准 `std::unordered_map` 默认 hash/equality。
+- 将 `ScopeDictionary` 的 key 存储从 CoreLib hash helper 迁移到标准 `std::unordered_map` 默认 hash/equality，并从 IL 公共头收缩为 optimizer 私有 helper。
 - 清掉 IL 非测试路径中的 CoreLib `StringBuilder` 残留。
 - 将 interference analysis 的 `LiveRange` 结果所有权从 CoreLib `RefPtr` 迁移到 `std::shared_ptr`。
 - 将若干 IL 和 optimizer 内部容器替换为 `std::vector`、`std::unordered_map`、`std::unordered_set`。

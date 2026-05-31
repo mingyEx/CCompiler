@@ -43,7 +43,7 @@
 - 将 IL `Operand::ToString()`、`Instruction::ToString()` 和 x86 `Instruction::ToString()` 从 CoreLib `String/StringBuilder` 改为直接返回 `std::wstring`。
 - 将 CFG dump 中的 IR 文本缓冲从 CoreLib `StringBuilder` 改为 `std::wstring`。
 - 将 IL `Instruction::Operands` 从 CoreLib `List<Operand>` 改为 `std::vector<Operand>`，并同步更新 CFG、optimizer、out-of-SSA、x86 codegen 和最小自测里的访问 API。
-- 将 `ScopeDictionary` 从 CoreLib hash helper 解耦，改为标准 `std::unordered_map` 默认 hash/equality，目前表达式 key 已使用 `std::wstring`。
+- 将 `ScopeDictionary` 从 CoreLib hash helper 解耦，改为标准 `std::unordered_map` 默认 hash/equality，并收缩为唯一使用 optimizer 的私有 helper。
 - 清掉 IL 非测试路径中的 CoreLib `StringBuilder` 残留，并删除无调用的 CoreLib `String` dump/变量名兼容入口。
 - 将 interference analysis 的 `LiveRange` 结果从 CoreLib `RefPtr` 改为 `std::shared_ptr`。
 - 将 `ControlFlowGraph::Variables` 从 CoreLib `List<RefPtr<Variable>>` 改为 `std::vector<RefPtr<Variable>>`，同步更新 SSA、out-of-SSA、optimizer、register allocation 和 interference analysis 访问点。

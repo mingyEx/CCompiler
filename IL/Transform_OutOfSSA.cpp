@@ -1,6 +1,5 @@
 #include "Optimization.h"
 #include "InterferenceAnalysis.h"
-#include "ScopeDictionary.h"
 #include <memory>
 #include <string>
 #include <unordered_map>

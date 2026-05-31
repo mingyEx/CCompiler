@@ -39,9 +39,6 @@
     <ClInclude Include="TransformInvariant.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ScopeDictionary.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include=".\CodeEmitter_x86.h">
       <Filter>Header Files</Filter>
     </ClInclude>

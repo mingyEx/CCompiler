@@ -1,11 +1,60 @@
 #include "Optimization.h"
-#include "ScopeDictionary.h"
 #include <sstream>
+#include <unordered_map>
+#include <vector>
 
 namespace Compiler
 {
 	namespace Intermediate
 	{
+		template <typename TKey, typename TValue>
+		class ScopeDictionary
+		{
+		public:
+			using MapType = std::unordered_map<TKey, TValue>;
+
+			void PushScope()
+			{
+				dicts.emplace_back();
+			}
+
+			void PopScope()
+			{
+				dicts.pop_back();
+			}
+
+			bool TryGetValue(const TKey& key, TValue& value)
+			{
+				for (auto iter = dicts.rbegin(); iter != dicts.rend(); ++iter)
+				{
+					auto valueIter = iter->find(key);
+					if (valueIter != iter->end())
+					{
+						value = valueIter->second;
+						return true;
+					}
+				}
+				return false;
+			}
+
+			bool TryGetValueInCurrentScope(const TKey& key, TValue& value)
+			{
+				auto valueIter = dicts.back().find(key);
+				if (valueIter == dicts.back().end())
+					return false;
+				value = valueIter->second;
+				return true;
+			}
+
+			void Add(const TKey& key, const TValue& value)
+			{
+				dicts.back()[key] = value;
+			}
+
+		private:
+			std::vector<MapType> dicts;
+		};
+
 		// This optimizer perform following transformations:
 		// 1. Remove instructions that involve identities, e.g. replace
 		//	  a = b + 1 with a = b		

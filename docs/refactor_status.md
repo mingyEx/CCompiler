@@ -95,7 +95,7 @@
 - interference analysis 已去掉 CoreLib `Math` / `LibMath` 依赖，改用标准库 min/max。
 - `IntermediateCode.h` 的 `InvalidProgramException` 已改为 `std::runtime_error`，`InstructionList` / parameter ordering 错误改为标准异常，IL 旧 CoreLib `Exception/String` 边界已清掉。
 - `IL.vcxproj` 已移除 CoreLib include 路径和 CoreLib project reference；当前 `IL` 目录没有 `CoreLib` 命中。
-- `ScopeDictionary` 已从 CoreLib `Dictionary/GetHashCode` helper 解耦，当前表达式 key 使用 `std::wstring`。
+- `ScopeDictionary` 已从 CoreLib `Dictionary/GetHashCode` helper 解耦，当前表达式 key 使用 `std::wstring`，并已从 IL 公共头收缩为 optimizer 私有 helper。
 - IL 非测试路径中的 CoreLib `StringBuilder` 已清掉，若干无调用的 CoreLib `String` 兼容重载已删除。
 - interference analysis 的 `LiveRange` 结果已从 CoreLib `RefPtr` 改为 `std::shared_ptr`。
 
