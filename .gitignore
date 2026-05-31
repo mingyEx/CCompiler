@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# SimpleC smoke artifacts
+SimpleC/in.code
+SimpleC/in.asm.*.txt
+SimpleC/in.cfg.*.cfgdump
