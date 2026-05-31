@@ -15,7 +15,8 @@ $patterns = @(
 
 $targets = @(
     'SimpleC',
-    'IL'
+    'IL',
+    'DevTools\X86_InstrCodeGen'
 )
 
 $args = @()
@@ -32,14 +33,14 @@ foreach ($target in $targets)
 $result = & rg -n --no-heading --color never @args
 if ($LASTEXITCODE -eq 0)
 {
-    Write-Host 'Found forbidden CoreLib dependency markers in main compiler chain:' -ForegroundColor Red
+    Write-Host 'Found forbidden CoreLib dependency markers in protected compiler chain:' -ForegroundColor Red
     Write-Host $result
     exit 1
 }
 
 if ($LASTEXITCODE -eq 1)
 {
-    Write-Host 'OK: no forbidden CoreLib dependency markers found in SimpleC/IL.' -ForegroundColor Green
+    Write-Host 'OK: no forbidden CoreLib dependency markers found in SimpleC/IL/DevTools.' -ForegroundColor Green
     exit 0
 }
 

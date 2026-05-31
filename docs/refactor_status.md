@@ -7,7 +7,7 @@
 重构必须保持渐进：
 
 - 保留现有项目结构和构建目标。
-- 当前最高优先级是拆掉 SimpleC/IL 主编译链路里能替换的 CoreLib 依赖。
+- 当前最高优先级是拆掉 SimpleC/IL/DevTools(X86_InstrCodeGen) 主编译链路里能替换的 CoreLib 依赖。
 - 优先替换主链路接口和内部实现中已经可验证的 `String`、`List`、`LinkedList`、`RefPtr` 使用点。
 - 每批保持 `SimpleC Debug|Win32` 可构建。
 - 每批尽量跑 `scripts\check_mainchain_no_corelib.ps1` 和 `SimpleC/in.txt` smoke。
@@ -173,7 +173,7 @@
 
 `scripts\check_mainchain_no_corelib.ps1` 当前覆盖：
 
-- 扫描 `SimpleC/IL` 主链路，阻断 `CoreLib::`、`CoreLib\`、`Basic.h`、`RefPtr`、`SmartPointer`、`LinkedList`、`LinkedNode` 重新引入。
+- 扫描 `SimpleC`、`IL`、`DevTools/X86_InstrCodeGen` 主链路，阻断 `CoreLib::`、`CoreLib\`、`Basic.h`、`RefPtr`、`SmartPointer`、`LinkedList`、`LinkedNode` 重新引入。
 
 不足：
 
