@@ -67,7 +67,7 @@
 - 将 x86 emitter 的字节缓冲、常量表、重定位表等局部存储替换为 `std::vector`。
 - 将部分 CoreLib 内部缓冲替换为 `std::vector` 或 `std::string`。
 - 收缩 `SimpleC` 公共头中的 broad namespace import，改为精确引用 `CompileError` 和实际需要的 IL 类型。
-- 开始收缩 `InstructionList` 旧全局 helper API 的使用面，先迁移 peephole、branch fuse、variable cleanup 和 invariant transform 的简单调用点。
+- 继续收缩 `InstructionList` 旧全局 helper API 的使用面，已迁移 peephole、branch fuse、variable cleanup、invariant transform、interference analysis、dead-code/control-flow cleanup、register allocation 和 CFG 非复杂调用点。
 
 ## 已完成的 correctness 工作桶
 

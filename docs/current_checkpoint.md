@@ -72,7 +72,7 @@
 - out-of-SSA parallel-copy 临时变量已从裸 `new Variable` 改为 `std::unique_ptr` 托管，保留现有 raw pointer IR 引用语义。
 - CFG dominator visitor 的旧 `FakedList` 辅助容器已移除，改用 `std::span<ControlFlowNode*>` 表示临时边视图。
 - `SimpleC` 公共头中的 broad `using namespace` 已收缩为精确类型引入，避免 Lexer/Parser/visitor/codegen 头继续向包含方泄漏 IL/Compiler 命名空间。
-- `InstructionList` 仍保留稳定 `InstructionNode*` 语义，但已开始把 optimizer 小文件从旧全局 helper 调用迁到 `InstructionList` / `InstructionNode` 成员接口。
+- `InstructionList` 仍保留稳定 `InstructionNode*` 语义，但大部分非复杂 pass 已从旧全局 helper 调用迁到 `InstructionList` / `InstructionNode` 成员接口；剩余集中在 `UselessInstructionRemoval` 和 `OutOfSSA`。
 
 ## 最近完成的 correctness 修复
 

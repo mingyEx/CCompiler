@@ -142,7 +142,7 @@ namespace Compiler
 							{
 								//�����ǰ�ڵ���˳�����ͼ���˳��������˳��ڵ������Ϊ1��{��˵���ǵ��߹�ϵ����������������Ҳ���ںϲ�Node�ɣ�ǰ������ɾ��ĳ��Node,�������ںϲ�����������ָ���Node.}
 								auto exitNode = node->Exits[0];
-								RemoveInstruction(LastInstructionNode(node->Code));	//���һ��ָ����Ȼ����ת��ɾ����Ȼ�����һ�����������ͺ�.
+								node->Code.LastNode()->Delete();	//���һ��ָ����Ȼ����ת��ɾ����Ȼ�����һ�����������ͺ�.
 								for (auto & instr : exitNode->Code)
 									node->Code.AddLast(instr);
 								node->Exits[0] = exitNode->Exits[0];	//�˳��ڵ���������Ϊ��һ����.
@@ -268,10 +268,10 @@ namespace Compiler
 				{
 					int instrId = 0;
 					auto & code = program->Nodes[i]->Code;
-					for (auto instrNode = FirstInstructionNode(code); instrNode != nullptr; )
+					for (auto instrNode = code.FirstNode(); instrNode != nullptr; )
 					{
-						auto nextInstrNode = NextInstructionNode(instrNode);
-						auto & instr = GetInstruction(instrNode);
+						auto nextInstrNode = instrNode->GetNext();
+						auto & instr = instrNode->Value;
 						if (instr.Mark == 0)
 						{
 							if (instr.Func == Operation::Branch)
@@ -294,7 +294,7 @@ namespace Compiler
 							else if (instr.Func != Operation::Jump)
 							{
 								result.Changed = true;
-								RemoveInstruction(instrNode);
+								instrNode->Delete();
 							}
 						}
 						instrNode = nextInstrNode;

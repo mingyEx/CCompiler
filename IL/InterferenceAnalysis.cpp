@@ -81,9 +81,9 @@ namespace Compiler
 				// build live now
 				liveNow.Clear();
 				liveNow.UnionWith(node->LiveOut);
-				for (auto iter = LastInstructionNode(node->Code); iter; iter = PreviousInstructionNode(iter))
+				for (auto iter = node->Code.LastNode(); iter; iter = iter->GetPrevious())
 				{
-					auto & instr = GetInstruction(iter);
+					auto & instr = iter->Value;
 					if (instr.LeftOperand.IsVariable())
 					{
 						int var0 = instr.LeftOperand.Var->Id;

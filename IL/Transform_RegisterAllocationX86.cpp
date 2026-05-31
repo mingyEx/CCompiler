@@ -100,9 +100,9 @@ namespace Compiler
 				}
 				// insert temporary variable for mul and div and call and shl and shr, replace parameter uses with corresponding copy
 				for (auto node : program->Nodes)
-					for (auto instrNode = FirstInstructionNode(node->Code); instrNode != nullptr; instrNode = NextInstructionNode(instrNode))
+					for (auto instrNode = node->Code.FirstNode(); instrNode != nullptr; instrNode = instrNode->GetNext())
 					{
-						auto &instr = GetInstruction(instrNode);
+						auto &instr = instrNode->Value;
 						if (instr.LeftOperand.IsVariable() && instr.LeftOperand.Var->Id < program->ParameterCount)
 							instr.LeftOperand.Var = program->Variables[instr.LeftOperand.Var->Id+paramCopyStartId].get();
 						for (auto & op : instr.Operands)
@@ -115,7 +115,7 @@ namespace Compiler
 							instr.Func == Operation::Call)
 						{
 							if (instr.LeftOperand.IsVariable())
-								InsertInstructionAfter(instrNode, Instruction(instr.LeftOperand, 0, eaxedx.get()));
+								instrNode->InsertAfter(Instruction(instr.LeftOperand, 0, eaxedx.get()));
 							instr.LeftOperand.Var = eaxedx.get();
 						}
 						if (instr.Func == Operation::Lsh || instr.Func == Operation:: Rsh ||
@@ -123,7 +123,7 @@ namespace Compiler
 						{
 							if (instr.Operands[1].IsVariable())
 							{
-								InsertInstructionBefore(instrNode, Instruction(ecx.get(), 0, instr.Operands[1]));
+								instrNode->InsertBefore(Instruction(ecx.get(), 0, instr.Operands[1]));
 								instr.Operands[1].Var = ecx.get();
 							}
 						}
@@ -278,16 +278,16 @@ namespace Compiler
 				// remove unnecessary parameter copies
 				if (startNode)
 				{
-					auto instrNode = FirstInstructionNode(startNode->Code);
+					auto instrNode = startNode->Code.FirstNode();
 					std::unordered_map<Variable*, Variable*> var_map;
 					for (int i = 0; i<program->ParameterCount; i++)
 					{
-						auto & instr = GetInstruction(instrNode);
+						auto & instr = instrNode->Value;
 						if (instr.LeftOperand.Var->Location.Type == MemoryLocationType::Stack)
 						{
 							var_map[instr.LeftOperand.Var] = instr.Operands[0].Var;
 						}
-						instrNode = NextInstructionNode(instrNode);
+						instrNode = instrNode->GetNext();
 					}
 					if (!var_map.empty())
 					{

@@ -91,7 +91,7 @@
 - SimpleC/IL 主链路中的 broad `using namespace CoreLib::Basic` 已清掉，剩余 CoreLib 类型通过精确 using 或显式限定暴露。
 - x86 `Function_x86::Code` 已从 CoreLib `LinkedList<Instruction>` 改为 `std::list<Instruction>`。
 - IL `Function::Instructions` 和 `ControlFlowNode::Code` 已从 CoreLib `LinkedList<Instruction>` 改为本地 `InstructionList` 过渡层；该层内部使用 `std::list`，保留稳定 `InstructionNode*` 以兼容现有 SSA/out-of-SSA 和优化器节点引用。
-- `InstructionList` 的后续方向不是直接替换成裸 `std::list<Instruction>`，而是先减少旧全局 helper API；peephole、branch fuse、variable cleanup 和 invariant transform 已改用成员接口。
+- `InstructionList` 的后续方向不是直接替换成裸 `std::list<Instruction>`，而是先减少旧全局 helper API；多数非复杂 pass 已改用成员接口，剩余旧 helper 使用主要集中在 `UselessInstructionRemoval` 和 `OutOfSSA`。
 - 当前 SimpleC/IL 主链路已经没有 CoreLib `LinkedList` / `LinkedNode` 类型命中；剩余 `LinkedList` 命中只在 `corelib_regression_tests.cpp` 中测试 CoreLib 自身。
 - IL `IntSet` / `BitIntSet` 已迁移为 IL 本地标准库 backed 实现，不再从 CoreLib 引入。
 - interference analysis 已去掉 CoreLib `Math` / `LibMath` 依赖，改用标准库 min/max。

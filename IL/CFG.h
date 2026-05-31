@@ -59,12 +59,12 @@ namespace Compiler
 			}
 			InstructionNode* FirstInstruction()
 			{
-				InstructionNode * rs = FirstInstructionNode(Code);	
+				InstructionNode * rs = Code.FirstNode();	
 				//取出第一条指令。Code 使用稳定节点的 InstructionList；如果第一个是 phi 就继续找下一条。
 				//... 来看看这个函数调用的地方吧，我觉得它一定不止在程序开始节点被调用，中间遇到某个块的时候，他还是会被调用的.到那时候phi必须被跳过，因为目标机没有对应的指令 ? 再说吧~
 				//上来就是outofssa,不打掉Phi就他妈的怪了..
 				while (rs && rs->Value.Func == Operation::Phi)	//如果phi存在就跳过，
-					rs = NextInstructionNode(rs);
+					rs = rs->GetNext();
 				return rs;
 			}
 

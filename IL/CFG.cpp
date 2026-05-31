@@ -204,16 +204,16 @@ namespace Compiler
 			
 			int instrId = 0;
 			std::vector<int> removedInstrs;	//这是要把第i条已经移除的指令都标记下来?
-			for (auto instrNode = FirstInstructionNode(func.Instructions); instrNode != nullptr; )
+			for (auto instrNode = func.Instructions.FirstNode(); instrNode != nullptr; )
 			{
-				auto nextInstrNode = NextInstructionNode(instrNode);
-				auto & instr = GetInstruction(instrNode);
+				auto nextInstrNode = instrNode->GetNext();
+				auto & instr = instrNode->Value;
 				if (instr.Func == Operation::Jump)
 				{
 					int line = line_map[instr.Operands[0].IntValue];
 					if (line == instrId + 1)
 					{
-						RemoveInstruction(instrNode);
+						instrNode->Delete();
 						removedInstrs.push_back(instrId);
 					}
 					else
@@ -224,7 +224,7 @@ namespace Compiler
 					int line = line_map[instr.Operands[1].IntValue];
 					if (line == instrId + 1)
 					{
-						RemoveInstruction(instrNode);
+						instrNode->Delete();
 						removedInstrs.push_back(instrId);
 					}
 					else
@@ -236,9 +236,9 @@ namespace Compiler
 			//就猜这个是把所有到不了的指令mark出来了，细节不看。
 
 			//下面干嘛，猜一下.. 又是跳转之类的.. 消除死代码吗，暂时不管。
-			for (auto instrNode = FirstInstructionNode(func.Instructions); instrNode != nullptr; instrNode = NextInstructionNode(instrNode))
+			for (auto instrNode = func.Instructions.FirstNode(); instrNode != nullptr; instrNode = instrNode->GetNext())
 			{
-				auto & instr = GetInstruction(instrNode);
+				auto & instr = instrNode->Value;
 				int * line = 0;
 				if (instr.Func == Operation::Jump)
 				{
@@ -787,9 +787,9 @@ namespace Compiler
 		void SSA_Rename(ControlFlowNode * node, ControlFlowGraph * graph, std::vector<SSA_RootVar*> & rootVarMapping)
 		{
 			// rename instructions
-			for (auto instrNode = FirstInstructionNode(node->Code); instrNode != nullptr; instrNode = NextInstructionNode(instrNode))
+			for (auto instrNode = node->Code.FirstNode(); instrNode != nullptr; instrNode = instrNode->GetNext())
 			{
-				auto & instr = GetInstruction(instrNode);
+				auto & instr = instrNode->Value;
 				if (instr.Func != Operation::Phi)
 				{
 					for (auto &op : instr.Operands)

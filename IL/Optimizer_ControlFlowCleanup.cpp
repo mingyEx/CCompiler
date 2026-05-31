@@ -162,7 +162,7 @@ namespace Compiler
 							if (node->Exits[0] != graph->Sink && node->Exits[0]->Entries.size() == 1)
 							{
 								auto exitNode = node->Exits[0];
-								RemoveInstruction(LastInstructionNode(node->Code));
+								node->Code.LastNode()->Delete();
 								for (auto & instr : exitNode->Code)
 									node->Code.AddLast(instr);
 								node->Exits[0] = exitNode->Exits[0];
