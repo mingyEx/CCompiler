@@ -558,6 +558,16 @@ namespace
 			char bytes[] = { 'a', 0, 0, 0 };
 			static_cast<void>(Encoding::Unicode->GetString(bytes, -1));
 		}, L"UnicodeEncoding::GetString should reject negative lengths.");
+
+		RequireThrows([&]()
+		{
+			static_cast<void>(Encoding::Ansi->GetString(nullptr, 1));
+		}, L"AnsiEncoding::GetString should reject null buffers when length is positive.");
+
+		RequireThrows([&]()
+		{
+			static_cast<void>(Encoding::Unicode->GetString(nullptr, 2));
+		}, L"UnicodeEncoding::GetString should reject null buffers when length is positive.");
 	}
 
 	void TestIntermediateMoveSemantics()

@@ -102,7 +102,13 @@ namespace CoreLib
 			{
 				if (length < 0)
 					throw ArgumentException(L"Text length cannot be negative.");
-				if (buffer == nullptr || length == 0)
+				if (buffer == nullptr)
+				{
+					if (length == 0)
+						return String();
+					throw ArgumentException(L"Text buffer cannot be null when length is positive.");
+				}
+				if (length == 0)
 					return String();
 
 				int startPos = 0;
@@ -147,7 +153,11 @@ namespace CoreLib
 				if (length < 0)
 					throw ArgumentException(L"Text length cannot be negative.");
 				if (buffer == nullptr)
-					return String();
+				{
+					if (length == 0)
+						return String();
+					throw ArgumentException(L"Text buffer cannot be null when length is positive.");
+				}
 				if (length == 0)
 					return String();
 
