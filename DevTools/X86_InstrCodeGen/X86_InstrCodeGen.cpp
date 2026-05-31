@@ -3,10 +3,50 @@
 
 #include "stdafx.h"
 #include "VL_JIT_X86.h"
-#include "Basic.h"
 #include <algorithm>
+#include <string>
 using namespace vl::jit::x86;
-using namespace CoreLib::Basic;
+
+class TextBuilder
+{
+private:
+	std::wstring text;
+public:
+	explicit TextBuilder(size_t reserveSize)
+	{
+		text.reserve(reserveSize);
+	}
+
+	void Append(const wchar_t * value)
+	{
+		text += value;
+	}
+
+	void Append(const std::wstring & value)
+	{
+		text += value;
+	}
+
+	void Append(int value)
+	{
+		text += std::to_wstring(value);
+	}
+
+	int Length() const
+	{
+		return static_cast<int>(text.size());
+	}
+
+	void Remove(int start, int len)
+	{
+		text.erase(static_cast<size_t>(start), static_cast<size_t>(len));
+	}
+
+	const wchar_t * Buffer() const
+	{
+		return text.c_str();
+	}
+};
 
 bool InsCompare(VLS_InsFormat i1, VLS_InsFormat i2)
 {
@@ -18,8 +58,8 @@ bool InsCompare(VLS_InsFormat i1, VLS_InsFormat i2)
 int _tmain(int argc, _TCHAR* argv[])	//这个文件是干嘛的.. 意思是.. 用来生成?
 {
 	const int instrCount = 246;
-	StringBuilder sb(4*1024*1024);
-	StringBuilder header(1024*512);
+	TextBuilder sb(4 * 1024 * 1024);
+	TextBuilder header(1024 * 512);
 	sb.Append(L"#include \"CodeEmitter_x86.h\"\n");
 	sb.Append(L"namespace Compiler\n{\n");
 	sb.Append(L"namespace x86\n{\n");
@@ -29,7 +69,7 @@ int _tmain(int argc, _TCHAR* argv[])	//这个文件是干嘛的.. 意思是.. �
 		header.Append(L"\t\t\tvoid Emit_");
 		header.Append(name);
 		header.Append("(int paramCount, const Operand & op1, const Operand & op2);\n");
-		sb.Append("void ");
+		sb.Append(L"void ");
 		sb.Append(L"BinaryCodeEmitter::Emit_");
 		sb.Append(name);
 		sb.Append("(int paramCount, const Operand & op1, const Operand & op2)\n");
@@ -90,12 +130,13 @@ int _tmain(int argc, _TCHAR* argv[])	//这个文件是干嘛的.. 意思是.. �
 			int oldLen = sb.Length();
 			// Match parameters
 			sb.Append(L"if (paramCount == ");
-			sb.Append(String(paramCount));
+			sb.Append(paramCount);
 			for (int p = 0; p<paramCount; p++)
 			{
 				sb.Append(L" && (");
-				String opName = String(L"op") + String(p+1);
-				String targetParamCondition;
+				std::wstring opName = L"op";
+				opName += std::to_wstring(p + 1);
+				std::wstring targetParamCondition;
 				switch (format.Params[p])
 				{
 				case vipREL_8:
@@ -188,7 +229,7 @@ int _tmain(int argc, _TCHAR* argv[])	//这个文件是干嘛的.. 意思是.. �
 				case vipM_32_AND_32:
 				default:
 					shouldOmit = true;
-					targetParamCondition = "false";
+					targetParamCondition = L"false";
 					break;
 				}
 				sb.Append(targetParamCondition);
