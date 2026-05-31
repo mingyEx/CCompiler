@@ -119,10 +119,10 @@ namespace Compiler
 				exprMap.PushScope();	//实现作用域词典的栈.
 				if (node != program->Source)	//从开头开始.
 				{
-					for (auto instrNode = FirstInstructionNode(node->Code); instrNode != nullptr; )	//遍历当前节点里list<Instruction>里的每一个.
+					for (auto instrNode = node->Code.FirstNode(); instrNode != nullptr; )	//遍历当前节点里list<Instruction>里的每一个.
 					{
-						auto nextInstrNode = NextInstructionNode(instrNode);
-						Instruction & instr = GetInstruction(instrNode);
+						auto nextInstrNode = instrNode->GetNext();
+						Instruction & instr = instrNode->Value;
 						// Process Phi functions
 						if (instr.Func == Operation::Phi)
 						{
@@ -143,7 +143,7 @@ namespace Compiler
 									throw InvalidProgramException(L"Value entry not found in exprMap");*/
 
 								exprMap.Add(GetExprString(instr.LeftOperand.Var), instr.Operands[0]);	//把左操作数和第一个操作数都组成一对塞到作用域词典里?
-								RemoveInstruction(instrNode);			//为什么呢？因为取消掉phi之后就变成了简单的赋值，不对，是“只有这一个操作数”。？嗯，左边是名字，右边是值?
+								instrNode->Delete();			//为什么呢？因为取消掉phi之后就变成了简单的赋值，不对，是“只有这一个操作数”。？嗯，左边是名字，右边是值?
 								//对 Instruction 来说，它的Operands 要么是值，要么是指向变量的指针，所以这么搞没有问题啦！
 								changed = true;	//都塞进去了，为什么还要设定为true呢？
 								instrNode = nextInstrNode;
@@ -156,7 +156,7 @@ namespace Compiler
 								if (exprMap.TryGetValueInCurrentScope(exprString, opValue))//opValue 是out 参数. 这里的意思是，如果此参数存在，就如此
 								{
 									exprMap.Add(GetExprString(instr.LeftOperand.Var), opValue);		//然后把他以及对应的值加到作用域字典里去.
-									RemoveInstruction(instrNode);	//简单赋值之后，把当前指令删除掉 ...    为什么？ 不该是仅仅在phi可以被优化的时候才删掉吗?
+									instrNode->Delete();	//简单赋值之后，把当前指令删除掉 ...    为什么？ 不该是仅仅在phi可以被优化的时候才删掉吗?
 									changed = true;
 									instrNode = nextInstrNode;
 									continue;
@@ -208,7 +208,7 @@ namespace Compiler
 								exprMap.Add(GetExprString(instr.LeftOperand.Var), opValue);
 								changed = true;
 								program->VarDefs[instr.LeftOperand.Var->Id] = 0;
-								RemoveInstruction(instrNode);
+								instrNode->Delete();
 								instrNode = nextInstrNode;
 								continue;
 							}

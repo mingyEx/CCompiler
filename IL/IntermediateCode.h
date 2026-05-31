@@ -587,57 +587,6 @@ namespace Compiler
 				owner->Delete(this);
 		}
 
-		inline InstructionNode * FirstInstructionNode(InstructionList & code)
-		{
-			return code.FirstNode();
-		}
-
-		inline InstructionNode * LastInstructionNode(InstructionList & code)
-		{
-			return code.LastNode();
-		}
-
-		inline InstructionNode * NextInstructionNode(InstructionNode * node)
-		{
-			return node ? node->GetNext() : nullptr;
-		}
-
-		inline InstructionNode * PreviousInstructionNode(InstructionNode * node)
-		{
-			return node ? node->GetPrevious() : nullptr;
-		}
-
-		inline Instruction & GetInstruction(InstructionNode * node)
-		{
-			return node->Value;
-		}
-
-		inline const Instruction & GetInstruction(const InstructionNode * node)
-		{
-			return node->Value;
-		}
-
-		inline InstructionNode * AppendInstruction(InstructionList & code, const Instruction & instruction)
-		{
-			return code.AddLast(instruction);
-		}
-
-		inline InstructionNode * InsertInstructionBefore(InstructionNode * node, const Instruction & instruction)
-		{
-			return node ? node->InsertBefore(instruction) : nullptr;
-		}
-
-		inline InstructionNode * InsertInstructionAfter(InstructionNode * node, const Instruction & instruction)
-		{
-			return node ? node->InsertAfter(instruction) : nullptr;
-		}
-
-		inline void RemoveInstruction(InstructionNode * node)
-		{
-			if (node)
-				node->Delete();
-		}
-
 		enum class MemoryLocationType
 		{
 			Register, Stack	//标记变量的位置在stack还是寄存器。

@@ -72,7 +72,7 @@
 - out-of-SSA parallel-copy 临时变量已从裸 `new Variable` 改为 `std::unique_ptr` 托管，保留现有 raw pointer IR 引用语义。
 - CFG dominator visitor 的旧 `FakedList` 辅助容器已移除，改用 `std::span<ControlFlowNode*>` 表示临时边视图。
 - `SimpleC` 公共头中的 broad `using namespace` 已收缩为精确类型引入，避免 Lexer/Parser/visitor/codegen 头继续向包含方泄漏 IL/Compiler 命名空间。
-- `InstructionList` 仍保留稳定 `InstructionNode*` 语义，但大部分非复杂 pass 已从旧全局 helper 调用迁到 `InstructionList` / `InstructionNode` 成员接口；剩余集中在 `UselessInstructionRemoval` 和 `OutOfSSA`。
+- `InstructionList` 仍保留稳定 `InstructionNode*` 语义，但旧全局 helper 调用点已全部迁到 `InstructionList` / `InstructionNode` 成员接口，并删除了兼容 helper 定义。
 
 ## 最近完成的 correctness 修复
 
@@ -96,7 +96,7 @@
 
 纠偏状态：
 
-- 最新一批已经转向更高价值的 IL CoreLib 依赖拆除，完成 IR/x86 文本输出的 `std::wstring` 化、`Instruction::Operands` 的 `std::vector` 化、`ControlFlowGraph::Variables` / `Nodes` 的 `std::vector` 化、CFG 支配树列表和 CFG edge `Entries` 的 `std::vector` 化，并把 optimizer 的 CFG 所有权边界、CFG 节点所有权、IL 变量所有权和 out-of-SSA `PhiClasses` 改为 `std::shared_ptr`；本轮继续清掉 CFG 局部 `List<IntSet>`、SimpleC codegen 的 CoreLib unsupported 异常、SimpleC/IL 主链路中的 broad CoreLib namespace import、IL/x86 指令链表对 CoreLib `LinkedList` / `LinkedNode` 的依赖，以及 IL 项目对 CoreLib 的直接引用。
+- 最新一批已经转向更高价值的 IL CoreLib 依赖拆除，完成 IR/x86 文本输出的 `std::wstring` 化、`Instruction::Operands` 的 `std::vector` 化、`ControlFlowGraph::Variables` / `Nodes` 的 `std::vector` 化、CFG 支配树列表和 CFG edge `Entries` 的 `std::vector` 化，并把 optimizer 的 CFG 所有权边界、CFG 节点所有权、IL 变量所有权和 out-of-SSA `PhiClasses` 改为 `std::shared_ptr`；本轮继续清掉 CFG 局部 `List<IntSet>`、SimpleC codegen 的 CoreLib unsupported 异常、SimpleC/IL 主链路中的 broad CoreLib namespace import、IL/x86 指令链表对 CoreLib `LinkedList` / `LinkedNode` 的依赖、IL 项目对 CoreLib 的直接引用，以及 `InstructionList` 旧全局 helper API。
 - 后续目标应继续拆 SimpleC/IL 主链路中的 `RefPtr`、`List`、`LinkedList`、`String` 入口，而不是做低价值风格化清理或新增后端功能。
 
 ## 续接步骤

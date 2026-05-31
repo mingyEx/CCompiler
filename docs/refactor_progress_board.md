@@ -16,7 +16,7 @@
 | 阶段 | 状态 | 粗略进度 | 说明 |
 | --- | --- | ---: | --- |
 | 1. 稳定 CoreLib 内部 | 进行中 | 75% | `String`、`Stream`、`TextIO`、`LibIO`、容器和 `RefPtr` 已修过一批真实边界问题，并有自测覆盖。 |
-| 2. 减少自定义容器和资源管理依赖 | 已开始 | 92% | `SimpleC` 前端 AST/lexer/parser/semantic/printer 已基本使用标准库字符串和智能指针，visitor 分派接口已改为引用；IL/x86 名称字段、IR/x86 文本输出已开始改为 `std::wstring`；`Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表和 CFG edge `Entries` 已从 CoreLib `List` 改为 `std::vector`；CFG liveness / SSA phi placement 局部 `List<IntSet>` 已改为 `std::vector<IntSet>`；IL/x86 指令链表已脱离 CoreLib `LinkedList` / `LinkedNode`；IL 本地 `IntSet` / `BitIntSet` 已替代 CoreLib 版本；IL 和 SimpleC 项目均已移除 CoreLib include 路径和 project reference。 |
+| 2. 减少自定义容器和资源管理依赖 | 已开始 | 93% | `SimpleC` 前端 AST/lexer/parser/semantic/printer 已基本使用标准库字符串和智能指针，visitor 分派接口已改为引用；IL/x86 名称字段、IR/x86 文本输出已开始改为 `std::wstring`；`Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表和 CFG edge `Entries` 已从 CoreLib `List` 改为 `std::vector`；CFG liveness / SSA phi placement 局部 `List<IntSet>` 已改为 `std::vector<IntSet>`；IL/x86 指令链表已脱离 CoreLib `LinkedList` / `LinkedNode`；`InstructionList` 旧全局 helper API 已移除；IL 本地 `IntSet` / `BitIntSet` 已替代 CoreLib 版本；IL 和 SimpleC 项目均已移除 CoreLib include 路径和 project reference。 |
 | 3. 加强最小回归测试 | 进行中 | 60% | `--corelib-self-test` 已建立，但仍不是完整编译器测试体系。 |
 | 4. 压缩兼容层暴露面 | 少量开始 | 30% | IL 已清掉 CoreLib `Exception/String/IntSet/BitIntSet/Math` 边界；CoreLib 自测已拆到独立 `CoreLibTests` 目标，SimpleC 主可执行文件不再绑定 CoreLib。 |
 | 5. 公共接口替换 | 暂缓 | 0% | 应放在内部依赖和测试护栏更多之后。 |
@@ -67,7 +67,7 @@
 - 将 x86 emitter 的字节缓冲、常量表、重定位表等局部存储替换为 `std::vector`。
 - 将部分 CoreLib 内部缓冲替换为 `std::vector` 或 `std::string`。
 - 收缩 `SimpleC` 公共头中的 broad namespace import，改为精确引用 `CompileError` 和实际需要的 IL 类型。
-- 继续收缩 `InstructionList` 旧全局 helper API 的使用面，已迁移 peephole、branch fuse、variable cleanup、invariant transform、interference analysis、dead-code/control-flow cleanup、register allocation 和 CFG 非复杂调用点。
+- 清掉 `InstructionList` 旧全局 helper API 的全部使用点，并删除兼容 helper 定义；IL pass 现在通过 `InstructionList` / `InstructionNode` 成员接口操作指令链表。
 
 ## 已完成的 correctness 工作桶
 
@@ -102,7 +102,7 @@
 
 已经纠偏的地方：
 
-- 最新一批转向更高价值的主链路 CoreLib 依赖拆除，已完成 IL `Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表、CFG edge `Entries`、CFG 局部 liveness/phi 工作集的 `std::vector` 化，IL/x86 指令链表的标准库链表迁移，optimizer CFG、CFG 节点、IL 变量和 out-of-SSA `PhiClasses` 所有权的 `std::shared_ptr` 化，IR/x86 文本输出的 `std::wstring` 化，以及 IL 项目对 CoreLib 的直接引用拆除。
+- 最新一批转向更高价值的主链路 CoreLib 依赖拆除，已完成 IL `Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表、CFG edge `Entries`、CFG 局部 liveness/phi 工作集的 `std::vector` 化，IL/x86 指令链表的标准库链表迁移，optimizer CFG、CFG 节点、IL 变量和 out-of-SSA `PhiClasses` 所有权的 `std::shared_ptr` 化，IR/x86 文本输出的 `std::wstring` 化，IL 项目对 CoreLib 的直接引用拆除，以及 `InstructionList` 旧全局 helper API 移除。
 - 后续不再优先做 visitor/cast/格式类小修，除非它们直接服务于 CoreLib 依赖移除。
 
 ## 当前焦点

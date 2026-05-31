@@ -91,7 +91,7 @@
 - SimpleC/IL 主链路中的 broad `using namespace CoreLib::Basic` 已清掉，剩余 CoreLib 类型通过精确 using 或显式限定暴露。
 - x86 `Function_x86::Code` 已从 CoreLib `LinkedList<Instruction>` 改为 `std::list<Instruction>`。
 - IL `Function::Instructions` 和 `ControlFlowNode::Code` 已从 CoreLib `LinkedList<Instruction>` 改为本地 `InstructionList` 过渡层；该层内部使用 `std::list`，保留稳定 `InstructionNode*` 以兼容现有 SSA/out-of-SSA 和优化器节点引用。
-- `InstructionList` 的后续方向不是直接替换成裸 `std::list<Instruction>`，而是先减少旧全局 helper API；多数非复杂 pass 已改用成员接口，剩余旧 helper 使用主要集中在 `UselessInstructionRemoval` 和 `OutOfSSA`。
+- `InstructionList` 的后续方向不是直接替换成裸 `std::list<Instruction>`；旧全局 helper API 已全部替换为 `InstructionList` / `InstructionNode` 成员接口，兼容 helper 定义已删除。
 - 当前 SimpleC/IL 主链路已经没有 CoreLib `LinkedList` / `LinkedNode` 类型命中；剩余 `LinkedList` 命中只在 `corelib_regression_tests.cpp` 中测试 CoreLib 自身。
 - IL `IntSet` / `BitIntSet` 已迁移为 IL 本地标准库 backed 实现，不再从 CoreLib 引入。
 - interference analysis 已去掉 CoreLib `Math` / `LibMath` 依赖，改用标准库 min/max。
@@ -211,7 +211,7 @@
 
 纠偏：
 
-- 最新一批已经切到主链路 CoreLib 依赖拆除，完成 IL/x86 文本输出的标准库字符串迁移，以及 `Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表、CFG edge `Entries`、CFG 局部 liveness/phi 工作集的标准容器迁移，IL/x86 指令链表的标准库链表迁移，optimizer CFG / CFG 节点 / IL 变量 / out-of-SSA `PhiClasses` 所有权的 `std::shared_ptr` 迁移，并完成 IL 本身对 CoreLib include/project reference 的拆除。
+- 最新一批已经切到主链路 CoreLib 依赖拆除，完成 IL/x86 文本输出的标准库字符串迁移，以及 `Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表、CFG edge `Entries`、CFG 局部 liveness/phi 工作集的标准容器迁移，IL/x86 指令链表的标准库链表迁移，optimizer CFG / CFG 节点 / IL 变量 / out-of-SSA `PhiClasses` 所有权的 `std::shared_ptr` 迁移，IL 本身对 CoreLib include/project reference 的拆除，并删除 `InstructionList` 旧全局 helper API。
 - 下一步应继续拆 SimpleC/IL 的 `List`、`LinkedList`、`RefPtr`、`String` 边界，而不是继续后端功能或低价值风格化清理。
 
 ## 当前下一步建议

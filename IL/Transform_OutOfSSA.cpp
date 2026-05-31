@@ -36,9 +36,9 @@ namespace Compiler
 				for (int i = static_cast<int>(traverse.size()) - 1; i>=0; i--)
 				{
 					auto node = traverse[i];
-					for (auto instrNode = FirstInstructionNode(node->Code); instrNode; instrNode = NextInstructionNode(instrNode))
+					for (auto instrNode = node->Code.FirstNode(); instrNode; instrNode = instrNode->GetNext())
 					{
-						auto & instr = GetInstruction(instrNode);
+						auto & instr = instrNode->Value;
 						if (instr.Func != Operation::Phi) break;
 						func(instrNode, instr);
 					}
@@ -52,9 +52,9 @@ namespace Compiler
 				for (int i = 0; i < static_cast<int>(program->Nodes.size()); i++)
 				{
 					auto node = program->Nodes[i].get();
-					for (auto instrNode = FirstInstructionNode(node->Code); instrNode != nullptr; instrNode = NextInstructionNode(instrNode))
+					for (auto instrNode = node->Code.FirstNode(); instrNode != nullptr; instrNode = instrNode->GetNext())
 					{
-						auto & instr = GetInstruction(instrNode);
+						auto & instr = instrNode->Value;
 						if (instr.Func != ParallelCopy) continue;	
 						func(instrNode, instr);
 					}
@@ -113,11 +113,12 @@ namespace Compiler
 					for (size_t i = 0; i < instr.Operands.size(); i++)	//遍历当前phi指令的所有操作数.
 					{
 						auto node = instr.CFG_Node->Entries[i];	//node设置为此指令在 cfg 里的前驱
-						InstructionNode* instrCopy = PreviousInstructionNode(LastInstructionNode(node->Code));//取倒数第二个指令.
+						auto lastInstruction = node->Code.LastNode();
+						InstructionNode* instrCopy = lastInstruction->GetPrevious();//取倒数第二个指令.
 						
-						if (instrCopy == nullptr || GetInstruction(instrCopy).Func != ParallelCopy) //如为空,或者它的指令不是ParallelCopy，则插入一个ParallelCopy
+						if (instrCopy == nullptr || instrCopy->Value.Func != ParallelCopy) //如为空,或者它的指令不是ParallelCopy，则插入一个ParallelCopy
 						{
-							instrCopy = InsertInstructionBefore(LastInstructionNode(node->Code), Instruction(ParallelCopy));
+							instrCopy = lastInstruction->InsertBefore(Instruction(ParallelCopy));
 							//在身为phi前驱块的node的倒数第二的位置上插入一条ParallelCopy指令，并且返回这个插入的指令
 						}
 
@@ -129,9 +130,9 @@ namespace Compiler
 						// {当此指令已经是 ParallelCopy 的时候，就不执行上面的if了。 那时候他会是啥呢？后面的程序遇到 ParallelCopy 指令的时候如何操作来使得ParallelCopy 的语义得以保持呢？ 存疑}
 						
 						//找到你了！！！ 原来就是在这里把 ParallelCopy 加上了操作数！ 那前面的没进 if的显然就是0+个Operands 的ParallelCopy指令了！！！这个循环会把phi的所有参数都塞到这个ParallelCopy指令里，待会被处理。
-						GetInstruction(instrCopy).Operands.push_back(targetVar); 
+						instrCopy->Value.Operands.push_back(targetVar);
 						//然后这里又加上了原来名字的操作数。 这是待会2i,2i+1 操作的时候用的吗？？？ 去看看！果然，line 520. EvalValueNumber()里这么用了！
-						GetInstruction(instrCopy).Operands.push_back(instr.Operands[i].Var);
+						instrCopy->Value.Operands.push_back(instr.Operands[i].Var);
 
 						instr.Operands[i].Var = targetVar;	//在这里他俩除了name 之外是一样的，所以是在添加了ParallelCopy里的操作数之后，把phi的参数变成x-> x'了。 是这么理解吧。
 					}//没有涉及计算phi-related web之类的..
@@ -145,17 +146,17 @@ namespace Compiler
 						InstructionNode * instrCopy = instr.CFG_Node->FirstInstruction();	//摸到此指令所在的cfgNode的第一条指令.
 						if (!instrCopy)		//如果为nullptr,则!为true,是空块？插入一条指令。
 						{
-							instrCopy = AppendInstruction(instr.CFG_Node->Code, Instruction(ParallelCopy));//在最后面加一条ParallelCopy指令.
+							instrCopy = instr.CFG_Node->Code.AddLast(Instruction(ParallelCopy));//在最后面加一条ParallelCopy指令.
 						}
-						else if (GetInstruction(instrCopy).Func != ParallelCopy)	
+						else if (instrCopy->Value.Func != ParallelCopy)
 						{
-							instrCopy = InsertInstructionBefore(instrCopy, Instruction(ParallelCopy));
+							instrCopy = instrCopy->InsertBefore(Instruction(ParallelCopy));
 						}
 
 						//然后新创建一个变量，给phi的左操作数也重命名，并且把操作数都加到ParallelCopy  里面。
 						auto newVar = MakePhiCopy(program, instr.LeftOperand.Var, instrCopy);
-						GetInstruction(instrCopy).Operands.push_back(instr.LeftOperand.Var);
-						GetInstruction(instrCopy).Operands.push_back(newVar);
+						instrCopy->Value.Operands.push_back(instr.LeftOperand.Var);
+						instrCopy->Value.Operands.push_back(newVar);
 						instr.LeftOperand.Var = newVar;	
 					}
 				});
@@ -280,7 +281,7 @@ namespace Compiler
 					});
 					auto EmitCopy = [&](Variable * dest, Variable * src)	
 					{
-						InsertInstructionAfter(instrNode, Instruction(dest, 0, src));
+						instrNode->InsertAfter(Instruction(dest, 0, src));
 					};
 
 					while (!todo.empty())
@@ -318,7 +319,7 @@ namespace Compiler
 							ready.push_back(b);
 						}
 					}
-					RemoveInstruction(instrNode);
+					instrNode->Delete();
 				});
 			}
 
@@ -409,14 +410,14 @@ namespace Compiler
 				//上面完成了变量的映射，这里一一删掉Phi指令
 				for (auto & node : program->Nodes)	//接下来是对所有节点里所有的指令进行。
 				{
-					for (auto instrNode = FirstInstructionNode(node->Code); instrNode != nullptr; )
+					for (auto instrNode = node->Code.FirstNode(); instrNode != nullptr; )
 					{
-						auto nextInstrNode = NextInstructionNode(instrNode);
-						auto & instr = GetInstruction(instrNode);
+						auto nextInstrNode = instrNode->GetNext();
+						auto & instr = instrNode->Value;
 						if (instr.Func == Operation::Phi)
 						{
 							//所有的phi相关的变量都被在vars里弄好映射关系，也靠着伪并行指令完成复制操作的插入了，自然可以直接删掉phi指令了。
-							RemoveInstruction(instrNode);	//删掉的是phi所在的？Instruction，是的，仅仅删掉一条指令而已。
+							instrNode->Delete();	//删掉的是phi所在的？Instruction，是的，仅仅删掉一条指令而已。
 							instrNode = nextInstrNode;
 							continue;
 						}
@@ -435,7 +436,7 @@ namespace Compiler
 						//如果指令是空，且左边和右边的第一个操作数相同且都是变量，就直接删掉当前语句。处理自赋值的情况.
 						if (instr.Func == 0 && instr.Operands[0].IsVariable() && instr.LeftOperand.Var == instr.Operands[0].Var)
 						{
-							RemoveInstruction(instrNode);	
+							instrNode->Delete();
 							instrNode = nextInstrNode;
 							continue;
 						}
