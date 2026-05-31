@@ -4,13 +4,13 @@
 
 ## 时间
 
-- 保存日期：2026-05-27
+- 保存日期：2026-05-31
 
 ## 最新已验证状态
 
 - 目标：`SimpleC Debug|Win32`
 - 构建：通过，`0 Warning(s), 0 Error(s)`
-- 最小回归：`Debug\SimpleC.exe --corelib-self-test` 通过
+- 最小回归：`Debug\CoreLibTests.exe --corelib-self-test` 通过
 - 自测输出：`CoreLib regression tests passed.`
 - 主编译 smoke：`Debug\SimpleC.exe SimpleC\in.txt` 通过
 - 临时 double codegen smoke：已通过，覆盖 `I2D`、double `+`、`-`、`*`、`/`、本地 double 存储和 ST0 double return
@@ -67,7 +67,8 @@
 - 将 IL `InvalidProgramException` 改为标准异常边界，并移除 optimizer 中旧 CoreLib `Exception.h` include。
 - `IL.vcxproj` 已移除 CoreLib include 路径和 CoreLib project reference；当前 `IL` 目录没有 `CoreLib` 命中。
 - `SimpleC/compiler_pipeline.cpp` 已移除 CoreLib 异常兼容 catch；SimpleC 非测试代码没有 `CoreLib::Basic` 直接引用。
-- `SimpleC.vcxproj` 已移除 CoreLib include directory；仅为 `--corelib-self-test` 保留 CoreLib project reference。
+- 新增独立 `CoreLibTests` 目标承载 CoreLib/IL 最小回归，`--corelib-self-test` 已从 `SimpleC` 主可执行文件拆出。
+- `SimpleC.vcxproj` 已移除 CoreLib include directory 和 CoreLib project reference；当前 `SimpleC` 目标不再构建或链接 CoreLib。
 - out-of-SSA parallel-copy 临时变量已从裸 `new Variable` 改为 `std::unique_ptr` 托管，保留现有 raw pointer IR 引用语义。
 - CFG dominator visitor 的旧 `FakedList` 辅助容器已移除，改用 `std::span<ControlFlowNode*>` 表示临时边视图。
 
@@ -100,13 +101,13 @@
 
 1. 打开 `C:\Users\mingy\Documents\New project\CCompiler`。
 2. 构建 `SimpleC Debug|Win32`。
-3. 运行 `Debug\SimpleC.exe --corelib-self-test`。
+3. 运行 `Debug\CoreLibTests.exe --corelib-self-test`。
 4. 对前端、IL、optimizer 或 pipeline 改动，额外运行 `Debug\SimpleC.exe SimpleC\in.txt`。
 5. 每批通过后清理 `SimpleC/in.*` smoke 产物。
 
 ## 下一小目标
 
-- 最高优先级：继续拆 SimpleC/IL 主链路 CoreLib 依赖，下一步评估是否把 `--corelib-self-test` 从 SimpleC 主目标拆出，并继续扫描 SimpleC 非测试源码中的残留接口边界。
+- 最高优先级：继续拆 SimpleC/IL 主链路 CoreLib 依赖；`--corelib-self-test` 已拆到独立 `CoreLibTests` 目标，下一步继续扫描 SimpleC 非测试源码中的残留接口边界。
 - 避免机械 cast、visitor 小修和纯风格化改动，除非它们直接服务于 CoreLib 依赖移除。
 - CoreLib 内部 `String`、`Stream`、`TextIO`、`LibIO` correctness 仍保留，但低于“主链路甩掉 CoreLib”。
 - 暂停扩展 x86/codegen 新功能。

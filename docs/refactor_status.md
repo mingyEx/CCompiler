@@ -10,14 +10,14 @@
 - 当前最高优先级是拆掉 SimpleC/IL 主编译链路里能替换的 CoreLib 依赖。
 - 优先替换主链路接口和内部实现中已经可验证的 `String`、`List`、`LinkedList`、`RefPtr` 使用点。
 - 每批保持 `SimpleC Debug|Win32` 可构建。
-- 每批尽量跑 `--corelib-self-test` 和 `SimpleC/in.txt` smoke。
+- 每批尽量跑 `CoreLibTests --corelib-self-test` 和 `SimpleC/in.txt` smoke。
 - 能用标准库表达清楚的局部容器、所有权和 I/O 实现，应逐步替换。
 
 ## 当前验证状态
 
 - `SimpleC Debug|Win32` 当前构建通过。
 - 最新构建结果：`0 Warning(s), 0 Error(s)`。
-- `Debug\SimpleC.exe --corelib-self-test` 通过。
+- `Debug\CoreLibTests.exe --corelib-self-test` 通过。
 - `Debug\SimpleC.exe SimpleC\in.txt` 通过。
 
 ## SimpleC 前端状态
@@ -40,7 +40,7 @@
 - Parser、SemanticsVisitor、SyntaxPrinter 已适配标准库宽字符串。
 - CodeGenerator 现在可以把前端 `std::wstring` 名称直接交给 IL，名称字段不再以 CoreLib `String` 为主载体。
 - CodeGenerator unsupported-codegen 错误已改用标准 `std::runtime_error`，不再依赖 CoreLib `NotSupportedException`。
-- SimpleC 非测试代码已无 `CoreLib::Basic` 直接引用；CoreLib 命中只剩 `corelib_regression_tests` 和项目文件里的自测依赖。
+- SimpleC 非测试代码已无 `CoreLib::Basic` 直接引用；CoreLib 最小回归已拆到独立 `CoreLibTests` 项目。
 - compiler pipeline 顶层 x86 generator 和 optimizer 局部所有权已改为 `std::unique_ptr`。
 - compiler pipeline 输出 `.code/.cfg/.asm` dump 路径已改为走 `std::filesystem::path` 重载。
 - IL `Function::Name`、`Variable::Name` 已迁移为 `std::wstring`，旧 CoreLib `String` 构造和添加入口保留为兼容转发。
@@ -49,8 +49,7 @@
 
 当前残留：
 
-- SimpleC 项目已移除 CoreLib include directory，但仍保留 CoreLib project reference，因为 `--corelib-self-test` 目前编译在 SimpleC 可执行文件内。
-- 后续如果要让 SimpleC 主编译器目标完全脱离 CoreLib，需要把 CoreLib 自测拆到独立测试目标，或者用编译开关隔离。
+- `SimpleC` 主目标已经移除 CoreLib include directory 和 project reference；后续重点转为防止新代码重新引入 CoreLib，并继续扫描非测试源码中的自定义容器/资源管理残留。
 
 ## IL 和分析工具状态
 
@@ -170,7 +169,7 @@
 
 ## 最小回归覆盖
 
-`SimpleC --corelib-self-test` 已覆盖：
+`CoreLibTests --corelib-self-test` 已覆盖：
 
 - 字符串非法索引、非法范围、trim、self-buffer assignment。
 - `StringBuilder` 容量和 safe remove。
@@ -217,8 +216,8 @@
 
 短期：
 
-- 评估是否把 `--corelib-self-test` 从 SimpleC 主可执行文件中拆出，降低 SimpleC 项目对 CoreLib 的强绑定。
 - 继续扫描 SimpleC 非测试源码中的自定义容器/资源管理残留，优先处理真正影响 CoreLib 脱钩的接口边界。
+- 检查解决方案和项目文件，防止 SimpleC/IL 重新引入 CoreLib include 或 project reference。
 - 每批继续执行固定验证。
 
 暂不做：

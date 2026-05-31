@@ -4,9 +4,9 @@
 
 ## 当前检查点
 
-- 日期：2026-05-27
+- 日期：2026-05-31
 - 构建：`SimpleC Debug|Win32` 通过，`0 Warning(s), 0 Error(s)`
-- 最小回归：`Debug\SimpleC.exe --corelib-self-test` 通过
+- 最小回归：`Debug\CoreLibTests.exe --corelib-self-test` 通过
 - 主 smoke：`Debug\SimpleC.exe SimpleC\in.txt` 通过
 - 当前阶段：阶段 1 后段，阶段 2 已开始
 - 当前纠偏：最高优先级改为拆掉 SimpleC/IL 主链路中能替换的 CoreLib 依赖
@@ -16,14 +16,14 @@
 | 阶段 | 状态 | 粗略进度 | 说明 |
 | --- | --- | ---: | --- |
 | 1. 稳定 CoreLib 内部 | 进行中 | 75% | `String`、`Stream`、`TextIO`、`LibIO`、容器和 `RefPtr` 已修过一批真实边界问题，并有自测覆盖。 |
-| 2. 减少自定义容器和资源管理依赖 | 已开始 | 88% | `SimpleC` 前端 AST/lexer/parser/semantic/printer 已基本使用标准库字符串和智能指针，visitor 分派接口已改为引用；IL/x86 名称字段、IR/x86 文本输出已开始改为 `std::wstring`；`Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表和 CFG edge `Entries` 已从 CoreLib `List` 改为 `std::vector`；CFG liveness / SSA phi placement 局部 `List<IntSet>` 已改为 `std::vector<IntSet>`；IL/x86 指令链表已脱离 CoreLib `LinkedList` / `LinkedNode`；IL 本地 `IntSet` / `BitIntSet` 已替代 CoreLib 版本；IL 项目已移除 CoreLib include 路径和 project reference。 |
+| 2. 减少自定义容器和资源管理依赖 | 已开始 | 92% | `SimpleC` 前端 AST/lexer/parser/semantic/printer 已基本使用标准库字符串和智能指针，visitor 分派接口已改为引用；IL/x86 名称字段、IR/x86 文本输出已开始改为 `std::wstring`；`Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表和 CFG edge `Entries` 已从 CoreLib `List` 改为 `std::vector`；CFG liveness / SSA phi placement 局部 `List<IntSet>` 已改为 `std::vector<IntSet>`；IL/x86 指令链表已脱离 CoreLib `LinkedList` / `LinkedNode`；IL 本地 `IntSet` / `BitIntSet` 已替代 CoreLib 版本；IL 和 SimpleC 项目均已移除 CoreLib include 路径和 project reference。 |
 | 3. 加强最小回归测试 | 进行中 | 60% | `--corelib-self-test` 已建立，但仍不是完整编译器测试体系。 |
-| 4. 压缩兼容层暴露面 | 少量开始 | 18% | IL 已清掉 CoreLib `Exception/String/IntSet/BitIntSet/Math` 边界；SimpleC 已移除 CoreLib include directory，但 CoreLib 自测仍绑定在 SimpleC 可执行文件内。 |
+| 4. 压缩兼容层暴露面 | 少量开始 | 30% | IL 已清掉 CoreLib `Exception/String/IntSet/BitIntSet/Math` 边界；CoreLib 自测已拆到独立 `CoreLibTests` 目标，SimpleC 主可执行文件不再绑定 CoreLib。 |
 | 5. 公共接口替换 | 暂缓 | 0% | 应放在内部依赖和测试护栏更多之后。 |
 
 ## 已完成的主线工作桶
 
-- 建立 `SimpleC --corelib-self-test` 最小回归入口。
+- 建立 `CoreLibTests --corelib-self-test` 最小回归入口，并从 SimpleC 主目标拆出。
 - 将多个前端 AST 容器从项目自定义容器替换为 `std::vector`。
 - 将 SimpleC 前端 AST 所有权从 `RefPtr` 替换为 `std::shared_ptr`。
 - 将 SimpleC parser AST 节点创建替换为 `std::make_shared`。
@@ -111,10 +111,10 @@
 
 ## 下一小目标
 
-1. 评估是否把 `--corelib-self-test` 从 SimpleC 主目标拆到独立测试目标，避免 SimpleC 项目继续硬引用 CoreLib。
-2. 继续扫描 SimpleC 非测试源码的自定义容器/资源管理残留，优先处理会阻塞 CoreLib 脱钩的接口边界。
+1. 继续扫描 SimpleC 非测试源码的自定义容器/资源管理残留，优先处理会阻塞 CoreLib 脱钩的接口边界。
+2. 继续检查解决方案和项目文件，防止 SimpleC/IL 重新引入 CoreLib include 或 project reference。
 3. 不做机械 cast、visitor 小修或 x86 后端功能扩展，除非它直接阻塞 CoreLib 依赖移除。
-4. 每批保持 `SimpleC Debug|Win32`、`--corelib-self-test`、`SimpleC/in.txt` smoke 通过。
+4. 每批保持 `SimpleC Debug|Win32`、`CoreLibTests --corelib-self-test`、`SimpleC/in.txt` smoke 通过。
 
 ## 暂缓事项
 
