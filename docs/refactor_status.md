@@ -10,14 +10,14 @@
 - 当前最高优先级是拆掉 SimpleC/IL 主编译链路里能替换的 CoreLib 依赖。
 - 优先替换主链路接口和内部实现中已经可验证的 `String`、`List`、`LinkedList`、`RefPtr` 使用点。
 - 每批保持 `SimpleC Debug|Win32` 可构建。
-- 每批尽量跑 `CoreLibTests --corelib-self-test` 和 `SimpleC/in.txt` smoke。
+- 每批尽量跑 `scripts\check_mainchain_no_corelib.ps1` 和 `SimpleC/in.txt` smoke。
 - 能用标准库表达清楚的局部容器、所有权和 I/O 实现，应逐步替换。
 
 ## 当前验证状态
 
 - `SimpleC Debug|Win32` 当前构建通过。
 - 最新构建结果：`0 Warning(s), 0 Error(s)`。
-- `Debug\CoreLibTests.exe --corelib-self-test` 通过。
+- `scripts\check_mainchain_no_corelib.ps1` 通过。
 - `Debug\SimpleC.exe SimpleC\in.txt` 通过。
 
 ## SimpleC 前端状态
@@ -40,7 +40,7 @@
 - Parser、SemanticsVisitor、SyntaxPrinter 已适配标准库宽字符串。
 - CodeGenerator 现在可以把前端 `std::wstring` 名称直接交给 IL，名称字段不再以 CoreLib `String` 为主载体。
 - CodeGenerator unsupported-codegen 错误已改用标准 `std::runtime_error`，不再依赖 CoreLib `NotSupportedException`。
-- SimpleC 非测试代码已无 `CoreLib::Basic` 直接引用；CoreLib 最小回归已拆到独立 `CoreLibTests` 项目。
+- SimpleC 非测试代码已无 `CoreLib::Basic` 直接引用；`CoreLib` / `CoreLibTests` 已退出主解决方案。
 - compiler pipeline 顶层 x86 generator 和 optimizer 局部所有权已改为 `std::unique_ptr`。
 - compiler pipeline 输出 `.code/.cfg/.asm` dump 路径已改为走 `std::filesystem::path` 重载。
 - IL `Function::Name`、`Variable::Name` 已迁移为 `std::wstring`，旧 CoreLib `String` 构造和添加入口保留为兼容转发。
@@ -171,21 +171,9 @@
 
 ## 最小回归覆盖
 
-`CoreLibTests --corelib-self-test` 已覆盖：
+`scripts\check_mainchain_no_corelib.ps1` 当前覆盖：
 
-- 字符串非法索引、非法范围、trim、self-buffer assignment。
-- `StringBuilder` 容量和 safe remove。
-- path helper 空输入和扩展名替换。
-- read-only / write-only stream misuse。
-- `StreamReader` 负长度、UTF-16 BOM、Unicode `Peak()`、显式 Unicode 无 BOM 文本。
-- `File::ReadAllText()` UTF-16 BOM 行为。
-- `StreamWriter` Unicode BOM round-trip。
-- `List`、`LinkedList`、`Dictionary`、`HashSet`、`KeyValuePair` 自赋值和 const iteration。
-- `RefPtr` cross-type assignment、raw self-assignment、detach。
-- `BinaryReader` 短流和异常字符串长度。
-- IL move assignment 元数据保留。
-- CFG node move assignment 元数据保留。
-- IL operation folding 和 comparison folding。
+- 扫描 `SimpleC/IL` 主链路，阻断 `CoreLib::`、`CoreLib\`、`Basic.h`、`RefPtr`、`SmartPointer`、`LinkedList`、`LinkedNode` 重新引入。
 
 不足：
 
