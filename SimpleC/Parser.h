@@ -18,14 +18,14 @@ namespace SimpleC
 		private:
 			int pos;
 			std::vector<Token>& tokens;
-			std::vector<CompileError>& errors;
+			std::vector<::Compiler::CompileError>& errors;
 			std::wstring fileName;
 			int TokenCount() const
 			{
 				return static_cast<int>(tokens.size());
 			}
 		public:
-			Parser(std::vector<Token>& _tokens, std::vector<CompileError>& _errors, std::wstring _fileName)
+			Parser(std::vector<Token>& _tokens, std::vector<::Compiler::CompileError>& _errors, std::wstring _fileName)
 				:tokens(_tokens), errors(_errors), pos(0), fileName(std::move(_fileName))
 			{}
 			std::shared_ptr<ProgramSyntaxNode> Parse();	//一个返回该程序根节点的parse函数.

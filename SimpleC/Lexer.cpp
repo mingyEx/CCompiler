@@ -5,6 +5,8 @@ namespace SimpleC
 {
 	namespace Compiler
 	{
+		using ::Compiler::CompileError;
+
 		enum class State
 		{
 			Start, Identifier, Operator, Int, Double, Char, String, MultiComment, SingleComment

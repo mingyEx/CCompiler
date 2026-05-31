@@ -5,6 +5,8 @@ namespace SimpleC
 {
 	namespace Compiler
 	{
+		using ::Compiler::CompileError;
+
 		Token & Parser::ReadToken(TokenType type)
 		{
 			if (pos >= TokenCount())

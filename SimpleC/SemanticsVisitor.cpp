@@ -10,6 +10,8 @@ namespace SimpleC
 {
 	namespace Compiler
 	{
+		using ::Compiler::CompileError;
+
 		class SemanticsVisitor : public SyntaxVisitor
 		{
 			ProgramSyntaxNode * program;

@@ -8,12 +8,19 @@
 #include <unordered_map>
 #include <vector>
 
-using namespace Compiler::Intermediate;
-
 namespace SimpleC
 {
 	namespace Compiler
 	{
+		using ::Compiler::Intermediate::DataType;
+		using ::Compiler::Intermediate::Function;
+		using ::Compiler::Intermediate::Instruction;
+		using ::Compiler::Intermediate::InvalidProgramException;
+		using ::Compiler::Intermediate::Operand;
+		using ::Compiler::Intermediate::Operation;
+		using ::Compiler::Intermediate::Program;
+		using ::Compiler::Intermediate::Variable;
+
 		class VariableOffset
 		{
 		public:

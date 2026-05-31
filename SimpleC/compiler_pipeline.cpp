@@ -81,9 +81,9 @@ namespace
 		return true;
 	}
 
-	std::unique_ptr<Compiler::Intermediate::IntraProcOptimizer> CreateOptimizationPipeline()
+	std::unique_ptr<::Compiler::Intermediate::IntraProcOptimizer> CreateOptimizationPipeline()
 	{
-		using namespace Compiler::Intermediate;
+		using namespace ::Compiler::Intermediate;
 
 		return std::make_unique<CompoundOptimizer>(
 			std::make_unique<IterateOptimizer>(
@@ -97,9 +97,9 @@ namespace
 			CreatePeepHoleOptimizer());
 	}
 
-	std::unique_ptr<Compiler::Intermediate::IntraProcOptimizer> CreateRegisterAllocationPipeline()
+	std::unique_ptr<::Compiler::Intermediate::IntraProcOptimizer> CreateRegisterAllocationPipeline()
 	{
-		using namespace Compiler::Intermediate;
+		using namespace ::Compiler::Intermediate;
 
 		return std::make_unique<CompoundOptimizer>(
 			CreateBranchFuseOptimizer(),
@@ -143,14 +143,14 @@ namespace SimpleC
 			const auto asm_path = ReplaceExtension(input_path, L".asm");
 			code_generator.CompiledCode->Dump(code_path);
 
-			auto pre_ssa_optimizer = Compiler::Intermediate::CreateControlFlowCleanupOptimizer();
+			auto pre_ssa_optimizer = ::Compiler::Intermediate::CreateControlFlowCleanupOptimizer();
 			auto optimizer = CreateOptimizationPipeline();
 			auto register_allocator = CreateRegisterAllocationPipeline();
 
 			for (auto& function : code_generator.CompiledCode->Functions)
 			{
-				std::shared_ptr<Compiler::Intermediate::ControlFlowGraph> graph =
-					Compiler::Intermediate::ControlFlowGraph::FromCode(function);
+				std::shared_ptr<::Compiler::Intermediate::ControlFlowGraph> graph =
+					::Compiler::Intermediate::ControlFlowGraph::FromCode(function);
 
 				graph->Dump(BuildFunctionDumpPath(cfg_path, function.Name, L"_original.cfgdump"));
 				graph = pre_ssa_optimizer->Optimize(graph).Program;
@@ -166,7 +166,7 @@ namespace SimpleC
 				graph->Dump(BuildFunctionDumpPath(cfg_path, function.Name, L"_final.cfgdump"));
 			}
 
-			auto x86_generator = Compiler::Intermediate::CreateX86CodeGenerator();
+			auto x86_generator = ::Compiler::Intermediate::CreateX86CodeGenerator();
 			auto program = x86_generator->GenerateCode(code_generator.CompiledCode.get());
 			for (auto& function : program.Functions)
 			{

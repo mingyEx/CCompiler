@@ -66,6 +66,7 @@
 - 将若干 IL 和 optimizer 内部容器替换为 `std::vector`、`std::unordered_map`、`std::unordered_set`。
 - 将 x86 emitter 的字节缓冲、常量表、重定位表等局部存储替换为 `std::vector`。
 - 将部分 CoreLib 内部缓冲替换为 `std::vector` 或 `std::string`。
+- 收缩 `SimpleC` 公共头中的 broad namespace import，改为精确引用 `CompileError` 和实际需要的 IL 类型。
 
 ## 已完成的 correctness 工作桶
 

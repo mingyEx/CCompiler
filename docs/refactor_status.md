@@ -46,6 +46,7 @@
 - IL `Function::Name`、`Variable::Name` 已迁移为 `std::wstring`，旧 CoreLib `String` 构造和添加入口保留为兼容转发。
 - 旧的、未参与构建的 `ParserTest.cpp` 已删除；它还使用 `SmartPointer` 和旧 `List::Add` API，会干扰后续判断。
 - Parser、SemanticsVisitor、SyntaxPrinter、CodeGenerator 已适配新的 AST 容器和所有权模型。
+- `Lexer.h`、`Parser.h`、`SyntaxVisitors.h` 和 `CodeGenerator.h` 已移除 broad namespace import，改为精确引用 `CompileError` 和实际需要的 IL 类型，减少前端公共头污染。
 
 当前残留：
 

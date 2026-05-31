@@ -10,9 +10,8 @@ namespace SimpleC
 {
 	namespace Compiler
 	{
-		using namespace ::Compiler;
 		std::unique_ptr<SyntaxVisitor> CreateSyntaxPrinter();
-		std::unique_ptr<SyntaxVisitor> CreateSemanticsVisitor(std::vector<CompileError> & errors);
+		std::unique_ptr<SyntaxVisitor> CreateSemanticsVisitor(std::vector<::Compiler::CompileError> & errors);
 		std::unique_ptr<SyntaxVisitor> CreateCodeGenerator();
 	}
 }

@@ -10,8 +10,6 @@ namespace SimpleC
 {
 	namespace Compiler
 	{
-		using namespace ::Compiler;
-
 		enum class TokenType
 		{
 			// illegal
@@ -55,7 +53,7 @@ namespace SimpleC
 		class Lexer
 		{
 		public:
-			std::vector<Token> Parse(const std::wstring & fileName, const std::wstring & str, std::vector<CompileError> & errorList);
+			std::vector<Token> Parse(const std::wstring & fileName, const std::wstring & str, std::vector<::Compiler::CompileError> & errorList);
 		};
 	}
 }

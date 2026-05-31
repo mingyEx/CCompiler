@@ -71,6 +71,7 @@
 - `SimpleC.vcxproj` 已移除 CoreLib include directory 和 CoreLib project reference；当前 `SimpleC` 目标不再构建或链接 CoreLib。
 - out-of-SSA parallel-copy 临时变量已从裸 `new Variable` 改为 `std::unique_ptr` 托管，保留现有 raw pointer IR 引用语义。
 - CFG dominator visitor 的旧 `FakedList` 辅助容器已移除，改用 `std::span<ControlFlowNode*>` 表示临时边视图。
+- `SimpleC` 公共头中的 broad `using namespace` 已收缩为精确类型引入，避免 Lexer/Parser/visitor/codegen 头继续向包含方泄漏 IL/Compiler 命名空间。
 
 ## 最近完成的 correctness 修复
 
