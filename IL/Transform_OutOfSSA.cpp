@@ -614,17 +614,6 @@ namespace Compiler
 				//接下来就是图的部分.
 				context.InterGraph = InterferenceAnalysis::BuildInterferenceGraph(program);		//phi-web 的计算，这个是灵魂了！就差你了！
 
-				//x86里也有这个，所以它大概是为了给那个用的。	总之，这里做了什么?
-				/*for (auto node : program->Nodes)
-				{
-					printf("live out(%d): ", node->Id);
-					for (int i = 0; i < static_cast<int>(program->Variables.size()); i++)		//原来你们是这么调试东西的，看id啊..我也这么写！
-					{
-						if (node->LiveOut.Contains(i))
-							printf("%d ", i);
-					}
-					printf("\n");
-				}*/
 				CoalesceCopy(program, context);		//合并多余的拷贝(很简单)
 				Rename(program, context);	//这个前面也看过了，所以只看那两个函数就好.
 				//最后为什么还要rename一次?

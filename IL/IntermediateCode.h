@@ -133,7 +133,7 @@ namespace Compiler
 			{
 				return false;
 			}
-			typedef Operation* OperationPtr;
+			using OperationPtr = Operation*;
 			// Binary operations: F(op1, op2)
 
 			//一些代表操作符 class 的指针

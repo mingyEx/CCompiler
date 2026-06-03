@@ -98,6 +98,7 @@
 - IL `IntSet` / `BitIntSet` 已迁移为 IL 本地标准库 backed 实现，不再从 CoreLib 引入。
 - interference analysis 已去掉 CoreLib `Math` / `LibMath` 依赖，改用标准库 min/max。
 - `IntermediateCode.h` 的 `InvalidProgramException` 已改为 `std::runtime_error`，`InstructionList` / parameter ordering 错误改为标准异常，IL 旧 CoreLib `Exception/String` 边界已清掉。
+- `OperationPtr` 已从旧 `typedef` 改为 `using` 别名，并清理 out-of-SSA 中注释掉的旧 `printf` live-out 调试块。
 - `IL.vcxproj` 已移除 CoreLib include 路径和 CoreLib project reference；当前 `IL` 目录没有 `CoreLib` 命中。
 - `ScopeDictionary` 已从 CoreLib `Dictionary/GetHashCode` helper 解耦，当前表达式 key 使用 `std::wstring`，并已从 IL 公共头收缩为 optimizer 私有 helper。
 - IL 非测试路径中的 CoreLib `StringBuilder` 已清掉，若干无调用的 CoreLib `String` 兼容重载已删除。
