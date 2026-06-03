@@ -21,33 +21,28 @@
 
 - `SimpleC/`：前端、语义检查、编译流程编排。
 - `IL/`：中间表示、CFG 构建、SSA 转换、优化、x86 lowering。
-- `CoreLib/`：历史兼容基础库，包含自定义字符串、容器、智能指针和 I/O 包装。
 - `DevTools/`：附属工具，包括旧 CFG 查看器和 x86 指令辅助工具。
 
-## 已完成的第一轮现代化方向
+`CoreLib/` 和 `CoreLibTests/` 已删除。主编译链路不再构建、链接或包含历史 CoreLib 基础库。
 
-第一轮没有推翻现有 AST/IR，而是先降低外围层的修改难度：
+## 已完成的现代化方向
+
+当前主线没有推翻现有 AST/IR，而是先拆掉外围自定义基础设施：
 
 - 编译入口从 `wmain` 中拆出到独立 pipeline。
-- 源文件加载开始使用 C++ 标准库。
-- `CoreLib::IO::File` 和 `CoreLib::IO::Path` 部分委托给 `std::filesystem` 与标准文件流。
-- `CoreLib::IO::FileStream` 内部逐步改成标准库文件流，同时保留旧 `Stream` 接口。
-- `CoreLib::IO::TextIO` 主构建路径减少了对 Win32 文本转换 API 的依赖。
-- 默认编译路径不再执行生成的机器码。
-- 多数 IL dump/export 路径已改用 C++ 标准库写文件。
+- 源文件加载和 dump 输出改用 C++ 标准库。
+- SimpleC 前端 AST 容器、字符串和所有权边界已切到 `std::vector`、`std::wstring`、`std::shared_ptr` / `std::unique_ptr`。
+- IL 主要容器、CFG 所有权、变量所有权、指令列表过渡层和 x86 文本输出已脱离 CoreLib。
+- `SimpleC`、`IL`、`DevTools/X86_InstrCodeGen` 均已移除 CoreLib include/project reference。
+- `CoreLib/` 和历史 `CoreLibTests/` 已从仓库删除。
 
 ## 当前遗留边界
 
-仍然明显依赖历史基础设施或 Windows/x86 假设的区域：
+现在不再存在“继续完善 CoreLib”的阶段。后续值得关注的是仍然带有旧 Windows/x86 假设或生成器耦合的区域：
 
-- `CoreLib/LibString.h`
-- `CoreLib/SmartPointer.h`
-- `CoreLib/List.h`
-- `CoreLib/Dictionary.h`
-- `CoreLib/TextIO.*`
-- `CoreLib/Stream.*`
 - `IL/Assembly_x86.*`
 - `IL/CodeEmitter_x86.cpp`
 - `IL/X86CodeGen.cpp`
+- `DevTools/X86_InstrCodeGen`
 
-从“先替换标准库可替换部分”的目标看，下一阶段更应该继续缩小 `SimpleC` 前端和 `CoreLib` 对 `RefPtr`、`List`、`Dictionary`、手写 I/O 包装的依赖，而不是继续扩展后端功能。
+短期重点应放在 `DevTools/X86_InstrCodeGen` 的生成器关系、调用方式和验证方式上；IL 结构收口暂按当前指令后置。

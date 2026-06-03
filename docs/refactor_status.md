@@ -4,21 +4,23 @@
 
 ## 当前策略
 
-重构必须保持渐进：
+重构继续保持渐进：
 
-- 保留现有项目结构和构建目标。
-- 当前最高优先级是拆掉 SimpleC/IL/DevTools(X86_InstrCodeGen) 主编译链路里能替换的 CoreLib 依赖。
-- 优先替换主链路接口和内部实现中已经可验证的 `String`、`List`、`LinkedList`、`RefPtr` 使用点。
+- 保留现有 `SimpleC`、`IL`、`DevTools` 项目结构和构建目标。
+- `CoreLib/` 和 `CoreLibTests/` 已删除，不再继续维护旧基础库。
 - 每批保持 `SimpleC Debug|Win32` 可构建。
 - 每批尽量跑 `scripts\check_mainchain_no_corelib.ps1` 和 `SimpleC/in.txt` smoke。
-- 能用标准库表达清楚的局部容器、所有权和 I/O 实现，应逐步替换。
+- 涉及 `DevTools/X86_InstrCodeGen` 时额外构建并运行该工具。
+- 能用标准库表达清楚的局部容器、所有权和 I/O 实现，应继续使用标准库，不再引入项目自定义基础设施。
 
 ## 当前验证状态
 
-- `SimpleC Debug|Win32` 当前构建通过。
-- 最新构建结果：`0 Warning(s), 0 Error(s)`。
-- `scripts\check_mainchain_no_corelib.ps1` 通过，覆盖 solution、SimpleC、IL 和 DevTools/X86_InstrCodeGen。
-- `Debug\SimpleC.exe SimpleC\in.txt` 通过。
+本轮删除 `CoreLib/` 和 `CoreLibTests/` 后，验证需要重新执行：
+
+- `SimpleC Debug|Win32`
+- `scripts\check_mainchain_no_corelib.ps1`
+- `Debug\SimpleC.exe SimpleC\in.txt`
+- `DevTools/X86_InstrCodeGen Debug|Win32`
 
 ## SimpleC 前端状态
 
@@ -39,19 +41,13 @@
 - AST 文本字段和 `ExpressionType::ToString()` 已从 CoreLib `String` 改成 `std::wstring`。
 - Parser、SemanticsVisitor、SyntaxPrinter 已适配标准库宽字符串。
 - SyntaxPrinter 已去掉 C 风格 `printf` / `wprintf_s` 输出和 `NULL` 判断，改为标准宽字符输出流和 `nullptr`。
-- CodeGenerator 现在可以把前端 `std::wstring` 名称直接交给 IL，名称字段不再以 CoreLib `String` 为主载体。
-- CodeGenerator unsupported-codegen 错误已改用标准 `std::runtime_error`，不再依赖 CoreLib `NotSupportedException`。
-- SimpleC 非测试代码已无 `CoreLib::Basic` 直接引用；`CoreLib` / `CoreLibTests` 已退出主解决方案。
-- compiler pipeline 顶层 x86 generator 和 optimizer 局部所有权已改为 `std::unique_ptr`。
-- compiler pipeline 输出 `.code/.cfg/.asm` dump 路径已改为走 `std::filesystem::path` 重载。
-- IL `Function::Name`、`Variable::Name` 已迁移为 `std::wstring`，旧 CoreLib `String` 构造和添加入口保留为兼容转发。
-- 旧的、未参与构建的 `ParserTest.cpp` 已删除；它还使用 `SmartPointer` 和旧 `List::Add` API，会干扰后续判断。
-- Parser、SemanticsVisitor、SyntaxPrinter、CodeGenerator 已适配新的 AST 容器和所有权模型。
-- `Lexer.h`、`Parser.h`、`SyntaxVisitors.h` 和 `CodeGenerator.h` 已移除 broad namespace import，改为精确引用 `CompileError` 和实际需要的 IL 类型，减少前端公共头污染。
+- CodeGenerator unsupported-codegen 错误已改用标准 `std::runtime_error`。
+- SimpleC 非测试代码已无 CoreLib 直接引用。
+- `SimpleC.vcxproj` 已移除 CoreLib include directory 和 CoreLib project reference。
 
 当前残留：
 
-- `SimpleC` 主目标已经移除 CoreLib include directory 和 project reference；后续重点转为防止新代码重新引入 CoreLib，并继续扫描非测试源码中的自定义容器/资源管理残留。
+- SimpleC 主目标已经完成 CoreLib 脱钩。后续只需要防止新代码重新引入等价的旧基础设施。
 
 ## IL 和分析工具状态
 
@@ -61,116 +57,44 @@
 - optimizer pipeline 子 pass 存储已换成 `std::vector`。
 - optimizer pipeline 子 pass 所有权已从 CoreLib `RefPtr<IntraProcOptimizer>` 改为 `std::unique_ptr`。
 - optimizer 工厂返回值已从 raw `IntraProcOptimizer*` 改为 `std::unique_ptr<IntraProcOptimizer>`。
-- scoped dictionary 已有标准库 backed 实现。
-- 低层 set 操作引入了 `BitIntSet` 风格辅助结构。
-- x86 binary emitter 字节缓冲已从 `CoreLib::List<unsigned char>` 换成 `std::vector<unsigned char>`。
+- x86 binary emitter 字节缓冲已从 CoreLib `List<unsigned char>` 换成 `std::vector<unsigned char>`。
 - x86 emitter 重定位表、函数元数据表、浮点常量表等多处局部存储已换成 `std::vector`。
-- 删除了无消费者的旧 x86 函数元数据和局部 link-point 表。
 - `Program_x86` 生成函数列表已换成 `std::vector<Function_x86>`。
 - x86 `Function_x86::Name` 已迁移为 `std::wstring`，和 IL 函数名保持标准库字符串边界。
 - x86 code generator 工厂返回值已从 raw `X86CodeGenerator*` 改为 `std::unique_ptr<X86CodeGenerator>`。
-- `DevTools/X86_InstrCodeGen` 已去掉 `D:\code.txt` / `D:\header.txt` 硬编码和 `FILE*` 输出，改为标准库文件输出并支持命令行指定生成路径；工具项目 Debug|Win32 当前可构建和运行。
 - CFG post-order traversal 结果容器已换成 `std::vector<ControlFlowNode*>`。
 - interference analysis live-range 结果存储已换成 `std::vector<std::shared_ptr<LiveRange>>`。
 - `Intermediate::Program` 函数列表已换成 `std::vector<Function>`。
-- `Intermediate::Function` 变量和参数存储已换成 `std::vector<RefPtr<Variable>>`。
+- `Intermediate::Function` 变量和参数存储已换成 `std::vector<std::shared_ptr<Variable>>`。
 - `ControlFlowGraph::VarDefs` 已换成 `std::vector<InstructionNode*>`。
 - `Operand::ToString()`、`Instruction::ToString()` 和 x86 `Instruction::ToString()` 已从 CoreLib `String/StringBuilder` 改为 `std::wstring`。
 - CFG dump 的 IR 文本缓冲已从 CoreLib `StringBuilder` 改为 `std::wstring`。
-- `Intermediate::Instruction::Operands` 已从 CoreLib `List<Operand>` 改为 `std::vector<Operand>`，相关 CFG、optimizer、out-of-SSA、x86 codegen 调用点已同步更新。
-- `ControlFlowGraph::Variables` 已从 CoreLib `List<RefPtr<Variable>>` 改为 `std::vector<RefPtr<Variable>>`，相关 SSA、out-of-SSA、optimizer、register allocation 和 interference analysis 调用点已同步更新。
-- `ControlFlowGraph::Nodes` 已从 CoreLib `List<RefPtr<ControlFlowNode>>` 改为 `std::vector<RefPtr<ControlFlowNode>>`，相关 CFG 构建、支配树、liveness、SSA、dead-code/control-flow cleanup 和 register allocation 调用点已同步更新。
-- `ControlFlowNode` 的支配树和支配边界列表已从 CoreLib `List<ControlFlowNode*>` 改为 `std::vector<ControlFlowNode*>`。
-- `ControlFlowNode::Entries` CFG edge 列表已从 CoreLib `List<ControlFlowNode*>` 改为 `std::vector<ControlFlowNode*>`。
+- `Intermediate::Instruction::Operands` 已从 CoreLib `List<Operand>` 改为 `std::vector<Operand>`。
+- `ControlFlowGraph::Variables`、`Nodes`、支配树、支配边界、CFG edge 列表已迁移到标准库容器。
 - optimizer 管线中的 CFG 所有权边界已从 CoreLib `RefPtr<ControlFlowGraph>` 改为 `std::shared_ptr<ControlFlowGraph>`。
 - CFG 节点所有权已从 CoreLib `RefPtr<ControlFlowNode>` 改为 `std::shared_ptr<ControlFlowNode>`。
 - out-of-SSA 内部 `PhiClasses` 已从 CoreLib `RefPtr<EnumerableIntSet>` 改为 `std::shared_ptr<EnumerableIntSet>`。
 - IL `Variable` 所有权已从 CoreLib `RefPtr<Variable>` 改为 `std::shared_ptr<Variable>`。
 - 当前 `IL` 目录已经没有 `RefPtr<...>` 命中。
-- out-of-SSA parallel-copy 临时变量已从裸 `new Variable` 改为 `std::unique_ptr` 托管。
-- CFG liveness 和 SSA phi placement 的局部 `List<IntSet>` 工作集已改为 `std::vector<IntSet>`。
-- CFG dominator visitor 的旧 `FakedList` 辅助容器已改为 `std::span<ControlFlowNode*>`。
-- SimpleC/IL 主链路中的 broad `using namespace CoreLib::Basic` 已清掉，剩余 CoreLib 类型通过精确 using 或显式限定暴露。
-- x86 `Function_x86::Code` 已从 CoreLib `LinkedList<Instruction>` 改为 `std::list<Instruction>`。
-- IL `Function::Instructions` 和 `ControlFlowNode::Code` 已从 CoreLib `LinkedList<Instruction>` 改为本地 `InstructionList` 过渡层；该层内部使用 `std::list`，保留稳定 `InstructionNode*` 以兼容现有 SSA/out-of-SSA 和优化器节点引用。
-- `InstructionList` 的后续方向不是直接替换成裸 `std::list<Instruction>`；旧全局 helper API 已全部替换为 `InstructionList` / `InstructionNode` 成员接口，兼容 helper 定义已删除。
-- 当前 SimpleC/IL 主链路已经没有 CoreLib `LinkedList` / `LinkedNode` 类型命中；剩余 `LinkedList` 命中只在 `corelib_regression_tests.cpp` 中测试 CoreLib 自身。
-- IL `IntSet` / `BitIntSet` 已迁移为 IL 本地标准库 backed 实现，不再从 CoreLib 引入。
-- interference analysis 已去掉 CoreLib `Math` / `LibMath` 依赖，改用标准库 min/max。
-- `IntermediateCode.h` 的 `InvalidProgramException` 已改为 `std::runtime_error`，`InstructionList` / parameter ordering 错误改为标准异常，IL 旧 CoreLib `Exception/String` 边界已清掉。
-- `OperationPtr` 已从旧 `typedef` 改为 `using` 别名，并清理 out-of-SSA 中注释掉的旧 `printf` live-out 调试块。
-- `IL.vcxproj` 已移除 CoreLib include 路径和 CoreLib project reference；当前 `IL` 目录没有 `CoreLib` 命中。
-- `ScopeDictionary` 已从 CoreLib `Dictionary/GetHashCode` helper 解耦，当前表达式 key 使用 `std::wstring`，并已从 IL 公共头收缩为 optimizer 私有 helper。
-- IL 非测试路径中的 CoreLib `StringBuilder` 已清掉，若干无调用的 CoreLib `String` 兼容重载已删除。
-- interference analysis 的 `LiveRange` 结果已从 CoreLib `RefPtr` 改为 `std::shared_ptr`。
-
-已修复：
-
-- `Intermediate::Instruction`、`Variable`、`Function` move assignment 现在保留 CFG node、flags、location 和 stack-size 元数据。
-- `ControlFlowNode` move assignment 现在保留 dominator、frontier 和 liveness 元数据。
-- `ConstIndirectionRemoval` pointer-value 状态已简化，base pointer 默认初始化，copy/move 使用默认语义。
-- CFG compaction 已修复，不再只检查 `Exits[0]` 而漏掉 `Exits[1]`。
-- `UselessInstructionOptimizer` 简单赋值消除不再无限循环。
-- IL 常量折叠修复了 `0 - x`、`x % 1`、`1 % x`、浮点除零检查、double 类型保留、constant `D2I` 等问题。
-- IL comparison folding 修复了 raw `Compare` 未初始化结果和 integer self `<=` / `>=` 折叠。
-- x86 codegen 对不支持的 IR operation 会显式失败，不再静默跳过。
-- `X86CodeGenerator` 基类已补虚析构，避免通过基类指针释放派生实现时的析构风险。
-- x86 codegen 已移除固定写入 `d:\programdump.asm` 的旧调试副作用。
-- x86 logical-not codegen 已改为正确 `SETZ` 到 8 位目标。
-- integer unary negation codegen 已补。
-- integer bit-not 现在通过临时寄存器写回结果，不再直接修改源操作数。
-- SimpleC/SSA double 类型传播已修复。
-- x86 register allocator 不再把非 4 字节值分配到通用寄存器。
-- 增加一小段安全 x87 double codegen。
+- IL `Function::Instructions` 和 `ControlFlowNode::Code` 已从 CoreLib `LinkedList<Instruction>` 改为本地 `InstructionList` 过渡层。
+- IL `IntSet` / `BitIntSet` 已迁移为 IL 本地标准库 backed 实现。
+- `IL.vcxproj` 已移除 CoreLib include 路径和 CoreLib project reference；当前 `IL` 目录没有 CoreLib 命中。
 
 注意：
 
-- x87 double codegen 属于真实 correctness 修复，但已经接近后端扩展。后续不应继续沿这条线扩展，除非阻塞固定验证。
+- x87 double codegen 修复属于真实 correctness 修复，但已经接近后端扩展。后续不应继续沿这条线扩展，除非阻塞固定验证。
+- 用户当前明确要求先不要继续 IL 结构收口。
 
-## CoreLib 状态
+## CoreLib 删除状态
 
-已完成的现代化：
+已完成：
 
-- `TextIO` buffer 部分改用 `std::vector<char>`。
-- `IntSet` 存储改用 `std::vector<int>`。
-- `String` multibyte cache 改用 `std::string`。
-- `StringBuilder` 改用 `std::vector<wchar_t>`。
-- `BinaryReader::ReadString()` 不再依赖局部 `new[]` / `delete[]`。
-- `TextIO` 编码转换临时宽字符缓冲改用标准容器。
-- 多处 `_Move` / 手写 rvalue cast 已替换为 `std::move`。
-- 多处 `NULL` 和裸 0 指针逐步替换为 `nullptr`。
-- 多处 C 字符串函数调用改成显式 `std::` 版本。
-- 部分 `memcpy` 依赖改为显式 `<cstring>` 和 `std::memcpy`。
-- `List` 的 memcpy 快路径限制到 `std::is_trivially_copyable`。
+- `CoreLib/` 已删除。
+- `CoreLibTests/` 已删除。
+- 旧 `--corelib-self-test` 入口随 CoreLib 删除退役。
+- 主链路验证改为 `SimpleC Debug|Win32`、no-CoreLib 守卫和 `SimpleC/in.txt` smoke。
 
-已修复的 correctness：
-
-- `String` 自己 buffer 或内部指针赋值时不再提前破坏源文本。
-- `String::IndexOf(wchar_t, int)` 失败路径的未定义行为已修复。
-- 多个空字符串、非法索引、非法区间、trim、case conversion 边界已修复。
-- `StringBuilder` 初始容量和 release 下 invalid `Remove()` 行为已修复。
-- `StreamReader::Read(wchar_t*, count)` 现在保留换行，不再像 `ReadLine()`。
-- `StreamReader` 对显式 Unicode encoding 的无 BOM 文本处理已修复。
-- `StreamReader::Peak()` Unicode 状态保持已修复。
-- `StreamWriter(path, Unicode)` 现在写 UTF-16LE BOM。
-- `StreamWriter` null encoding 现在 fallback 到 Unicode，不再首写崩溃。
-- `File::ReadAllText()` 共享 `StreamReader` BOM/encoding 行为。
-- `FileStream` 空路径和读写权限检查增强。
-- `Path` 空输入和 extension replacement 行为增强。
-- `BinaryReader` fixed-size read 改为 exact-read 语义，短流会失败而不是返回半初始化值。
-- `BinaryReader::ReadString()` 拒绝无法满足读取契约的异常长度前缀。
-- `List`、`LinkedList`、`Dictionary`、`HashSet` 多个 copy/move self-assignment 问题已修复。
-- `LinkedList::Count()` 已可在 const 对象上调用。
-- `RefPtr` cross-type assignment、raw self-assignment、manual detach 行为已修复。
-- `HashSet` copy assignment 和 const iteration 相关问题已修复。
-- `Dictionary` hash helper 和 iterator const 行为已改进。
-- `KeyValuePair` move self-assignment 和 copy assignment 问题已修复。
-
-仍需继续：
-
-- 继续压缩 `String`、`RefPtr`、`List`、`Dictionary`、`HashSet` 的公共暴露面。
-- 继续替换 `Stream` / `TextIO` / `LibIO` 内部可安全替换成标准库的实现。
-- 避免只做大范围风格化 cast 替换。
+这意味着后续不再有“继续完善 String/Stream/TextIO/LibIO”的工作项。相关历史修复只作为已完成背景存在，不再作为当前计划。
 
 ## 最小回归覆盖
 
@@ -194,28 +118,24 @@
 4. 压缩兼容层暴露面。
 5. 最后再考虑大接口替换或架构升级。
 
-偏离：
+当前结论：
 
-- 有一段时间追进了 IL/x86 double codegen。
-- 那批修复本身不是无效工作，但它不是“先收拾前端和 CoreLib 标准库替换”的主线。
-- 后续不能继续在 x86 后端上扩展新功能。
-
-纠偏：
-
-- 最新一批已经切到主链路 CoreLib 依赖拆除，完成 IL/x86 文本输出的标准库字符串迁移，以及 `Instruction::Operands`、`ControlFlowGraph::Variables`、`ControlFlowGraph::Nodes`、CFG 支配树列表、CFG edge `Entries`、CFG 局部 liveness/phi 工作集的标准容器迁移，IL/x86 指令链表的标准库链表迁移，optimizer CFG / CFG 节点 / IL 变量 / out-of-SSA `PhiClasses` 所有权的 `std::shared_ptr` 迁移，IL 本身对 CoreLib include/project reference 的拆除，并删除 `InstructionList` 旧全局 helper API。
-- 下一步应继续拆 SimpleC/IL 的 `List`、`LinkedList`、`RefPtr`、`String` 边界，而不是继续后端功能或低价值风格化清理。
+- 主链路甩掉 CoreLib 的目标已经完成。
+- 删除 CoreLib 后，继续在 CoreLib 内部做 correctness 或现代化已经没有意义。
+- 后续应转向 DevTools 生成器关系、验证体系和必要的 IL/x86 边界整理。
 
 ## 当前下一步建议
 
 短期：
 
-- 继续扫描 SimpleC 非测试源码中的自定义容器/资源管理残留，优先处理真正影响 CoreLib 脱钩的接口边界。
-- 检查解决方案和项目文件，防止 SimpleC/IL 重新引入 CoreLib include 或 project reference。
-- 每批继续执行固定验证。
+- 完成删除 CoreLib 后的构建、守卫、smoke 验证。
+- 提交并推送本轮删除。
+- 检查 `DevTools/X86_InstrCodeGen` 是否存在高价值、低风险的维护性问题。
 
 暂不做：
 
 - 更多 x86 codegen 功能。
+- IL 深层结构收口。
 - LLVM-style IR 重做。
 - 大规模 public API 破坏。
 - 大范围机械 cast 清理。
