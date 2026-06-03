@@ -13,14 +13,15 @@
 - `SimpleC`、`IL`、`DevTools/X86_InstrCodeGen` 主链路已经不再依赖 CoreLib include/project reference。
 - `scripts\check_mainchain_no_corelib.ps1` 仍保留，用于防止主链路重新出现 CoreLib、RefPtr、SmartPointer、LinkedList 等旧基础设施依赖。
 
-## 本轮待验证项
+## 最新已验证项
 
-删除 CoreLib 后需要重新执行：
+删除 CoreLib 后已经重新执行并通过：
 
-1. 构建 `SimpleC Debug|Win32`。
-2. 运行 `scripts\check_mainchain_no_corelib.ps1`。
-3. 运行 `Debug\SimpleC.exe SimpleC\in.txt`。
-4. 构建并运行 `DevTools/X86_InstrCodeGen Debug|Win32`，确认工具仍可用。
+1. `SimpleC Debug|Win32`，`0 Warning(s), 0 Error(s)`。
+2. `scripts\check_mainchain_no_corelib.ps1`。
+3. `Debug\SimpleC.exe SimpleC\in.txt`。
+4. `DevTools/X86_InstrCodeGen Debug|Win32`，`0 Warning(s), 0 Error(s)`。
+5. `DevTools/X86_InstrCodeGen` 生成器运行。
 
 ## 最近完成的主线工作
 
@@ -45,9 +46,9 @@
 ## 续接步骤
 
 1. 打开 `C:\Users\mingy\Documents\New project\CCompiler`。
-2. 执行本文件中的待验证项。
-3. 通过后提交并推送删除 CoreLib 的变更。
-4. 下一块先评估 `DevTools/X86_InstrCodeGen` 与生成产物关系。
+2. 每批继续执行 `SimpleC Debug|Win32`、no-CoreLib 守卫和 `SimpleC/in.txt` smoke。
+3. 涉及生成器时额外执行 `scripts\check_x86_generator_drift.ps1`。
+4. 下一块优先补 SimpleC 前端 parser/semantic regression。
 
 ## 下一小目标
 

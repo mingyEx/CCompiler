@@ -5,11 +5,12 @@
 ## 当前检查点
 
 - 日期：2026-06-03
-- 构建：待本轮删除 CoreLib 后重新验证
-- 主链路护栏：待本轮删除 CoreLib 后重新验证
-- 主 smoke：待本轮删除 CoreLib 后重新验证
+- 构建：`SimpleC Debug|Win32` 通过，`0 Warning(s), 0 Error(s)`
+- 主链路护栏：`scripts\check_mainchain_no_corelib.ps1` 通过
+- 主 smoke：`Debug\SimpleC.exe SimpleC\in.txt` 通过
+- DevTools：`DevTools/X86_InstrCodeGen Debug|Win32` 通过，生成器运行通过
 - 当前阶段：CoreLib 主链路替换完成，仓库内 CoreLib/CoreLibTests 已删除
-- 当前焦点：先看 `DevTools/X86_InstrCodeGen` 与生成产物关系，IL 深层结构收口暂缓
+- 当前焦点：补充生成器漂移检查和更系统的 SimpleC 前端回归入口，IL 深层结构收口暂缓
 
 ## 阶段进度
 
@@ -31,6 +32,7 @@
 - 将 IL/x86 文本输出从 CoreLib `String/StringBuilder` 迁移到 `std::wstring`。
 - 将 `SimpleC.vcxproj`、`IL.vcxproj`、`DevTools/X86_InstrCodeGen` 从 CoreLib include/project reference 中拆出。
 - 删除 `CoreLib/` 和 `CoreLibTests/`。
+- `DevTools/X86_InstrCodeGen` 生成器已修到输出当前 `std::vector` API，不再生成旧 `code.Add(...)`。
 
 ## 与原始目标的偏离情况
 
@@ -49,12 +51,12 @@
 
 ## 当前焦点
 
-- 重新验证删除 CoreLib 后的 `SimpleC Debug|Win32`、no-CoreLib 守卫和 SimpleC smoke。
-- 检查 `DevTools/X86_InstrCodeGen` 是否还有高价值、低风险整理点。
+- 保持 `SimpleC Debug|Win32`、no-CoreLib 守卫和 SimpleC smoke 为绿。
+- 用生成器漂移检查避免误覆盖 `IL/Instruction_x86.cpp` 的手工差异。
 - 暂不推进 IL 深层结构收口。
 
 ## 下一小目标
 
-1. 完成本轮删除 CoreLib 后的构建和 smoke 验证。
-2. 提交并推送删除 CoreLib 的变更。
-3. 评估 `DevTools/X86_InstrCodeGen` 与生成产物关系，优先做能降低后续误用风险的小改动。
+1. 运行并维护 `scripts\check_x86_generator_drift.ps1`。
+2. 增加更系统的 SimpleC 前端 parser/semantic regression。
+3. 继续记录 `DevTools/X86_InstrCodeGen` 与 `IL/Instruction_x86.cpp` 的手工差异，避免误把生成文件直接覆盖进主链路。

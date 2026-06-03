@@ -15,12 +15,13 @@
 
 ## 当前验证状态
 
-本轮删除 `CoreLib/` 和 `CoreLibTests/` 后，验证需要重新执行：
+本轮删除 `CoreLib/` 和 `CoreLibTests/` 后，已验证通过：
 
-- `SimpleC Debug|Win32`
+- `SimpleC Debug|Win32`，`0 Warning(s), 0 Error(s)`
 - `scripts\check_mainchain_no_corelib.ps1`
 - `Debug\SimpleC.exe SimpleC\in.txt`
-- `DevTools/X86_InstrCodeGen Debug|Win32`
+- `DevTools/X86_InstrCodeGen Debug|Win32`，`0 Warning(s), 0 Error(s)`
+- `DevTools/X86_InstrCodeGen` 生成器运行
 
 ## SimpleC 前端状态
 
@@ -107,6 +108,7 @@
 - 这还不是完整编译器测试体系。
 - 缺少系统性的前端 parser/semantic regression。
 - 缺少稳定的后端行为测试。
+- `scripts\check_x86_generator_drift.ps1` 只检查生成器可运行、不会输出旧 `code.Add` API、声明仍匹配，并报告生成产物和 `IL/Instruction_x86.cpp` 的已知手工漂移；它不是 x86 行为测试。
 
 ## 与原始目标的偏离总结
 
@@ -128,9 +130,9 @@
 
 短期：
 
-- 完成删除 CoreLib 后的构建、守卫、smoke 验证。
-- 提交并推送本轮删除。
-- 检查 `DevTools/X86_InstrCodeGen` 是否存在高价值、低风险的维护性问题。
+- 增加更系统的 SimpleC 前端 parser/semantic regression。
+- 继续检查 `DevTools/X86_InstrCodeGen` 与 `IL/Instruction_x86.cpp` 的手工差异，避免误覆盖生成产物。
+- 每批继续保持固定验证为绿。
 
 暂不做：
 
