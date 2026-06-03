@@ -68,6 +68,7 @@
 - `Program_x86` 生成函数列表已换成 `std::vector<Function_x86>`。
 - x86 `Function_x86::Name` 已迁移为 `std::wstring`，和 IL 函数名保持标准库字符串边界。
 - x86 code generator 工厂返回值已从 raw `X86CodeGenerator*` 改为 `std::unique_ptr<X86CodeGenerator>`。
+- `DevTools/X86_InstrCodeGen` 已去掉 `D:\code.txt` / `D:\header.txt` 硬编码和 `FILE*` 输出，改为标准库文件输出并支持命令行指定生成路径；工具项目 Debug|Win32 当前可构建和运行。
 - CFG post-order traversal 结果容器已换成 `std::vector<ControlFlowNode*>`。
 - interference analysis live-range 结果存储已换成 `std::vector<std::shared_ptr<LiveRange>>`。
 - `Intermediate::Program` 函数列表已换成 `std::vector<Function>`。

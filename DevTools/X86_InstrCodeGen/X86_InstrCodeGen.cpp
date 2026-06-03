@@ -4,6 +4,9 @@
 #include "stdafx.h"
 #include "VL_JIT_X86.h"
 #include <algorithm>
+#include <filesystem>
+#include <fstream>
+#include <stdexcept>
 #include <string>
 using namespace vl::jit::x86;
 
@@ -46,7 +49,26 @@ public:
 	{
 		return text.c_str();
 	}
+
+	const std::wstring & Text() const
+	{
+		return text;
+	}
 };
+
+void WriteAsciiTextFile(const std::filesystem::path & path, const TextBuilder & text)
+{
+	std::ofstream file(path, std::ios::binary);
+	if (!file)
+	{
+		throw std::runtime_error("failed to open generated output file");
+	}
+
+	for (wchar_t ch : text.Text())
+	{
+		file.put(static_cast<char>(ch));
+	}
+}
 
 bool InsCompare(VLS_InsFormat i1, VLS_InsFormat i2)
 {
@@ -68,11 +90,11 @@ int _tmain(int argc, _TCHAR* argv[])	//这个文件是干嘛的.. 意思是.. �
 		auto name = InsName[ins];
 		header.Append(L"\t\t\tvoid Emit_");
 		header.Append(name);
-		header.Append("(int paramCount, const Operand & op1, const Operand & op2);\n");
+		header.Append(L"(int paramCount, const Operand & op1, const Operand & op2);\n");
 		sb.Append(L"void ");
 		sb.Append(L"BinaryCodeEmitter::Emit_");
 		sb.Append(name);
-		sb.Append("(int paramCount, const Operand & op1, const Operand & op2)\n");
+		sb.Append(L"(int paramCount, const Operand & op1, const Operand & op2)\n");
 		sb.Append(L"{\n");
 		std::sort(InsFormat+InsOffset[ins], InsFormat+InsOffset[ins]+InsCount[ins], InsCompare);
 		for (int i = InsOffset[ins]; i<InsOffset[ins]+InsCount[ins]; i++)
@@ -426,13 +448,10 @@ int _tmain(int argc, _TCHAR* argv[])	//这个文件是干嘛的.. 意思是.. �
 		sb.Append(L"}\n\n");
 	}
 	sb.Append(L"}\n}\n");
-	FILE * f;
-	_wfopen_s(&f, L"D:\\code.txt", L"wt");
-	fwprintf(f, L"%s", sb.Buffer());
-	fclose(f);
-	_wfopen_s(&f, L"D:\\header.txt", L"wt");
-	fwprintf(f, L"%s", header.Buffer());
-	fclose(f);
+	const std::filesystem::path codePath = argc > 1 ? argv[1] : L"code.txt";
+	const std::filesystem::path headerPath = argc > 2 ? argv[2] : L"header.txt";
+	WriteAsciiTextFile(codePath, sb);
+	WriteAsciiTextFile(headerPath, header);
 	return 0;
 }
 
