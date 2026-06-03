@@ -1,4 +1,6 @@
 #include "SyntaxVisitors.h"
+#include <iomanip>
+#include <iostream>
 
 namespace SimpleC
 {
@@ -36,81 +38,81 @@ namespace SimpleC
 		{
 			auto * function = &function_node;
 			function->ReturnType->Accept(*this);
-			wprintf_s(L" %s(", function->Name.c_str());
+			std::wcout << L" " << function->Name << L"(";
 			for (auto & parameter : function->Parameters)
 			{
 				parameter->Accept(*this);
-				printf(",");
+				std::wcout << L",";
 			}
-			printf(")\r\n");
+			std::wcout << L")\r\n";
 			function->Body->Accept(*this);
 		}
 
 		void SyntaxPrinter::VisitBlockStatement(BlockStatementSyntaxNode & block_stmt_node)
 		{
 			auto * blockStmt = &block_stmt_node;
-			printf("{\r\n");
+			std::wcout << L"{\r\n";
 			for (auto & statement : blockStmt->Statements)
 				statement->Accept(*this);
-			printf("}\r\n");
+			std::wcout << L"}\r\n";
 		}
 
 		void SyntaxPrinter::VisitBreakStatement(BreakStatementSyntaxNode & stmt)
 		{
-			printf("break;\r\n");
+			std::wcout << L"break;\r\n";
 		}
 
 		void SyntaxPrinter::VisitContinueStatement(ContinueStatementSyntaxNode & stmt)
 		{
-			printf("continue;\r\n");
+			std::wcout << L"continue;\r\n";
 		}
 
 		void SyntaxPrinter::VisitDoWhileStatement(DoWhileStatementSyntaxNode & stmt_node)
 		{
 			auto * stmt = &stmt_node;
-			printf("do\r\n");
+			std::wcout << L"do\r\n";
 			stmt->Statement->Accept(*this);
-			printf("while(");
+			std::wcout << L"while(";
 			stmt->Predicate->Accept(*this);
-			printf(");\r\n");
+			std::wcout << L");\r\n";
 		}
 
 		void SyntaxPrinter::VisitEmptyStatement(EmptyStatementSyntaxNode & stmt)
 		{
-			printf(";\r\n");
+			std::wcout << L";\r\n";
 		}
 
 		void SyntaxPrinter::VisitForStatement(ForStatementSyntaxNode & stmt_node)
 		{
 			auto * stmt = &stmt_node;
-			printf("for(");
-			if (stmt->VarDeclr != NULL)
+			std::wcout << L"for(";
+			if (stmt->VarDeclr != nullptr)
 				stmt->VarDeclr->Accept(*this);
 			else
 			{
-				if(stmt->InitialExpression != NULL)
+				if(stmt->InitialExpression != nullptr)
 					stmt->InitialExpression->Accept(*this);
-				printf(";");
+				std::wcout << L";";
 			}
 			if (stmt->MarginExpression)
 				stmt->MarginExpression->Accept(*this);
-			printf(";");
+			std::wcout << L";";
 			if (stmt->SideEffectExpression)
 				stmt->SideEffectExpression->Accept(*this);
-			printf(")\r\n");
+			std::wcout << L")\r\n";
 			stmt->Statement->Accept(*this);
 		}
 
 		void SyntaxPrinter::VisitIfStatement(IfStatementSyntaxNode & stmt_node)
 		{
 			auto * stmt = &stmt_node;
-			printf("If(");
+			std::wcout << L"If(";
 			stmt->Predicate->Accept(*this);
-			printf(")\r\n");
+			std::wcout << L")\r\n";
 			stmt->PositiveStatement->Accept(*this);
-			if(stmt->NegativeStatement != NULL)
+			if(stmt->NegativeStatement != nullptr)
 			{
-				printf("else\r\n");
+				std::wcout << L"else\r\n";
 				stmt->NegativeStatement->Accept(*this);
 			}
 		}
@@ -118,12 +120,12 @@ namespace SimpleC
 		void SyntaxPrinter::VisitReturnStatement(ReturnStatementSyntaxNode & stmt_node)
 		{
 			auto * stmt = &stmt_node;
-			printf("return");
-			if(stmt->Expression != NULL)
+			std::wcout << L"return";
+			if(stmt->Expression != nullptr)
 			{
-				printf(" ");
+				std::wcout << L" ";
 				stmt->Expression->Accept(*this);
-				printf(";\r\n");
+				std::wcout << L";\r\n";
 			}
 		}
 
@@ -131,22 +133,22 @@ namespace SimpleC
 		{
 			auto * stmt = &stmt_node;
 			stmt->Type->Accept(*this);
-			printf(" ");
+			std::wcout << L" ";
 			for (auto & variable : stmt->Variables)
 			{
 				variable->Accept(*this);
-				printf(",");
+				std::wcout << L",";
 			}
-			printf(";\r\n");
+			std::wcout << L";\r\n";
 		}
 
 		void SyntaxPrinter::VisitDeclrVariable(VarDeclrStatementSyntaxNode::Variable & variable_node)
 		{
 			auto * variable = &variable_node;
-			wprintf_s(L"%s", variable->Name.c_str());
-			if(variable->Expression != NULL)
+			std::wcout << variable->Name;
+			if(variable->Expression != nullptr)
 			{
-				printf(" = ");
+				std::wcout << L" = ";
 				variable->Expression->Accept(*this);
 			}
 		}
@@ -154,9 +156,9 @@ namespace SimpleC
 		void SyntaxPrinter::VisitWhileStatement(WhileStatementSyntaxNode & stmt_node)
 		{
 			auto * stmt = &stmt_node;
-			printf("while(");
+			std::wcout << L"while(";
 			stmt->Predicate->Accept(*this);
-			printf(")\r\n");
+			std::wcout << L")\r\n";
 			stmt->Statement->Accept(*this);
 		}
 
@@ -165,17 +167,17 @@ namespace SimpleC
 			auto * stmt = &stmt_node;
 			if (stmt->Expression)
 				stmt->Expression->Accept(*this);
-			printf(";\n");
+			std::wcout << L";\n";
 		}
 
 		void SyntaxPrinter::VisitBinaryExpression(BinaryExpressionSyntaxNode & expr_node)
 		{
 			auto * expr = &expr_node;
-			printf("(");
+			std::wcout << L"(";
 			expr->LeftExpression->Accept(*this);
 			PrintOperator(expr->Operator);
 			expr->RightExpression->Accept(*this);
-			printf(")");
+			std::wcout << L")";
 		}
 
 		void SyntaxPrinter::VisitConstantExpression(ConstantExpressionSyntaxNode & expr_node)
@@ -184,19 +186,19 @@ namespace SimpleC
 			switch (expr->ConstType)
 			{
 				case ConstantExpressionSyntaxNode::ConstantType::Int:
-					printf("%d", expr->IntValue);
+					std::wcout << expr->IntValue;
 					break;
 				case ConstantExpressionSyntaxNode::ConstantType::Double:
-					printf("%f", expr->DoubleValue);
+					std::wcout << std::fixed << std::setprecision(6) << expr->DoubleValue << std::defaultfloat;
 					break;
 				case ConstantExpressionSyntaxNode::ConstantType::Char:
-					wprintf_s(L"'%c'", expr->CharValue);
+					std::wcout << L"'" << expr->CharValue << L"'";
 					break;
 				case ConstantExpressionSyntaxNode::ConstantType::String:
-					wprintf_s(L"\"%s\"", expr->StringValue.c_str());
+					std::wcout << L"\"" << expr->StringValue << L"\"";
 					break;
 			default:
-					printf("ERROR");
+					std::wcout << L"ERROR";
 				break;
 			}
 		}
@@ -205,19 +207,19 @@ namespace SimpleC
 		{
 			auto * expr = &expr_node;
 			expr->BaseExpression->Accept(*this);
-			printf("[");
+			std::wcout << L"[";
 			expr->IndexExpression->Accept(*this);
-			printf("]");
+			std::wcout << L"]";
 		}
 
 		void SyntaxPrinter::VisitInvokeExpression(InvokeExpressionSyntaxNode & expr_node)
 		{
 			auto * expr = &expr_node;
 			expr->FunctionExpr->Accept(*this);
-			printf("(");
+			std::wcout << L"(";
 			for (auto & argument : expr->Arguments)
 				argument->Accept(*this);
-			printf(")");
+			std::wcout << L")";
 		}
 
 		void SyntaxPrinter::VisitUnaryExpression(UnaryExpressionSyntaxNode & expr_node)
@@ -238,24 +240,22 @@ namespace SimpleC
 		void SyntaxPrinter::VisitVarExpression(VarExpressionSyntaxNode & expr_node)
 		{
 			auto * expr = &expr_node;
-			wprintf_s(L"%s", expr->Variable.c_str());
-			//printf("%s", expr->Variable.ToMultiByteString());
+			std::wcout << expr->Variable;
 		}
 
 		void SyntaxPrinter::VisitParameter(ParameterSyntaxNode & para_node)
 		{
 			auto * para = &para_node;
 			para->Type->Accept(*this);
-			printf(" ");
-			wprintf_s(L"%s", para->Name.c_str());
+			std::wcout << L" " << para->Name;
 		}
 
 		void SyntaxPrinter::VisitType(TypeSyntaxNode & type_node)
 		{
 			auto * type = &type_node;
-			wprintf_s(L"%s", type->TypeName.c_str());
+			std::wcout << type->TypeName;
 			if(type->ArrayLength > 0)
-				printf("[%d]", type->ArrayLength);
+				std::wcout << L"[" << type->ArrayLength << L"]";
 		}
 
 		void SyntaxPrinter::PrintOperator(Operator op)
@@ -263,82 +263,82 @@ namespace SimpleC
 			switch (op)
 			{
 			case SimpleC::Compiler::Operator::Neg:
-				printf("-");
+				std::wcout << L"-";
 				break;
 			case SimpleC::Compiler::Operator::Not:
-				printf("!");
+				std::wcout << L"!";
 				break;
 			case SimpleC::Compiler::Operator::PreInc:
-				printf("++");
+				std::wcout << L"++";
 				break;
 			case SimpleC::Compiler::Operator::PreDec:
-				printf("--");
+				std::wcout << L"--";
 				break;
 			case SimpleC::Compiler::Operator::PostInc:
-				printf("++");
+				std::wcout << L"++";
 				break;
 			case SimpleC::Compiler::Operator::PostDec:
-				printf("--");
+				std::wcout << L"--";
 				break;
 			case SimpleC::Compiler::Operator::Mul:
-				printf("*");
+				std::wcout << L"*";
 				break;
 			case SimpleC::Compiler::Operator::Div:
-				printf("/");
+				std::wcout << L"/";
 				break;
 			case SimpleC::Compiler::Operator::Mod:
-				printf("%%");
+				std::wcout << L"%";
 				break;
 			case SimpleC::Compiler::Operator::Add:
-				printf("+");
+				std::wcout << L"+";
 				break;
 			case SimpleC::Compiler::Operator::Sub:
-				printf("-");
+				std::wcout << L"-";
 				break;
 			case SimpleC::Compiler::Operator::Lsh:
-				printf(">>");
+				std::wcout << L">>";
 				break;
 			case SimpleC::Compiler::Operator::Rsh:
-				printf("<<");
+				std::wcout << L"<<";
 				break;
 			case SimpleC::Compiler::Operator::Eql:
-				printf("==");
+				std::wcout << L"==";
 				break;
 			case SimpleC::Compiler::Operator::Neq:
-				printf("!=");
+				std::wcout << L"!=";
 				break;
 			case SimpleC::Compiler::Operator::Greater:
-				printf(">");
+				std::wcout << L">";
 				break;
 			case SimpleC::Compiler::Operator::Less:
-				printf("<");
+				std::wcout << L"<";
 				break;
 			case SimpleC::Compiler::Operator::Geq:
-				printf(">=");
+				std::wcout << L">=";
 				break;
 			case SimpleC::Compiler::Operator::Leq:
-				printf("<=");
+				std::wcout << L"<=";
 				break;
 			case SimpleC::Compiler::Operator::BitAnd:
-				printf("&");
+				std::wcout << L"&";
 				break;
 			case SimpleC::Compiler::Operator::BitXor:
-				printf("^");
+				std::wcout << L"^";
 				break;
 			case SimpleC::Compiler::Operator::BitOr:
-				printf("|");
+				std::wcout << L"|";
 				break;
 			case SimpleC::Compiler::Operator::And:
-				printf("&&");
+				std::wcout << L"&&";
 				break;
 			case SimpleC::Compiler::Operator::Or:
-				printf("||");
+				std::wcout << L"||";
 				break;
 			case SimpleC::Compiler::Operator::Assign:
-				printf("=");
+				std::wcout << L"=";
 				break;
 			default:
-				printf("ERROR");
+				std::wcout << L"ERROR";
 				break;
 			}
 		}

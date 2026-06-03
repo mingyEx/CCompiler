@@ -38,6 +38,7 @@
 - `Lexer` 已从 CoreLib `String/StringBuilder` 改成 `std::wstring` 输入、token 文本和内部 builder。
 - AST 文本字段和 `ExpressionType::ToString()` 已从 CoreLib `String` 改成 `std::wstring`。
 - Parser、SemanticsVisitor、SyntaxPrinter 已适配标准库宽字符串。
+- SyntaxPrinter 已去掉 C 风格 `printf` / `wprintf_s` 输出和 `NULL` 判断，改为标准宽字符输出流和 `nullptr`。
 - CodeGenerator 现在可以把前端 `std::wstring` 名称直接交给 IL，名称字段不再以 CoreLib `String` 为主载体。
 - CodeGenerator unsupported-codegen 错误已改用标准 `std::runtime_error`，不再依赖 CoreLib `NotSupportedException`。
 - SimpleC 非测试代码已无 `CoreLib::Basic` 直接引用；`CoreLib` / `CoreLibTests` 已退出主解决方案。
