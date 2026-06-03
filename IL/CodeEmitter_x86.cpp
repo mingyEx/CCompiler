@@ -1,7 +1,6 @@
 
 #include "CodeEmitter_x86.h"
 #include <cstring>
-#include <stdio.h>
 
 namespace Compiler
 {
@@ -1047,29 +1046,4 @@ namespace Compiler
 		}
 	}
 }
-
-
-using namespace Compiler::x86;
-typedef  int (__stdcall *JITFunc)(int a, int b);
-
-void TestJIT()
-{
-	BinaryCodeEmitter emitter;
-	emitter.Emit_PUSH(1, Operand(Register::EBP), Operand());
-	emitter.Emit_MOV(2, Operand(Register::EBP), Operand(Register::ESP));
-	emitter.Emit_SUB(2, Operand(Register::ESP), Operand(4, true));
-	emitter.EmitLoad(Register::EAX, 8); // param1
-	emitter.EmitLoad(Register::ECX, 12); // param2
-	emitter.Emit_ADD(2, Operand(Register::EAX), Operand(Register::ECX));
-	emitter.EmitStore(Register::EAX, -4); // var1
-	emitter.EmitLoad(Register::ECX, -4);
-	emitter.Emit_MOV(2, Operand(Register::ESP), Operand(Register::EBP));
-	emitter.Emit_POP(1, Operand(Register::EBP), Operand());
-	emitter.Emit_RET(1, Operand((unsigned short) 8), Operand());
-	JITFunc f = (JITFunc)emitter.ToFunc();
-	int value = f(100,2);
-	printf("return value is %d\n", value);
-	VirtualFree(f, 0, MEM_RELEASE);
-}
-
 
