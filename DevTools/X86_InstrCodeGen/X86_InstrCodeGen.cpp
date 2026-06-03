@@ -401,40 +401,40 @@ int _tmain(int argc, _TCHAR* argv[])	//这个文件是干嘛的.. 意思是.. �
 			{
 				if (format.Params[0] == vipIMM_8 || format.Params[0] == vipREL_8)
 				{
-					sb.Append(L"code.Add((unsigned char)op1.Value);\n");
+					sb.Append(L"code.push_back((unsigned char)op1.Value);\n");
 					paramInclude[0]++;
 				}
 				else if (format.Params[1] == vipIMM_8 || format.Params[1] == vipREL_8)
 				{
-					sb.Append(L"code.Add((unsigned char)op2.Value);\n");
+					sb.Append(L"code.push_back((unsigned char)op2.Value);\n");
 					paramInclude[1]++;
 				}
 				else if (format.Params[0] == vipIMM_16 || format.Params[0] == vipREL_16)
 				{
-					sb.Append(L"code.Add(((unsigned char*)&(op1.Value))[0]);\n");
-					sb.Append(L"code.Add(((unsigned char*)&(op1.Value))[1]);\n");
+					sb.Append(L"code.push_back(((unsigned char*)&(op1.Value))[0]);\n");
+					sb.Append(L"code.push_back(((unsigned char*)&(op1.Value))[1]);\n");
 					paramInclude[0]++;
 				}
 				else if (format.Params[1] == vipIMM_16 || format.Params[1] == vipREL_16)
 				{
-					sb.Append(L"code.Add(((unsigned char*)&(op2.Value))[0]);\n");
-					sb.Append(L"code.Add(((unsigned char*)&(op2.Value))[1]);\n");
+					sb.Append(L"code.push_back(((unsigned char*)&(op2.Value))[0]);\n");
+					sb.Append(L"code.push_back(((unsigned char*)&(op2.Value))[1]);\n");
 					paramInclude[1]++;
 				}
 				else if (format.Params[0] == vipIMM_32 || format.Params[0] == vipREL_32)
 				{
-					sb.Append(L"code.Add(((unsigned char*)&(op1.Value))[0]);\n");
-					sb.Append(L"code.Add(((unsigned char*)&(op1.Value))[1]);\n");
-					sb.Append(L"code.Add(((unsigned char*)&(op1.Value))[2]);\n");
-					sb.Append(L"code.Add(((unsigned char*)&(op1.Value))[3]);\n");
+					sb.Append(L"code.push_back(((unsigned char*)&(op1.Value))[0]);\n");
+					sb.Append(L"code.push_back(((unsigned char*)&(op1.Value))[1]);\n");
+					sb.Append(L"code.push_back(((unsigned char*)&(op1.Value))[2]);\n");
+					sb.Append(L"code.push_back(((unsigned char*)&(op1.Value))[3]);\n");
 					paramInclude[0]++;
 				}
 				else if (format.Params[1] == vipIMM_32 || format.Params[1] == vipREL_32)
 				{
-					sb.Append(L"code.Add(((unsigned char*)&(op2.Value))[0]);\n");
-					sb.Append(L"code.Add(((unsigned char*)&(op2.Value))[1]);\n");
-					sb.Append(L"code.Add(((unsigned char*)&(op2.Value))[2]);\n");
-					sb.Append(L"code.Add(((unsigned char*)&(op2.Value))[3]);\n");
+					sb.Append(L"code.push_back(((unsigned char*)&(op2.Value))[0]);\n");
+					sb.Append(L"code.push_back(((unsigned char*)&(op2.Value))[1]);\n");
+					sb.Append(L"code.push_back(((unsigned char*)&(op2.Value))[2]);\n");
+					sb.Append(L"code.push_back(((unsigned char*)&(op2.Value))[3]);\n");
 					paramInclude[1]++;
 				}
 			}
