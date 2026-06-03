@@ -17,7 +17,7 @@
 
 - `SimpleC Debug|Win32` 当前构建通过。
 - 最新构建结果：`0 Warning(s), 0 Error(s)`。
-- `scripts\check_mainchain_no_corelib.ps1` 通过。
+- `scripts\check_mainchain_no_corelib.ps1` 通过，覆盖 solution、SimpleC、IL 和 DevTools/X86_InstrCodeGen。
 - `Debug\SimpleC.exe SimpleC\in.txt` 通过。
 
 ## SimpleC 前端状态
@@ -173,7 +173,7 @@
 
 `scripts\check_mainchain_no_corelib.ps1` 当前覆盖：
 
-- 扫描 `SimpleC`、`IL`、`DevTools/X86_InstrCodeGen` 主链路，阻断 `CoreLib::`、`CoreLib\`、`Basic.h`、`RefPtr`、`SmartPointer`、`LinkedList`、`LinkedNode` 重新引入。
+- 扫描 `CCompiler.sln`、`SimpleC`、`IL`、`DevTools/X86_InstrCodeGen` 主链路，阻断 `CoreLib::`、`CoreLib\`、`Basic.h`、`RefPtr`、`SmartPointer`、`LinkedList`、`LinkedNode` 重新引入。
 
 不足：
 

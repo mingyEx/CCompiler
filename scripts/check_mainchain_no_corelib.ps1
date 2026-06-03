@@ -14,6 +14,7 @@ $patterns = @(
 )
 
 $targets = @(
+    'CCompiler.sln',
     'SimpleC',
     'IL',
     'DevTools\X86_InstrCodeGen'
@@ -40,7 +41,7 @@ if ($LASTEXITCODE -eq 0)
 
 if ($LASTEXITCODE -eq 1)
 {
-    Write-Host 'OK: no forbidden CoreLib dependency markers found in SimpleC/IL/DevTools.' -ForegroundColor Green
+    Write-Host 'OK: no forbidden CoreLib dependency markers found in solution/SimpleC/IL/DevTools.' -ForegroundColor Green
     exit 0
 }
 
