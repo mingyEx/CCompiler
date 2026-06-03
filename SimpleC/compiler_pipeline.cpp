@@ -1,9 +1,9 @@
 #include "compiler_pipeline.h"
 
 #include "CodeGenerator.h"
-#include "IL/CFG.h"
-#include "IL/Optimization.h"
-#include "IL/x86CodeGen.h"
+#include "../IL/CFG.h"
+#include "../IL/Optimization.h"
+#include "../IL/x86CodeGen.h"
 #include "Lexer.h"
 #include "Parser.h"
 #include "SyntaxVisitors.h"

@@ -1,6 +1,6 @@
 ﻿#include "SyntaxVisitors.h"
 #include "CodeGenerator.h"
-#include "IL/IntermediateCode.h"
+#include "../IL/IntermediateCode.h"
 
 #include <stdexcept>
 

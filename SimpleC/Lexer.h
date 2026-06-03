@@ -1,7 +1,7 @@
 #ifndef SIMPLE_C_LEXER_H
 #define SIMPLE_C_LEXER_H
 
-#include "IL/CompileError.h"
+#include "../IL/CompileError.h"
 #include <string>
 #include <utility>
 #include <vector>

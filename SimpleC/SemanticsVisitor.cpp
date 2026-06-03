@@ -4,7 +4,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "IL/CompileError.h"
+#include "../IL/CompileError.h"
 
 namespace SimpleC
 {

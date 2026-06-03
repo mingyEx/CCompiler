@@ -2,7 +2,7 @@
 #define SIMPLE_C_CODE_GENERATOR_H
 
 #include "SyntaxVisitors.h"
-#include "IL/IntermediateCode.h"
+#include "../IL/IntermediateCode.h"
 #include <memory>
 #include <string>
 #include <unordered_map>

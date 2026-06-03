@@ -1,7 +1,7 @@
 #ifndef _SIMPLEC_SYNTAX_PRINTER_H
 #define _SIMPLEC_SYNTAX_PRINTER_H
 
-#include "IL/CompileError.h"
+#include "../IL/CompileError.h"
 #include "Syntax.h"
 #include <memory>
 #include <vector>
