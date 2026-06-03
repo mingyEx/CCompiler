@@ -9,7 +9,7 @@
 - 保留现有 `SimpleC`、`IL`、`DevTools` 项目结构和构建目标。
 - `CoreLib/` 和 `CoreLibTests/` 已删除，不再继续维护旧基础库。
 - 每批保持 `SimpleC Debug|Win32` 可构建。
-- 每批尽量跑 `scripts\check_mainchain_no_corelib.ps1` 和 `SimpleC/in.txt` smoke。
+- 每批优先跑 `scripts\check_smoke.ps1`；只改前端样例时可单独跑 `scripts\check_simplec_smoke.ps1`。
 - 涉及 `DevTools/X86_InstrCodeGen` 时额外构建并运行该工具。
 - 能用标准库表达清楚的局部容器、所有权和 I/O 实现，应继续使用标准库，不再引入项目自定义基础设施。
 
@@ -93,7 +93,7 @@
 - `CoreLib/` 已删除。
 - `CoreLibTests/` 已删除。
 - 旧 `--corelib-self-test` 入口随 CoreLib 删除退役。
-- 主链路验证改为 `SimpleC Debug|Win32`、no-CoreLib 守卫和 `SimpleC/in.txt` smoke。
+- 主链路验证改为 `scripts\check_smoke.ps1` 统一入口。
 
 这意味着后续不再有“继续完善 String/Stream/TextIO/LibIO”的工作项。相关历史修复只作为已完成背景存在，不再作为当前计划。
 
@@ -109,6 +109,7 @@
 - 缺少系统性的前端 parser/semantic regression。
 - 缺少稳定的后端行为测试。
 - `scripts\check_x86_generator_drift.ps1` 只检查生成器可运行、不会输出旧 `code.Add` API、声明仍匹配，并报告生成产物和 `IL/Instruction_x86.cpp` 的已知手工漂移；它不是 x86 行为测试。
+- `scripts\check_simplec_smoke.ps1` 当前覆盖基础函数调用、局部变量和 if/else 样例；它仍不是系统性 parser/semantic 测试。
 
 ## 与原始目标的偏离总结
 
@@ -132,7 +133,7 @@
 
 - 增加更系统的 SimpleC 前端 parser/semantic regression。
 - 继续检查 `DevTools/X86_InstrCodeGen` 与 `IL/Instruction_x86.cpp` 的手工差异，避免误覆盖生成产物。
-- 每批继续保持固定验证为绿。
+- 每批继续保持 `scripts\check_smoke.ps1` 为绿。
 
 暂不做：
 

@@ -41,13 +41,13 @@
 
 - 主链路甩掉 CoreLib 的目标已经完成。
 - 旧的 `--corelib-self-test` 入口随 CoreLib 删除一起退役。
-- 后续验证以 `SimpleC Debug|Win32`、no-CoreLib 守卫、SimpleC smoke 和必要的 DevTools 构建/运行检查为准。
+- 后续验证以 `scripts\check_smoke.ps1` 为统一入口；它覆盖 `SimpleC Debug|Win32`、no-CoreLib 守卫、多样例 SimpleC smoke、DevTools 构建和 x86 生成器漂移检查。
 
 ## 续接步骤
 
 1. 打开 `C:\Users\mingy\Documents\New project\CCompiler`。
-2. 每批继续执行 `SimpleC Debug|Win32`、no-CoreLib 守卫和 `SimpleC/in.txt` smoke。
-3. 涉及生成器时额外执行 `scripts\check_x86_generator_drift.ps1`。
+2. 每批优先执行 `scripts\check_smoke.ps1`。
+3. 只改前端样例时可单独执行 `scripts\check_simplec_smoke.ps1`。
 4. 下一块优先补 SimpleC 前端 parser/semantic regression。
 
 ## 下一小目标

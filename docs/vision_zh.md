@@ -166,7 +166,7 @@
 
 - `SimpleC Debug|Win32` 构建
 - no-CoreLib 主链路守卫
-- `SimpleC/in.txt` smoke
+- `scripts\check_simplec_smoke.ps1` 多样例 SimpleC smoke
 - 涉及 `DevTools/X86_InstrCodeGen` 时额外构建并运行生成器
 
 ### 5.3 按专题成批推进

@@ -366,3 +366,6 @@ FodyWeavers.xsd
 SimpleC/in.code
 SimpleC/in.asm.*.txt
 SimpleC/in.cfg.*.cfgdump
+tests/simplec_smoke/*.code
+tests/simplec_smoke/*.asm.*.txt
+tests/simplec_smoke/*.cfg.*.cfgdump

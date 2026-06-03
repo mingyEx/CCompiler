@@ -1,0 +1,12 @@
+int add(int a,int b)
+{
+  return a + b;
+}
+int square_sum(int c)
+{
+  return add(c,c) * add(c,c);
+}
+int main()
+{
+  square_sum(1);
+}

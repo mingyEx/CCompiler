@@ -18,7 +18,7 @@
 | --- | --- | ---: | --- |
 | 1. 稳定旧 CoreLib 内部 | 已结束 | 100% | 旧库已经不再作为主线继续维护；`CoreLib/` 已删除。 |
 | 2. 减少自定义容器和资源管理依赖 | 已完成主链路 | 100% | `SimpleC`、`IL`、`DevTools/X86_InstrCodeGen` 已脱离 CoreLib include/project reference。 |
-| 3. 加强最小回归测试 | 进行中 | 70% | 主链路已有 no-CoreLib 守卫和 SimpleC smoke；仍缺少系统性 parser/semantic/backend regression。 |
+| 3. 加强最小回归测试 | 进行中 | 75% | 主链路已有统一 smoke 入口、no-CoreLib 守卫、多样例 SimpleC smoke 和 x86 生成器漂移检查；仍缺少系统性 parser/semantic/backend regression。 |
 | 4. 压缩兼容层暴露面 | 已完成主目标 | 100% | `CoreLib/` 和 `CoreLibTests/` 已从仓库删除。 |
 | 5. 后续结构整理 | 未开始 | 0% | DevTools 生成器、IL/x86 边界、CFG 工具等后续分批处理。 |
 
@@ -33,6 +33,7 @@
 - 将 `SimpleC.vcxproj`、`IL.vcxproj`、`DevTools/X86_InstrCodeGen` 从 CoreLib include/project reference 中拆出。
 - 删除 `CoreLib/` 和 `CoreLibTests/`。
 - `DevTools/X86_InstrCodeGen` 生成器已修到输出当前 `std::vector` API，不再生成旧 `code.Add(...)`。
+- 新增 `scripts\check_smoke.ps1` 统一验证入口和 `scripts\check_simplec_smoke.ps1` 多样例 SimpleC smoke。
 
 ## 与原始目标的偏离情况
 
@@ -51,12 +52,12 @@
 
 ## 当前焦点
 
-- 保持 `SimpleC Debug|Win32`、no-CoreLib 守卫和 SimpleC smoke 为绿。
+- 保持 `scripts\check_smoke.ps1` 为绿。
 - 用生成器漂移检查避免误覆盖 `IL/Instruction_x86.cpp` 的手工差异。
 - 暂不推进 IL 深层结构收口。
 
 ## 下一小目标
 
-1. 运行并维护 `scripts\check_x86_generator_drift.ps1`。
-2. 增加更系统的 SimpleC 前端 parser/semantic regression。
+1. 继续增加更系统的 SimpleC 前端 parser/semantic regression 样例。
+2. 运行并维护 `scripts\check_smoke.ps1`。
 3. 继续记录 `DevTools/X86_InstrCodeGen` 与 `IL/Instruction_x86.cpp` 的手工差异，避免误把生成文件直接覆盖进主链路。

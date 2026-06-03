@@ -1,0 +1,16 @@
+int choose(int a,int b)
+{
+  int total = a + b;
+  if (total > 3)
+  {
+    return total;
+  }
+  else
+  {
+    return b;
+  }
+}
+int main()
+{
+  choose(1,3);
+}
