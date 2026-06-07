@@ -130,7 +130,11 @@ namespace SimpleC
 					stmt->InitialExpression->Accept(*this);
 
 				if (stmt->MarginExpression != nullptr)
+				{
 					stmt->MarginExpression->Accept(*this);
+					if (stmt->MarginExpression->Type != ExpressionType::Error && stmt->MarginExpression->Type != ExpressionType::Int)
+						Error(30027, L"'for': condition expression must evaluate to int.", stmt);
+				}
 
 				if (stmt->SideEffectExpression != nullptr)
 					stmt->SideEffectExpression->Accept(*this);
