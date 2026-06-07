@@ -249,7 +249,7 @@ namespace Compiler
 						}
 						node->Exits[0] = keptExits[0];
 						node->Exits[1] = keptExits[1];
-						if (node->GetExitCount()==1)
+						if (node->GetExitCount()==1 && node->Code.Last().Func == Operation::Branch)
 							node->Code.Last().Func = Operation::Jump;
 					}
 				}

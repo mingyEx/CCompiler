@@ -263,8 +263,10 @@ namespace SimpleC
 			SetCurrentLoopBeginPosition(GetCurrentInstructionPos());
 
 			if (stmt->MarginExpression)
+			{
 				stmt->MarginExpression->Accept(*this);
-			Emit(Instruction(Operation::Branch, PopExpr(stmt->MarginExpression->Type), GetCurrentLoopBreakLabel(), 1));
+				Emit(Instruction(Operation::Branch, PopExpr(stmt->MarginExpression->Type), GetCurrentLoopBreakLabel(), 1));
+			}
 			stmt->Statement->Accept(*this);
 			SetCurrentLoopContinuePosition(GetCurrentInstructionPos());
 			if (stmt->SideEffectExpression)
@@ -300,6 +302,11 @@ namespace SimpleC
 		void CodeGenerator::VisitReturnStatement(ReturnStatementSyntaxNode& stmt_node)
 		{
 			auto * stmt = &stmt_node;
+			if (!stmt->Expression)
+			{
+				Emit(Instruction(Operation::Ret, Operand(curFunc->ParameterSize)));
+				return;
+			}
 			stmt->Expression->Accept(*this);
 			Emit(Instruction(Operation::Ret, Operand(curFunc->ParameterSize), PopExpr(stmt->Expression->Type)));
 		}

@@ -187,7 +187,15 @@ namespace SimpleC
 
 					function->Variables.push_back(varDeclr);
 					if(para->Expression != nullptr)
+					{
 						para->Expression->Accept(*this);
+						if (para->Expression->Type != ExpressionType::Error &&
+							para->Expression->Type != varDeclr.Type &&
+							!(varDeclr.Type == ExpressionType::Double && para->Expression->Type == ExpressionType::Int))
+						{
+							Error(30026, L"Initializer type '" + para->Expression->Type.ToString() + L"' does not match variable type '" + varDeclr.Type.ToString() + L"'.", para.get());
+						}
+					}
 				}
 			}
 			virtual void VisitWhileStatement(WhileStatementSyntaxNode & stmt_node)
